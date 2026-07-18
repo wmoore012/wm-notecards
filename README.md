@@ -25,7 +25,7 @@ NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
 12   133  32   131  131  3345 343  35
 ```
 
-![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](https://raw.githubusercontent.com/wmoore012/wm-notecards/main/assets/wm-notecards-demo.gif)
+![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](assets/wm-notecards-demo.gif)
 
 Jupyter gave me `df.describe()`.
 
