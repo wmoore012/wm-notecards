@@ -53,6 +53,8 @@ reader journey must be observed.
 ## 4. Visual encoding and color
 
 - [ ] Encodings match the question: position/length before area or decorative color.
+- [ ] Preattentive order is deliberate: the answer/decision is strongest, evidence is
+      next, and metadata is quiet; not every element competes for attention.
 - [ ] A categorical palette is not used as an ordered scale, or vice versa.
 - [ ] Color meaning is stable across the notebook.
 - [ ] Red/green is not the sole distinction.
@@ -74,6 +76,8 @@ reader journey must be observed.
 - [ ] Annotations remain inside their intended panel at narrow width.
 - [ ] The plotting area remains large enough after titles, legends, and color bars.
 - [ ] Table text is professionally aligned: labels left, numbers/dates right.
+- [ ] Neutral multi-row tables have visible alternating row shades; semantic fills
+      override zebra banding only when the fill carries defined meaning.
 - [ ] Tables stretch to content and expose both scroll directions when needed.
 - [ ] Long tables have a bounded viewport and sticky header; short tables do not gain
       an unnecessary vertical scrollbar.

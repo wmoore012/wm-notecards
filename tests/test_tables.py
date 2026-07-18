@@ -3,6 +3,7 @@ import pytest
 
 from wm_notecards import WMTheme
 from wm_notecards.tables import (
+    WMTableTheme,
     display_cols_by_dtype,
     semantic_table_css,
     style_describe_wm,
@@ -140,6 +141,18 @@ def test_short_table_stretches_without_forced_vertical_scroll(monkeypatch) -> No
     assert "class='wm-table-scroll'" in html
     assert "class='wm-table-scroll wm-table-scroll--bounded'" not in html
     assert "width: max-content; min-width: 100%" in html
+
+
+def test_standard_tables_enforce_visible_zebra_rows() -> None:
+    light = WMTheme.light()
+    dark = WMTheme.dark()
+
+    assert light.table_stripe_bg == "rgba(17,17,17,0.055)"
+    assert dark.table_stripe_bg == "rgba(255,255,255,0.045)"
+    for theme in (light, dark):
+        css = WMTableTheme().css(theme)
+        assert "tbody tr:nth-child(even) td" in css
+        assert f"background: {theme.table_stripe_bg}" in css
 
 
 def test_table_styling_family_and_micro_profiles(monkeypatch) -> None:

@@ -1,15 +1,29 @@
 # wm-notecards
 
-## Machine learning should not feel like reading a phone book.
+## Please hear me out. I’m new here.
 
-I almost failed Machine Learning.
-
-Not because the math was impossible. Because I kept forgetting what I had already
-learned while staring at walls of notebook output.
+> I’m new to this community. Thank you for having me—I mean that. I’m learning in
+> public, and this is the tool I needed while I was learning.
 
 We are data scientists. We make data visualizations for a living.
 
 **Why are we still doing machine learning in MS-DOS?**
+
+I almost failed Machine Learning. Not because the math was impossible. Because I kept
+forgetting what I had already learned while staring at walls of notebook output.
+
+I came here from music production and audio engineering: glowing rooms, tactile
+instruments, modern tools with vintage soul. In creative work, how a tool feels changes
+how you think with it.
+
+This is not just vibe. A data frame represents the real world and the people affected
+by our decisions. That is hard to remember when the interface keeps handing us this:
+
+```text
+NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+12   133  32   131  131  3345 343  35
+```
 
 ![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](https://raw.githubusercontent.com/wmoore012/wm-notecards/main/assets/wm-notecards-demo.gif)
 
@@ -33,8 +47,11 @@ Open source. If you think notebooks can be better, come help.
 ## Install
 
 ```bash
-uv add wm-notecards
+uv add "wm-notecards @ git+https://github.com/wmoore012/wm-notecards.git"
 ```
+
+The shorter `uv add wm-notecards` command will be documented after the first PyPI
+release; it is intentionally not claimed before that release exists.
 
 Then make one notebook section feel like a conversation:
 
@@ -45,18 +62,25 @@ theme = WMTheme.light()
 init_notebook(theme)
 ```
 
-## What is enforced
+## What is enforced (and why)
 
-- Dense named bar charts automatically become horizontal; charts above 24 categories
-  require an explicit visual-review override.
-- Long tables stretch to their content, gain horizontal and vertical scrolling, and
-  keep headers visible.
-- Header chips wrap instead of covering subtitles or chart annotations.
-- Card motion respects `prefers-reduced-motion`.
-- Legacy plotting defaults are mapped onto a consistent semantic palette.
-- SVG, high-resolution PNG, and PDF exports use the styled figure dimensions.
-- The test suite checks card shells, chart density, table overflow, semantic colors,
-  pictograms, formulas, icons, and static-render helpers.
+- **Readable categories:** Dense named bar charts become horizontal; charts above 24
+  categories require an explicit visual-review override.
+- **Tables you can actually scan:** Neutral tables use visible alternating row shades;
+  long tables stretch, scroll in both directions, and keep headers visible.
+- **Preattentive hierarchy:** Answer-first titles, position, size, one restrained
+  accent, zebra rows, and semantic state fills establish the reading order before a
+  reader consciously decodes the values.
+- **Context without collisions:** Header chips wrap instead of covering subtitles or
+  chart annotations.
+- **Motion with consent:** New cards arrive with a brief attention cue, hover gently,
+  and respect `prefers-reduced-motion`.
+- **Color sanity:** Legacy plotting defaults map onto a consistent semantic palette,
+  with text, line style, or borders carrying a second channel.
+- **Honest exports:** SVG, high-resolution PNG, and PDF use the styled figure
+  dimensions instead of silently clipping the evidence.
+- **Regression pressure:** Tests cover card shells, chart density, table overflow and
+  striping, semantic colors, pictograms, formulas, icons, and static rendering.
 
 These guarantees target the failures that are hardest to catch from code alone:
 stacked category labels, clipped evidence, drifting fonts, callouts covering prose,

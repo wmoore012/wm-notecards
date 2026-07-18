@@ -15,7 +15,11 @@ Before calling a notecard notebook complete:
 - Keep semantic color stable and add labels, shapes, or line styles.
 - Never let chips or callouts overlap prose.
 - Give long tables two-axis scrolling and sticky headers.
+- Keep neutral table zebra bands visible and below semantic fills in the attention
+  hierarchy.
 - Keep label columns left-aligned and numeric/date columns right-aligned.
+- Verify that title, evidence, annotation, and metadata form an intentional
+  preattentive reading order.
 - Test typography, spacing, contrast, keyboard scrolling, and reduced motion.
 
 ## Proof

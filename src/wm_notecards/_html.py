@@ -126,6 +126,9 @@ def card_shell_css(
 
     return (
         "<style>"
+        "@keyframes wm-card-arrive{"
+        "from{opacity:0;transform:translateY(6px)}"
+        "to{opacity:1;transform:translateY(0)}}"
         # ── card wrapper ──
         f".{card_class}{{"
         f"max-width:{theme.width}px !important;"
@@ -137,6 +140,7 @@ def card_shell_css(
         f"box-shadow:{shadow};"
         "transition:transform 0.18s ease,box-shadow 0.18s ease,"
         "border-color 0.18s ease;"
+        "animation:wm-card-arrive 0.28s cubic-bezier(0.22,1,0.36,1);"
         "}"
         # ── hover ──
         f".{card_class}:hover{{"
@@ -612,6 +616,11 @@ def plot_shell_html(
 
     return (
         "<style>"
+        "@keyframes wm-card-arrive{"
+        "from{opacity:0;transform:translateY(6px)}"
+        "to{opacity:1;transform:translateY(0)}}"
+        ".wm-plot-shell{animation:wm-card-arrive 0.28s "
+        "cubic-bezier(0.22,1,0.36,1);}"
         ".wm-plot-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;"
         "overscroll-behavior-x:contain;scrollbar-width:thin;box-sizing:border-box;}"
         ".wm-plot-stage{display:block;margin:0 auto;box-sizing:border-box;}"

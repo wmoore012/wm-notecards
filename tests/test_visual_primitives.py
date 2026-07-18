@@ -5,7 +5,7 @@ import pytest
 
 from wm_notecards import WMTheme, pictogram, rendering
 from wm_notecards._colors import WMGradient, generate_discrete_gradient_wm, generate_gradient_wm
-from wm_notecards._html import chip_html, plot_shell_html, shell_header_html
+from wm_notecards._html import card_shell_css, chip_html, plot_shell_html, shell_header_html
 from wm_notecards.icons import get_icon, list_icons
 from wm_notecards.kicker import WMKicker, kicker_html
 
@@ -56,6 +56,18 @@ def test_kicker_and_html_shell_wrap_long_metadata() -> None:
     shell = plot_shell_html("<div>plot</div>", theme, figure_width=860)
     assert "wm-plot-scroll" in shell
     assert "scroll horizontally" in shell
+
+
+def test_new_output_attention_cue_respects_reduced_motion() -> None:
+    theme = WMTheme.light()
+    card_css = card_shell_css(theme, card_class="wm-test-card")
+    plot_shell = plot_shell_html("<div>plot</div>", theme, figure_width=860)
+
+    for markup in (card_css, plot_shell):
+        assert "@keyframes wm-card-arrive" in markup
+        assert "animation:wm-card-arrive 0.28s" in markup
+        assert "prefers-reduced-motion:reduce" in markup
+        assert "animation:none !important" in markup
 
 
 def test_pictogram_validates_and_renders(monkeypatch: pytest.MonkeyPatch) -> None:

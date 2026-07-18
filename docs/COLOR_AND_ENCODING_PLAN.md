@@ -17,6 +17,21 @@ Line style carries a second channel: solid for observations, dashed for forecast
 counterfactuals, and dotted for baselines. Never require hue alone to distinguish two
 series.
 
+## Preattentive hierarchy contract
+
+A reader should know where to look before consciously decoding the values:
+
+1. Position and length carry quantitative comparisons whenever possible.
+2. The answer-first title is the strongest text cue; metadata and methodology remain
+   visibly quieter.
+3. One restrained accent establishes reading order. Do not make every element salient.
+4. Neutral tables use discernible zebra rows to support horizontal scanning; their
+   banding stays weaker than semantic pass/check/fail or missingness fills.
+5. A semantic fill must mean something and must keep a text, border, symbol, or line
+   style as a second channel.
+6. A brief arrival animation may signal new notebook output, but it never carries
+   meaning and disappears entirely under `prefers-reduced-motion`.
+
 ## SVD/authorship plan
 
 Hamilton and Madison are categories, not good/bad outcomes. Give each author one

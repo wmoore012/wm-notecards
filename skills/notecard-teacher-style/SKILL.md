@@ -63,6 +63,10 @@ the result. Use a counterintuitive card when a smart beginner could overread the
 - Let dense named bar charts become horizontal.
 - Reduce or facet charts above the category limit; do not force an unreadable override.
 - Use semantic color roles consistently and add a non-color channel.
+- Design a preattentive reading order: answer-first title, evidence, then quiet
+  methodology; use salience sparingly instead of highlighting everything.
+- Keep alternating row shades visible on neutral tables, with semantic fills reserved
+  for defined states.
 - Allow long tables to scroll in both directions while keeping headers visible.
 - Keep chips, annotations, legends, and prose in separate layout regions.
 - Use shared font, spacing, radius, and color tokens.
