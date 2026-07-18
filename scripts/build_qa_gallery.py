@@ -61,7 +61,10 @@ def _dense_chart(theme: WMTheme) -> str:
         "Kenny Mason",
     ]
     fig = go.Figure(go.Bar(x=labels, y=[0.64, 0.60, 0.59, 0.57, 0.56, 0.54, 0.52, 0.49, 0.47, 0.44, 0.38, 0.32]))
-    fig.update_layout(xaxis_title="Peer artist", yaxis_title="Reviewed score")
+    # Explicit types reproduce the reviewer-found regression: transposition must
+    # move axis types as well as axis titles.
+    fig.update_xaxes(type="category", title_text="Peer artist")
+    fig.update_yaxes(type="linear", title_text="Reviewed score")
     style_fig_wm(
         fig,
         title="Named categories become readable before labels can collide",

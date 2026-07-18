@@ -320,8 +320,14 @@ def _apply_bar_category_policy(
 
     old_x_title = str(getattr(getattr(fig.layout.xaxis, "title", None), "text", "") or "")
     old_y_title = str(getattr(getattr(fig.layout.yaxis, "title", None), "text", "") or "")
-    fig.update_xaxes(title_text=old_y_title or None)
-    fig.update_yaxes(title_text=old_x_title or None, autorange="reversed")
+    old_x_type = getattr(fig.layout.xaxis, "type", None)
+    old_y_type = getattr(fig.layout.yaxis, "type", None)
+    fig.update_xaxes(title_text=old_y_title or None, type=old_y_type)
+    fig.update_yaxes(
+        title_text=old_x_title or None,
+        type=old_x_type,
+        autorange="reversed",
+    )
 
 
 # ── Kicker / chip annotation helpers ───────────────────────────────

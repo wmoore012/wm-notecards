@@ -495,13 +495,14 @@ def style_describe_wm(
         row = summary.loc["count"]
         if isinstance(row, pd.DataFrame):
             row = row.iloc[0]
-        counts = pd.to_numeric(cast("pd.Series[Any]", row), errors="coerce")
+        counts = pd.to_numeric(row, errors="coerce")
         for column in counts.index[counts != counts.max()]:
             styles.loc["count", column] = (
                 f"background-color:{theme.color_count_bg}; color:inherit"
             )
 
-    return cast("Styler", summary.style.apply(lambda _: styles, axis=None).format(_fmt))
+    styled: Any = summary.style.apply(lambda _: styles, axis=None).format(_fmt)
+    return cast("Styler", styled)
 
 
 def style_outlier_report_wm(
@@ -533,10 +534,11 @@ def style_outlier_report_wm(
     for c in df.columns:
         fmts[c] = "{:.2%}" if c == "outlier_rate" else _fmt
 
-    return cast(
-        "Styler",
-        df.style.apply(_row_bg, axis=1).format(cast("Any", fmts), na_rep="—"),
+    styled: Any = df.style.apply(_row_bg, axis=1).format(
+        cast("Any", fmts),
+        na_rep="—",
     )
+    return cast("Styler", styled)
 
 
 def display_cols_by_dtype(

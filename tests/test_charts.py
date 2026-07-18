@@ -73,6 +73,20 @@ def test_dense_named_bars_transpose_before_labels_can_collide() -> None:
     assert fig.data[0].marker.color == WMTheme.light().accent
 
 
+def test_dense_bar_transpose_swaps_explicit_axis_types() -> None:
+    labels = [f"Peer {idx}" for idx in range(12)]
+    fig = go.Figure(go.Bar(x=labels, y=list(range(12))))
+    fig.update_xaxes(type="category", title_text="Peer artist")
+    fig.update_yaxes(type="linear", title_text="Score")
+
+    style_fig_wm(fig, title="Rank mass", theme=WMTheme.light())
+
+    assert fig.layout.xaxis.type == "linear"
+    assert fig.layout.yaxis.type == "category"
+    assert fig.layout.xaxis.title.text == "Score"
+    assert fig.layout.yaxis.title.text == "Peer artist"
+
+
 def test_too_many_bar_categories_require_explicit_review() -> None:
     fig = go.Figure(go.Bar(x=[f"peer-{idx}" for idx in range(25)], y=list(range(25))))
 

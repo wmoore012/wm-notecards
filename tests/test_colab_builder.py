@@ -19,7 +19,14 @@ def test_portable_notebook_clears_execution_state_and_preserves_order(tmp_path: 
             new_code_cell("answer = 42", execution_count=7, outputs=[]),
         ]
     )
-    scratch = new_notebook(cells=[*takeover.cells, new_code_cell("exploration = True")])
+    scratch = new_notebook(
+        cells=[
+            takeover.cells[0],
+            new_code_cell("scratch_before = True"),
+            takeover.cells[1],
+            new_code_cell("exploration = True"),
+        ]
+    )
     takeover_path = tmp_path / "takeover.ipynb"
     scratch_path = tmp_path / "scratch.ipynb"
     takeover_path.write_text(json.dumps(takeover), encoding="utf-8")
@@ -38,7 +45,9 @@ def test_portable_notebook_clears_execution_state_and_preserves_order(tmp_path: 
     assert generated.cells[1].source == "answer = 42"
     assert generated.cells[1].execution_count is None
     assert generated.cells[1].outputs == []
-    assert generated.cells[-1].source == "exploration = True"
+    sources = [cell.source for cell in generated.cells]
+    assert sources.count("answer = 42") == 1
+    assert sources[-2:] == ["scratch_before = True", "exploration = True"]
 
 
 def test_embed_sanitizer_removes_editor_notes_and_keeps_runnable_source() -> None:

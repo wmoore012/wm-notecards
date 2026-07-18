@@ -116,13 +116,13 @@ def clear_cell_state(cell: NotebookNode) -> NotebookNode:
     return clone
 
 
-def cell_identity(cell: NotebookNode, fallback_index: int) -> str:
+def cell_identity(cell: NotebookNode) -> str:
     match = CELL_ID_RE.search(cell.source)
     if match:
         return next(group for group in match.groups() if group)
 
     digest = hashlib.sha1(cell.source.encode("utf-8")).hexdigest()[:12]
-    return f"{cell.cell_type}:{fallback_index}:{digest}"
+    return f"{cell.cell_type}:{digest}"
 
 
 def collect_root_python_files(project_dir: Path, *, exclude: set[str]) -> list[Path]:
@@ -378,13 +378,11 @@ def build_notebook(
     generated_cells.extend(cleaned_takeover)
 
     if include_scratch:
-        takeover_ids = {
-            cell_identity(cell, idx) for idx, cell in enumerate(takeover_nb.cells)
-        }
+        takeover_ids = {cell_identity(cell) for cell in takeover_nb.cells}
         scratch_unique = [
             clear_cell_state(cell)
-            for idx, cell in enumerate(scratch_nb.cells)
-            if cell_identity(cell, idx) not in takeover_ids
+            for cell in scratch_nb.cells
+            if cell_identity(cell) not in takeover_ids
         ]
         if scratch_unique:
             generated_cells.append(build_scratch_appendix_cell(scratch_path.name))
