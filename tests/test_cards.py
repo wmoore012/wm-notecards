@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import inspect
+
 import pandas as pd
 import pytest
 
-from wm_notecards import WMTheme, cards
+from wm_notecards import WMTheme, cards, init_notebook
 
 
 def _capture(monkeypatch: pytest.MonkeyPatch) -> list[str]:
@@ -14,6 +16,15 @@ def _capture(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
     monkeypatch.setattr(cards, "display", fake_display)
     return rendered
+
+
+def test_public_quick_start_exposes_a_zero_argument_notebook_initializer() -> None:
+    signature = inspect.signature(init_notebook)
+
+    assert all(
+        parameter.default is not inspect.Parameter.empty
+        for parameter in signature.parameters.values()
+    )
 
 
 def test_card_family_renders_one_consistent_shell(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -59,7 +59,7 @@ Then make one notebook section feel like a conversation:
 from wm_notecards import WMTheme, init_notebook
 
 theme = WMTheme.light()
-init_notebook(theme)
+init_notebook()
 ```
 
 ## What is enforced (and why)
@@ -104,7 +104,7 @@ from wm_notecards import WMTheme, init_notebook
 from wm_notecards.charts import style_fig_wm, wm_render_figure_card
 
 theme = WMTheme.light()
-init_notebook(theme)
+init_notebook()
 
 fig = px.bar(
     peer_scores.head(10),

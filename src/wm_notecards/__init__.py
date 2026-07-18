@@ -5,7 +5,7 @@ Quick start::
     from wm_notecards import WMTheme, init_notebook
 
     theme = WMTheme.light()
-    init_notebook(theme)
+    init_notebook()
 
 Then use cards, tables, charts, and pictograms::
 
