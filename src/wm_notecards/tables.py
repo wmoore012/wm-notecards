@@ -49,6 +49,42 @@ _ALLOWED_FE_CALLS = frozenset({
 
 _NUMERIC_RE = re.compile(r"^-?[\d,$%().\s]+$")
 
+_SEMANTIC_STATUS_ALIASES: dict[str, str] = {
+    "before": "before",
+    "original": "before",
+    "raw": "raw",
+    "after": "after",
+    "clean": "cleaned",
+    "cleaned": "cleaned",
+    "pass": "pass",
+    "passed": "pass",
+    "ok": "pass",
+    "success": "pass",
+    "fail": "fail",
+    "failed": "fail",
+    "error": "fail",
+    "warn": "warn",
+    "warning": "warn",
+    "caution": "warn",
+    "cached": "cached",
+    "cache": "cached",
+    "missing": "missing",
+    "na": "missing",
+    "null": "missing",
+}
+
+_SEMANTIC_STATUSES: tuple[str, ...] = (
+    "before",
+    "after",
+    "pass",
+    "fail",
+    "warn",
+    "cached",
+    "missing",
+    "raw",
+    "cleaned",
+)
+
 # Maps dtype strings → palette index for dtype chips.
 _DTYPE_PALETTE: dict[str, int] = {
     "int8": 0, "int16": 0, "int32": 0, "int64": 0,
@@ -77,6 +113,8 @@ class WMTableTheme:
     card_class: str = "wm-table-card"
     interactive_rows: bool = True
     interactive_shell: bool = False
+    max_visible_rows: int = 12
+    scroll_height: int = 560
 
     def css(self, theme: ThemeLike) -> str:
         """Generate the full ``<style>`` block for this table config."""
@@ -101,14 +139,18 @@ class WMTableTheme:
 div.{cc} {{ overflow: hidden; }}
 div.{cc}:hover {{ transform: {lift}; box-shadow: {shadow_hover}; }}
 div.{cc} .wm-table-scroll {{
-  overflow-x: auto; overflow-y: hidden;
+  overflow: auto;
   width: 100%; max-width: 100%; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: {theme.table_header_bg} transparent;
   border-radius: 14px;
 }}
+div.{cc} .wm-table-scroll--bounded thead th {{
+  position: sticky; top: 0; z-index: 2;
+}}
 table.{tc} {{
-  width: 100%; font-family: {theme.font_mono}; font-size: 13px;
+  width: max-content; min-width: 100%;
+  font-family: {theme.font_mono}; font-size: 13px;
   border-collapse: separate; border-spacing: 0;
 }}
 table.{tc} thead th {{
@@ -158,7 +200,7 @@ table.{tc} tbody tr:hover td span {{
     def _scrollbar_css(self, theme: ThemeLike) -> str:
         cc = self.card_class
         return f"""
-div.{cc} .wm-table-scroll::-webkit-scrollbar {{ height: 10px; }}
+div.{cc} .wm-table-scroll::-webkit-scrollbar {{ width:10px; height:10px; }}
 div.{cc} .wm-table-scroll::-webkit-scrollbar-track {{
   background: transparent;
 }}
@@ -175,7 +217,8 @@ div.{cc} .wm-table-scroll::-webkit-scrollbar-thumb {{
 @media print {{
   div.{cc} {{ overflow: visible !important; }}
   div.{cc} .wm-table-scroll {{
-    overflow-x: visible !important; max-width: 100% !important;
+    overflow: visible !important; max-width: 100% !important;
+    max-height: none !important;
   }}
   table.{tc} {{ width: 100% !important; table-layout: auto !important; }}
   table.{tc} thead th, table.{tc} tbody td {{
@@ -232,7 +275,7 @@ def _fmt(value: object) -> str:
     return str(value)
 
 
-def _mode_text(series: pd.Series) -> str:  # type: ignore[type-arg]
+def _mode_text(series: pd.Series[Any]) -> str:
     """Return the mode of a series as a display string, truncated."""
     mode = series.dropna().mode()
     if mode.empty:
@@ -244,7 +287,7 @@ def _mode_text(series: pd.Series) -> str:  # type: ignore[type-arg]
 # ── Column alignment ────────────────────────────────────────────────
 
 
-def _looks_numeric(series: pd.Series) -> bool:  # type: ignore[type-arg]
+def _looks_numeric(series: pd.Series[Any]) -> bool:
     """Heuristic: should this column be right-aligned?"""
     if pd.api.types.is_numeric_dtype(series):
         return True
@@ -308,6 +351,124 @@ def _align_css(
     return f"<style>{''.join(rules)}</style>"
 
 
+# ── Semantic table colour helpers ───────────────────────────────────
+
+
+def _semantic_key(value: object) -> str | None:
+    """Normalize a status-like value to a supported semantic class key."""
+    if _is_missing(value):
+        return "missing"
+    key = str(value).strip().lower().replace("_", " ").replace("-", " ")
+    key = " ".join(key.split())
+    return _SEMANTIC_STATUS_ALIASES.get(key)
+
+
+def _semantic_palette(theme: ThemeLike) -> dict[str, tuple[str, str, str]]:
+    """Return status -> (background, foreground, border) tokens."""
+    if theme.mode == "dark":
+        return {
+            "before": ("rgba(255, 138, 128, 0.14)", "#FFB4AB", "rgba(255, 138, 128, 0.32)"),
+            "after": ("rgba(129, 199, 132, 0.14)", "#A5D6A7", "rgba(129, 199, 132, 0.34)"),
+            "pass": ("rgba(129, 199, 132, 0.14)", "#A5D6A7", "rgba(129, 199, 132, 0.34)"),
+            "fail": ("rgba(255, 138, 128, 0.14)", "#FFB4AB", "rgba(255, 138, 128, 0.32)"),
+            "warn": ("rgba(244, 181, 86, 0.16)", "#F4B556", "rgba(244, 181, 86, 0.34)"),
+            "cached": ("rgba(22, 199, 232, 0.13)", "#8BE9FF", "rgba(22, 199, 232, 0.30)"),
+            "missing": ("rgba(244, 181, 86, 0.16)", "#F4B556", "rgba(244, 181, 86, 0.34)"),
+            "raw": ("rgba(148, 163, 184, 0.14)", "#CBD5E1", "rgba(148, 163, 184, 0.28)"),
+            "cleaned": ("rgba(129, 199, 132, 0.14)", "#A5D6A7", "rgba(129, 199, 132, 0.34)"),
+        }
+    return {
+        "before": ("rgba(180, 35, 60, 0.10)", "#9F1D35", "rgba(180, 35, 60, 0.24)"),
+        "after": ("rgba(32, 181, 123, 0.12)", "#146C43", "rgba(32, 181, 123, 0.26)"),
+        "pass": ("rgba(32, 181, 123, 0.12)", "#146C43", "rgba(32, 181, 123, 0.26)"),
+        "fail": ("rgba(180, 35, 60, 0.10)", "#9F1D35", "rgba(180, 35, 60, 0.24)"),
+        "warn": ("rgba(216, 140, 46, 0.16)", "#8A5700", "rgba(216, 140, 46, 0.28)"),
+        "cached": ("rgba(22, 199, 232, 0.12)", "#087B91", "rgba(22, 199, 232, 0.26)"),
+        "missing": ("rgba(216, 140, 46, 0.16)", "#8A5700", "rgba(216, 140, 46, 0.28)"),
+        "raw": ("rgba(76, 100, 117, 0.10)", "#3D5362", "rgba(76, 100, 117, 0.22)"),
+        "cleaned": ("rgba(32, 181, 123, 0.12)", "#146C43", "rgba(32, 181, 123, 0.26)"),
+    }
+
+
+def semantic_table_css(theme: ThemeLike, *, table_class: str = "wm-table") -> str:
+    """Return CSS classes for semantic status cells.
+
+    The classes are theme-aware and Colab-safe.  Use them instead of
+    inline red/green styles when a table needs to communicate before/
+    after, pass/fail, cached/missing, or raw/cleaned state.
+    """
+    rules: list[str] = []
+    for status, (bg, fg, border) in _semantic_palette(theme).items():
+        rules.append(
+            f"table.{table_class} tbody td.wm-semantic--{status} {{"
+            f" background-color:{bg} !important;"
+            f" color:{fg} !important;"
+            f" border-color:{border} !important;"
+            " font-weight:800;"
+            "}}"
+        )
+        rules.append(
+            f"table.{table_class} tbody td.wm-semantic--{status} code,"
+            f"table.{table_class} tbody td.wm-semantic--{status} span {{"
+            f" color:{fg} !important;"
+            "}}"
+        )
+    return f"<style>{''.join(rules)}</style>"
+
+
+def _semantic_td_classes(
+    df: pd.DataFrame,
+    *,
+    semantic_columns: Sequence[str] | None,
+    semantic_by_column: Mapping[str, str] | None,
+) -> pd.DataFrame:
+    """Build a Styler ``td`` class frame for semantic cell colouring."""
+    classes = pd.DataFrame("", index=df.index, columns=df.columns)
+    selected = set(df.columns if semantic_columns is None else semantic_columns)
+    for column in selected:
+        if column not in df.columns:
+            continue
+        classes[column] = df[column].map(
+            lambda value: (
+                f"wm-semantic--{key}" if (key := _semantic_key(value)) else ""
+            )
+        )
+    for column, status in (semantic_by_column or {}).items():
+        if column not in df.columns:
+            continue
+        key = _semantic_key(status)
+        if key:
+            classes[column] = f"wm-semantic--{key}"
+    return classes
+
+
+def style_semantic_wm(
+    data: Styler | pd.DataFrame,
+    *,
+    theme: ThemeLike,
+    semantic_columns: Sequence[str] | None = None,
+    semantic_by_column: Mapping[str, str] | None = None,
+    hide_index: bool = True,
+) -> Styler:
+    """Return a Styler with reusable semantic status classes.
+
+    ``semantic_columns`` reads status words from cell values.  Use
+    ``semantic_by_column`` when whole columns have a role, such as a
+    before/after comparison table.
+    """
+    styler = data.style if isinstance(data, pd.DataFrame) else data
+    frame = cast("pd.DataFrame", cast("Any", styler).data)
+    classes = _semantic_td_classes(
+        frame,
+        semantic_columns=semantic_columns,
+        semantic_by_column=semantic_by_column,
+    )
+    styler = styler.set_td_classes(classes)
+    if hide_index:
+        styler = styler.hide(axis="index")
+    return styler
+
+
 # ── Public styling functions ─────────────────────────────────────────
 
 
@@ -334,15 +495,13 @@ def style_describe_wm(
         row = summary.loc["count"]
         if isinstance(row, pd.DataFrame):
             row = row.iloc[0]
-        counts = cast(
-            "pd.Series",  # type: ignore[type-arg]
-            pd.to_numeric(cast("pd.Series[Any]", row), errors="coerce"),
-        )
-        styles.loc["count", counts != counts.max()] = (
-            f"background-color:{theme.color_count_bg}; color:inherit"
-        )
+        counts = pd.to_numeric(cast("pd.Series[Any]", row), errors="coerce")
+        for column in counts.index[counts != counts.max()]:
+            styles.loc["count", column] = (
+                f"background-color:{theme.color_count_bg}; color:inherit"
+            )
 
-    return summary.style.apply(lambda _: styles, axis=None).format(_fmt)
+    return cast("Styler", summary.style.apply(lambda _: styles, axis=None).format(_fmt))
 
 
 def style_outlier_report_wm(
@@ -374,7 +533,10 @@ def style_outlier_report_wm(
     for c in df.columns:
         fmts[c] = "{:.2%}" if c == "outlier_rate" else _fmt
 
-    return df.style.apply(_row_bg, axis=1).format(cast("Any", fmts), na_rep="—")
+    return cast(
+        "Styler",
+        df.style.apply(_row_bg, axis=1).format(cast("Any", fmts), na_rep="—"),
+    )
 
 
 def display_cols_by_dtype(
@@ -403,7 +565,8 @@ def display_cols_by_dtype(
         lambda d: d.name if hasattr(d, "name") else str(d)
     )
     groups: list[str] = []
-    for name, grp in dtypes.groupby(names, sort=False):
+    for raw_name, grp in dtypes.groupby(names, sort=False):
+        name = str(raw_name)
         lbl = _label(name)
         count = f" • {len(grp)} columns" if len(grp) > 3 else ""
         chips = "".join(
@@ -555,7 +718,7 @@ def style_df_wm(
         "0 10px 18px -10px rgba(0,0,0,0.18)"
         if theme.mode == "light" else "none"
     )
-    data = cast("pd.DataFrame", styler.data)
+    data = cast("pd.DataFrame", cast("Any", styler).data)
     align_styles = [
         {"selector": f"tbody td.col{i}",
          "props": (
@@ -645,6 +808,7 @@ def wm_render_styler(
         dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
     ) = None,
     chip_text: str | None = None,
+    max_height: int | None = None,
 ) -> None:
     """Render a pandas Styler inside a themed WM card shell.
 
@@ -672,8 +836,18 @@ def wm_render_styler(
     )
     html_table = styler.to_html()
     css = table_theme.css(theme)
-    data = cast("pd.DataFrame", styler.data)
+    data = cast("pd.DataFrame", cast("Any", styler).data)
+    if max_height is None and len(data) > table_theme.max_visible_rows:
+        max_height = table_theme.scroll_height
+    scroll_class = "wm-table-scroll"
+    scroll_style = ""
+    if max_height is not None:
+        if max_height < 160:
+            raise ValueError("max_height must be at least 160 pixels.")
+        scroll_class += " wm-table-scroll--bounded"
+        scroll_style = f" style='max-height:{int(max_height)}px;'"
     acss = _align_css(data, table_theme.table_class, wrap=wrap_columns)
+    scss = semantic_table_css(theme, table_class=table_theme.table_class)
 
     header = shell_header_html(
         title=title or "",
@@ -686,14 +860,95 @@ def wm_render_styler(
 
     if wrap_card:
         html = (
-            f"{css}{acss}"
+            f"{css}{acss}{scss}"
             f"<div class='wm-card {table_theme.card_class}'>"
             f"<div class='wm-shell-inner'>{header}</div>"
-            f"<div class='wm-table-scroll'>{html_table}</div></div>"
+            f"<div class='{scroll_class}'{scroll_style} tabindex='0' role='region' "
+            f"aria-label='{escape(title or 'Data table')}'>{html_table}</div></div>"
         )
     else:
-        html = f"{css}{acss}{header}{html_table}"
+        html = f"{css}{acss}{scss}{header}{html_table}"
     display(HTML(html))
+
+
+def wm_semantic_table(
+    data: Styler | pd.DataFrame,
+    *,
+    theme: ThemeLike,
+    semantic_columns: Sequence[str] | None = None,
+    semantic_by_column: Mapping[str, str] | None = None,
+    table_theme: WMTableTheme = _DEFAULT_TABLE_THEME,
+    interactive_rows: bool | None = None,
+    wrap_card: bool = True,
+    title: str | None = None,
+    kicker: str | None = None,
+    subtitle: str | None = None,
+    wrap_columns: (
+        dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
+    ) = None,
+    chip_text: str | None = None,
+    hide_index: bool = True,
+    max_height: int | None = None,
+) -> None:
+    """Render a DataFrame with theme-aware semantic status colours.
+
+    This is the reusable replacement for notebook-local HTML tables that
+    hard-code red/green inline styles.  It works in Colab light and dark
+    mode because the colours come from WM semantic CSS classes.
+    """
+    styler = style_semantic_wm(
+        data,
+        theme=theme,
+        semantic_columns=semantic_columns,
+        semantic_by_column=semantic_by_column,
+        hide_index=hide_index,
+    )
+    wm_render_styler(
+        styler,
+        theme=theme,
+        table_theme=table_theme,
+        interactive_rows=interactive_rows,
+        wrap_card=wrap_card,
+        title=title,
+        kicker=kicker,
+        subtitle=subtitle,
+        wrap_columns=wrap_columns,
+        chip_text=chip_text,
+        max_height=max_height,
+    )
+
+
+def wm_before_after_table(
+    data: Styler | pd.DataFrame,
+    *,
+    theme: ThemeLike,
+    before_columns: Sequence[str],
+    after_columns: Sequence[str],
+    title: str,
+    subtitle: str | None = None,
+    kicker: str | None = None,
+    chip_text: str | None = "Before / after",
+    wrap_columns: (
+        dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
+    ) = None,
+    hide_index: bool = True,
+) -> None:
+    """Render a before/after comparison table with semantic column roles."""
+    semantic_by_column = {
+        **{str(column): "before" for column in before_columns},
+        **{str(column): "after" for column in after_columns},
+    }
+    wm_semantic_table(
+        data,
+        theme=theme,
+        semantic_by_column=semantic_by_column,
+        title=title,
+        subtitle=subtitle,
+        kicker=kicker,
+        chip_text=chip_text,
+        wrap_columns=wrap_columns,
+        hide_index=hide_index,
+    )
 
 
 # ── wm_fe_decision_table ─────────────────────────────────────────────
@@ -926,7 +1181,8 @@ def _numeric_card(
     """Build one numeric micro-profile card (violin + stats grid)."""
     numeric = pd.to_numeric(series, errors="coerce")
     valid = numeric.dropna()
-    skew = float(valid.skew()) if len(valid) >= 3 else 0.0
+    skew_value = valid.skew() if len(valid) >= 3 else 0.0
+    skew = float(cast("Any", skew_value))
     high_skew = abs(skew) >= 1.0
 
     if valid.empty:

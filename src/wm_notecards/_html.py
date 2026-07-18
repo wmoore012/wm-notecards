@@ -157,7 +157,7 @@ def card_shell_css(
         "}"
         # ── top-row (eyebrow + chip side-by-side) ──
         f".{card_class} .wm-shell-toprow{{"
-        "display:flex;align-items:flex-start;"
+        "display:flex;align-items:flex-start;flex-wrap:wrap;"
         "justify-content:space-between;gap:12px;"
         "margin-bottom:10px;"
         "}"
@@ -209,6 +209,15 @@ def card_shell_css(
         "height:1px;"
         f"background:{theme.grid} !important;"
         "margin:0 0 14px 0;"
+        "}"
+        "@media (max-width:640px){"
+        f".{card_class} .wm-shell-inner{{padding:18px 16px 16px 16px;}}"
+        f".{card_class} .wm-shell-title{{font-size:clamp(25px,8vw,{title_size}px);}}"
+        f".{card_class} .wm-shell-toprow{{align-items:stretch;}}"
+        "}"
+        "@media (prefers-reduced-motion:reduce){"
+        f".{card_class},.{card_class} *{{transition:none !important;animation:none !important;}}"
+        f".{card_class}:hover{{transform:none !important;}}"
         "}"
         "</style>"
     )
@@ -393,16 +402,17 @@ def chip_html(
     """
     if not text:
         return ""
-    chip_color = color or getattr(theme, "heat_neg", theme.accent)
+    chip_color = str(color or getattr(theme, "heat_neg", theme.accent))
     return (
-        "<span style='display:inline-flex;align-items:center;"
+        "<span class='wm-shell-chip' style='display:inline-flex;align-items:center;"
         "justify-content:center;padding:5px 10px;border-radius:999px;"
         f"border:1px solid {rgba_css(chip_color, 0.28)} !important;"
         f"background:{rgba_css(chip_color, 0.10)} !important;"
         f"color:{chip_color} !important;"
         f"font-family:{theme.font_mono};font-size:11px;font-weight:800;"
         "letter-spacing:0.08em;text-transform:uppercase;"
-        f"white-space:nowrap;'>{escape(text)}</span>"
+        "white-space:normal;overflow-wrap:anywhere;text-align:center;"
+        f"max-width:min(100%,24ch);box-sizing:border-box;'>{escape(text)}</span>"
     )
 
 
@@ -601,6 +611,13 @@ def plot_shell_html(
     inner_radius = max(radius - 6, 10)
 
     return (
+        "<style>"
+        ".wm-plot-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;"
+        "overscroll-behavior-x:contain;scrollbar-width:thin;box-sizing:border-box;}"
+        ".wm-plot-stage{display:block;margin:0 auto;box-sizing:border-box;}"
+        "@media (prefers-reduced-motion:reduce){.wm-plot-shell,.wm-plot-shell *{"
+        "transition:none !important;animation:none !important;}}"
+        "</style>"
         "<div class='wm-card wm-plot-shell-wrap' style='"
         "display:flex;justify-content:center;align-items:flex-start;"
         "width:100%;margin:16px auto;padding:10px 0 6px 0;"
@@ -613,10 +630,11 @@ def plot_shell_html(
         f"border:1px solid {theme.border} !important;"
         f"border-radius:{radius}px;"
         f"box-shadow:{shadow};overflow:hidden;box-sizing:border-box;'>"
-        f"<div style='display:block;width:min(100%, {figure_width}px);"
-        f"max-width:{figure_width}px;margin:0 auto;padding-top:14px;"
-        f"border-radius:{inner_radius}px;overflow:hidden;"
-        f"box-sizing:border-box;'>"
+        "<div class='wm-plot-scroll' tabindex='0' role='region' "
+        "aria-label='Chart; scroll horizontally when needed'>"
+        f"<div class='wm-plot-stage' style='width:{figure_width}px;"
+        f"min-width:{figure_width}px;padding-top:14px;"
+        f"border-radius:{inner_radius}px;overflow:hidden;'>"
         f"{figure_html}"
-        "</div></div></div>"
+        "</div></div></div></div>"
     )
