@@ -5,6 +5,11 @@ notebooks surface a clear, actionable diagnostic panel instead of
 silently falling back to an interactive Plotly chart outside the WM card
 shell.
 
+Public export helper
+--------------------
+Use :func:`export_figure_wm` for deterministic SVG, PNG, or PDF files
+suited to articles, slide decks, email, and social sharing.
+
 .. warning::
 
    REGRESSION WARNING: If chart appears outside the WM card shell, that
@@ -20,7 +25,7 @@ import sys
 import tempfile
 from html import escape
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, cast
 
 import plotly.graph_objects as go
 from IPython.display import HTML, display
@@ -64,7 +69,10 @@ def _export_svg_bytes(fig: go.Figure, *, file_stub: str) -> bytes:
     import kaleido  # optional dependency — imported lazily
 
     export_path = Path(tempfile.gettempdir()) / f"{_safe_export_stub(file_stub)}.svg"
-    return kaleido.calc_fig_sync(fig, path=export_path, opts={"format": "svg"})
+    return cast(
+        "bytes",
+        kaleido.calc_fig_sync(fig, path=export_path, opts={"format": "svg"}),
+    )
 
 
 def _inline_svg_markup(svg_bytes: bytes, *, file_stub: str) -> str:
@@ -305,6 +313,39 @@ def collect_rendering_proof(*, run_smoke_test: bool = True) -> dict[str, object]
     return proof
 
 
+def export_figure_wm(
+    fig: go.Figure,
+    path: str | Path,
+    *,
+    scale: float = 3.0,
+    width: int | None = None,
+    height: int | None = None,
+) -> Path:
+    """Export a figure to SVG, PNG, or PDF using its styled dimensions.
+
+    PNG at the default 3× scale is the share-card/slide-deck default. SVG is
+    preferred for editable vector workflows. PDF is available for print.
+    """
+    output_path = Path(path).expanduser().resolve()
+    suffix = output_path.suffix.lower()
+    if suffix not in {".svg", ".png", ".pdf"}:
+        raise ValueError("Export path must end in .svg, .png, or .pdf.")
+    if scale <= 0:
+        raise ValueError("scale must be greater than zero.")
+
+    export_width = width or int(getattr(fig.layout, "width", 0) or 860)
+    export_height = height or int(getattr(fig.layout, "height", 0) or 420)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_image(
+        str(output_path),
+        format=suffix.removeprefix("."),
+        width=export_width,
+        height=export_height,
+        scale=scale,
+    )
+    return output_path
+
+
 def wm_render_figure_card_reliable(
     fig: go.Figure,
     *,
@@ -313,7 +354,7 @@ def wm_render_figure_card_reliable(
     role: WMCardRole = "chart",
     kicker: str | None = None,
     verdict_tone: WMVerdictTone = "neutral",
-    mode: str = "notebook",
+    mode: Literal["notebook", "export"] = "notebook",
     chip_text: str | None = None,
     prefer_static: bool = True,
 ) -> None:

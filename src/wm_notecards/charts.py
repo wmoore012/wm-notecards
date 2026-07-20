@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import contextlib
 import re
+import sys
 from html import escape
+from numbers import Number
 from textwrap import wrap
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -24,10 +26,18 @@ from wm_notecards._html import plot_shell_html, rgba_css
 from wm_notecards.kicker import WMKicker
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from wm_notecards._types import ThemeLike, WMCardRole, WMVerdictTone
 
 # ── Private constants ───────────────────────────────────────────────
 _PLOT_BR_RE = re.compile(r"<br\s*/?>", flags=re.IGNORECASE)
+_LEGACY_PLOTLY_COLORS = {
+    "#1f77b4": "accent",
+    "#2ca02c": "teal",
+    "#d62728": "negative",
+    "#ff7f0e": "warning",
+}
 
 
 # ── Text wrapping ───────────────────────────────────────────────────
@@ -131,7 +141,7 @@ def _wrap_bar_labels(
     total_extra = 0
     changed = False
 
-    for raw in raw_values:  # type: ignore[union-attr]
+    for raw in cast("Iterable[object]", raw_values):
         label = str(raw)
         wrapped, line_count = _wrap_plot_text(label, max_chars=wrap_width)
         wrapped_label = wrapped or escape(label)
@@ -192,6 +202,132 @@ def _minimum_plot_area_height(fig: go.Figure) -> int:
     if max_v_bars:
         return max(220, min(300, 34 * max_v_bars))
     return 220
+
+
+def _should_show_legend(fig: go.Figure) -> bool:
+    """Decide whether the legend deserves real space in the card layout.
+
+    WM chart cards should not spend ~50px of bottom margin on a legend
+    that a reader will never need. By default we show legends only when
+    there is more than one legendable trace. If a caller explicitly sets
+    ``layout.showlegend = True``, we respect that and keep the legend even
+    for a single trace.
+    """
+    layout_showlegend = getattr(fig.layout, "showlegend", None)
+    if layout_showlegend is False:
+        return False
+
+    legendable_traces = 0
+    for trace in fig.data:
+        if getattr(trace, "visible", True) is False:
+            continue
+        if getattr(trace, "showlegend", None) is False:
+            continue
+        legendable_traces += 1
+
+    if layout_showlegend is True:
+        return legendable_traces > 0
+    return legendable_traces > 1
+
+
+def _legacy_color_replacements(theme: ThemeLike) -> dict[str, str]:
+    """Map common plotting defaults onto the active WM semantic palette."""
+    palette = tuple(getattr(theme, "category_palette", ()))
+    colorway = tuple(getattr(theme, "colorway", (theme.accent,)))
+    return {
+        "accent": theme.accent,
+        "teal": palette[4] if len(palette) > 4 else colorway[-1],
+        "negative": getattr(theme, "heat_neg", colorway[2]),
+        "warning": colorway[4] if len(colorway) > 4 else "#D88C2E",
+    }
+
+
+def _normalize_legacy_trace_colors(fig: go.Figure, theme: ThemeLike) -> None:
+    """Replace exact Matplotlib/Plotly default colors with WM tokens.
+
+    Only exact, well-known defaults are changed. Deliberately chosen custom
+    colors and continuous scales are left untouched.
+    """
+    replacements = _legacy_color_replacements(theme)
+    for trace in fig.data:
+        for container_name in ("line", "marker"):
+            container = getattr(trace, container_name, None)
+            color = getattr(container, "color", None) if container is not None else None
+            if not isinstance(color, str):
+                continue
+            token = _LEGACY_PLOTLY_COLORS.get(color.lower())
+            if token:
+                cast("Any", container).color = replacements[token]
+
+
+def _vertical_bar_categories(fig: go.Figure) -> list[object]:
+    """Return ordered unique categories used by vertical bar traces."""
+    categories: list[object] = []
+    for trace in fig.data:
+        if getattr(trace, "type", None) != "bar":
+            continue
+        if getattr(trace, "orientation", "v") == "h":
+            continue
+        raw_values = getattr(trace, "x", None)
+        if raw_values is None:
+            continue
+        for value in raw_values:
+            if value not in categories:
+                categories.append(value)
+    return categories
+
+
+def _apply_bar_category_policy(
+    fig: go.Figure,
+    *,
+    category_policy: Literal["auto", "preserve"],
+    max_categories: int,
+    allow_dense_categories: bool,
+) -> None:
+    """Prevent unreadable categorical bar charts before they render.
+
+    String-heavy vertical bars become horizontal when the label density is
+    unsafe. Charts above the hard category limit must be reduced, faceted, or
+    explicitly opted out so an LLM cannot silently recreate a label pile-up.
+    """
+    categories = _vertical_bar_categories(fig)
+    if not categories:
+        return
+    if len(categories) > max_categories and not allow_dense_categories:
+        raise ValueError(
+            f"Categorical bar chart has {len(categories)} categories; the WM release "
+            f"limit is {max_categories}. Use top-N, facet the chart, or pass "
+            "allow_dense_categories=True after a visual review."
+        )
+    if category_policy == "preserve":
+        return
+    if any(isinstance(value, Number) and not isinstance(value, bool) for value in categories):
+        return
+
+    labels = [str(value) for value in categories]
+    should_transpose = len(labels) >= 10 or max(map(len, labels), default=0) > 14
+    if not should_transpose:
+        return
+
+    for trace in fig.data:
+        if getattr(trace, "type", None) != "bar":
+            continue
+        if getattr(trace, "orientation", "v") == "h":
+            continue
+        old_x = getattr(trace, "x", None)
+        old_y = getattr(trace, "y", None)
+        trace.update(x=old_y, y=old_x, orientation="h")
+
+    old_x_title = str(getattr(getattr(fig.layout.xaxis, "title", None), "text", "") or "")
+    old_y_title = str(getattr(getattr(fig.layout.yaxis, "title", None), "text", "") or "")
+    old_x_type = getattr(fig.layout.xaxis, "type", None)
+    old_y_type = getattr(fig.layout.yaxis, "type", None)
+    fig.update_xaxes(title_text=old_y_title or None, type=old_y_type)
+    fig.update_yaxes(
+        title_text=old_x_title or None,
+        type=old_x_type,
+        autorange="reversed",
+    )
 
 
 # ── Kicker / chip annotation helpers ───────────────────────────────
@@ -314,6 +450,10 @@ def style_fig_wm(
     center_title: bool = False,
     margin_overrides: dict[str, int] | None = None,
     paper_transparent: bool = False,
+    category_policy: Literal["auto", "preserve"] = "auto",
+    max_categories: int = 24,
+    allow_dense_categories: bool = False,
+    normalize_legacy_colors: bool = True,
 ) -> go.Figure:
     """Apply the WM card aesthetic to any Plotly figure.
 
@@ -350,13 +490,33 @@ def style_fig_wm(
         Per-side pixel overrides merged into the default margins.
     paper_transparent : bool
         When ``True`` the paper background is fully transparent.
+    category_policy : {``"auto"``, ``"preserve"``}
+        ``"auto"`` turns label-heavy vertical bars into horizontal bars.
+    max_categories : int
+        Hard release limit for vertical categorical bars.
+    allow_dense_categories : bool
+        Explicit visual-review escape hatch for charts above the limit.
+    normalize_legacy_colors : bool
+        Replace exact Matplotlib/Plotly defaults with semantic WM tokens.
 
     Returns
     -------
     go.Figure
         The same *fig* instance, styled in-place.
     """
-    margin = dict(l=64, r=72, t=102, b=112 if legend_bottom else 62)
+    if max_categories < 1:
+        raise ValueError("max_categories must be at least 1.")
+    _apply_bar_category_policy(
+        fig,
+        category_policy=category_policy,
+        max_categories=max_categories,
+        allow_dense_categories=allow_dense_categories,
+    )
+    if normalize_legacy_colors:
+        _normalize_legacy_trace_colors(fig, theme)
+
+    show_legend = _should_show_legend(fig)
+    margin = dict(l=64, r=72, t=102, b=112 if (legend_bottom and show_legend) else 62)
     if margin_overrides:
         margin.update(margin_overrides)
 
@@ -420,6 +580,7 @@ def style_fig_wm(
         subtitle_html=subtitle_html,
         paper_transparent=paper_transparent,
         legend_bottom=legend_bottom,
+        show_legend=show_legend,
     )
 
     axis_style = dict(
@@ -471,19 +632,20 @@ def _apply_layout(
     subtitle_html: str | None,
     paper_transparent: bool,
     legend_bottom: bool,
+    show_legend: bool,
 ) -> None:
     """Apply the main ``update_layout`` call for :func:`style_fig_wm`."""
-    subtitle_block = {}
+    subtitle_suffix = ""
     if subtitle_html:
-        subtitle_block = {
-            "subtitle": dict(
-                text=(
-                    f"<span style='font-family:{theme.font_mono};"
-                    f" font-size:13px; line-height:1.45;"
-                    f" color:{muted_text};'>{subtitle_html}</span>"
-                )
-            )
-        }
+        # Plotly's ``title.subtitle`` is positioned as if the title occupies
+        # one line.  It therefore overlaps auto-wrapped, multi-line titles.
+        # Keep both strings in the same SVG text flow so every rendered line
+        # reserves its own vertical space.
+        subtitle_suffix = (
+            "<br><span style='font-family:"
+            f"{theme.font_mono}; font-size:13px; font-weight:400;"
+            f" letter-spacing:0; color:{muted_text};'>{subtitle_html}</span>"
+        )
 
     fig.update_layout(
         width=figure_width,
@@ -499,7 +661,7 @@ def _apply_layout(
             text=(
                 f"<span style='font-family:{theme.font_display};"
                 f" font-weight:900; letter-spacing:-0.8px;'>"
-                f"{title_html}</span>"
+                f"{title_html}</span>{subtitle_suffix}"
             ),
             x=title_x,
             xanchor="center" if center_title else "left",
@@ -507,7 +669,6 @@ def _apply_layout(
             yanchor="top",
             pad=dict(t=10, b=0),
             font=dict(size=30, color=theme.text_main),
-            **subtitle_block,
         ),
         margin=margin,
         legend=dict(
@@ -522,6 +683,7 @@ def _apply_layout(
             xanchor="left",
             x=0.0,
         ),
+        showlegend=show_legend,
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor=tooltip_bg,
@@ -614,6 +776,11 @@ def show_fig_wm(
     border, padding, radius, and shadow.  The Plotly figure itself must
     **not** draw a second outer card border.
 
+    **Google Colab (``mode="notebook"`` only):** uses ``fig.show(renderer="colab")``
+    without the HTML shell — Plotly JS inside :func:`plot_shell_html` often fails
+    there (blank card). **Jupyter / VS Code** keep ``fig.to_html`` +
+    :func:`plot_shell_html` so figures stay centred with WM card background.
+
     Parameters
     ----------
     fig : go.Figure
@@ -644,6 +811,29 @@ def show_fig_wm(
         or getattr(theme, "height", 400)
         or 400
     )
+
+    # REGRESSION GUARD: Only Colab reliably breaks on plot_shell_html + embedded
+    # Plotly (blank white card). Jupyter / VS Code need the shell for centering +
+    # card_bg — do not route them through fig.show() alone.
+    if mode == "notebook" and "google.colab" in sys.modules:
+        fig.update_layout(
+            autosize=False,
+            width=min(figure_width, 960),
+            height=figure_height,
+        )
+        config = {
+            **config,
+            "toImageButtonOptions": {
+                "format": "svg",
+                "filename": file_stub,
+                "width": fig.layout.width,
+                "height": fig.layout.height,
+                "scale": export_scale,
+            },
+        }
+        fig.show(config=config, renderer="colab")
+        return
+
     figure_html = fig.to_html(
         full_html=False,
         include_plotlyjs="cdn",
@@ -1024,7 +1214,7 @@ def _add_panel_trace(
 def _add_panel_annotations(
     fig: go.Figure,
     *,
-    valid: pd.Series,  # type: ignore[type-arg]
+    valid: pd.Series[Any],
     row: int,
     color: str,
     value_format: str | None,

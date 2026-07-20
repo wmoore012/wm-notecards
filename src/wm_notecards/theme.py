@@ -206,7 +206,9 @@ class WMTheme:
 
     # -- colours: table chrome ----------------------------------------------
     table_header_bg: str = "#ECECE7"
-    table_stripe_bg: str = "rgba(17,17,17,0.022)"
+    # Visible enough to scan across wide tables, quiet enough to remain below
+    # semantic status fills in the preattentive hierarchy.
+    table_stripe_bg: str = "rgba(17,17,17,0.055)"
     table_hover_bg: str = "#10212B"
     table_hover_text: str = "#16C7E8"
     table_hover_border: str = "rgba(22,199,232,0.22)"
@@ -287,7 +289,7 @@ class WMTheme:
             color_missing_bg="rgba(216, 140, 46, 0.22)",
             color_missing_txt="#F4B556",
             table_header_bg="#0E141E",
-            table_stripe_bg="rgba(255,255,255,0.018)",
+            table_stripe_bg="rgba(255,255,255,0.045)",
             table_hover_bg="#08131A",
             table_hover_text="#16C7E8",
             table_hover_border="rgba(22,199,232,0.24)",

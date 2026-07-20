@@ -29,6 +29,7 @@ from wm_notecards.kicker import WMKicker
 
 if TYPE_CHECKING:
     from wm_notecards._types import ThemeLike
+    from wm_notecards.icons import PictogramIcon
 
 # ── Grid geometry ────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ def _validate(
 
 
 def _build_grid(
-    picon: object,
+    picon: PictogramIcon,
     filled: int,
     pop_color: str,
     empty_color: str,
@@ -198,9 +199,9 @@ def _build_grid(
     empty_alpha: float,
 ) -> str:
     """Render the 12×8 SVG pictogram grid."""
-    cw = picon.cell_width  # type: ignore[union-attr]
-    ch = picon.cell_height  # type: ignore[union-attr]
-    builder = picon.svg_builder  # type: ignore[union-attr]
+    cw = picon.cell_width
+    ch = picon.cell_height
+    builder = picon.svg_builder
 
     cells: list[str] = []
     for idx in range(_TOTAL):

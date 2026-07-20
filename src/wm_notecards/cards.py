@@ -13,7 +13,7 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from html import escape
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pandas as pd
 from IPython.display import HTML, Markdown, display
@@ -1661,7 +1661,7 @@ def wm_counterintuitive_card(
 
 
 def wm_build_reason_summary(
-    reasons: pd.Series,  # type: ignore[type-arg]
+    reasons: pd.Series[Any],
     *,
     top_n: int = 10,
 ) -> pd.DataFrame:
@@ -1695,10 +1695,11 @@ def wm_build_reason_summary(
     )
     if summary.empty:
         return pd.DataFrame(columns=["reason", "count"])
-    return (
+    result = (
         summary.sort_values(
             ["count", "reason"], ascending=[False, True], kind="stable",
         )
         .head(top_n)
         .reset_index(drop=True)
     )
+    return pd.DataFrame(result)

@@ -12,3 +12,9 @@ build/
 .coverage
 htmlcov/
 *.so
+.DS_Store
+.webapp-tester/
+.ipynb_checkpoints/
+
+# Private working material; not part of the distributable project.
+docs/ARTICLE_DRAFT.md

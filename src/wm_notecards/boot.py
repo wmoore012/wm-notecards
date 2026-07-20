@@ -221,6 +221,35 @@ def _dark_mode_defense_css() -> str:
   background: var(--wm-card-bg, #FFFFFF) !important;
   color: var(--wm-text-main, #111111) !important;
 }
+.wm-card .wm-semantic--before,
+.wm-card .wm-semantic--fail {
+  background-color: rgba(180, 35, 60, 0.10) !important;
+  color: #9F1D35 !important;
+  border-color: rgba(180, 35, 60, 0.24) !important;
+}
+.wm-card .wm-semantic--after,
+.wm-card .wm-semantic--pass,
+.wm-card .wm-semantic--cleaned {
+  background-color: rgba(32, 181, 123, 0.12) !important;
+  color: #146C43 !important;
+  border-color: rgba(32, 181, 123, 0.26) !important;
+}
+.wm-card .wm-semantic--warn,
+.wm-card .wm-semantic--missing {
+  background-color: rgba(216, 140, 46, 0.16) !important;
+  color: #8A5700 !important;
+  border-color: rgba(216, 140, 46, 0.28) !important;
+}
+.wm-card .wm-semantic--cached {
+  background-color: rgba(22, 199, 232, 0.12) !important;
+  color: #087B91 !important;
+  border-color: rgba(22, 199, 232, 0.26) !important;
+}
+.wm-card .wm-semantic--raw {
+  background-color: rgba(76, 100, 117, 0.10) !important;
+  color: #3D5362 !important;
+  border-color: rgba(76, 100, 117, 0.22) !important;
+}
 </style>
 """.strip()
 

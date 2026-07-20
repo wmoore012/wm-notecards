@@ -1,0 +1,4 @@
+interface:
+  display_name: "Notecard Teacher Style"
+  short_description: "Build lead-first, human-in-the-loop data-science notecards."
+  default_prompt: "Create or revise a guided data-science notebook using the notecard teaching system and its release-quality visual checks."
