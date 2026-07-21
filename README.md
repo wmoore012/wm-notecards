@@ -1,48 +1,65 @@
-# wm-notecards
-
-## Please hear me out. I’m new here.
-
-> I’m new to this community. Thank you for having me—I mean that. I’m learning in
-> public, and this is the tool I needed while I was learning.
-
-We are data scientists. We make data visualizations for a living.
-
-**Why are we still doing machine learning in MS-DOS?**
-
-I almost failed Machine Learning. Not because the math was impossible. Because I kept
-forgetting what I had already learned while staring at walls of notebook output.
-
-I came here from music production and audio engineering: glowing rooms, tactile
-instruments, modern tools with vintage soul. In creative work, how a tool feels changes
-how you think with it.
-
-This is not just vibe. A data frame represents the real world and the people affected
-by our decisions. That is hard to remember when the interface keeps handing us this:
-
-```text
-NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
-NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
-12   133  32   131  131  3345 343  35
-```
+# wm-notecards 
+### A living northstar
 
 ![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](assets/wm-notecards-demo.gif)
 
-Jupyter gave me `df.describe()`.
+Data Science CAN look as good as Stripe or Notion.
+&
+df.describe() should be better.
 
-I wanted `df.explain()`.
+```text
+Age   Income   BMI    Visits  Claims  Premium  Score   Balance  Color   State   Segment   Churn
+45    NaN      31.2   12      2       1430.52  0.91    4432.10  Green   NC      Gold      False
+38    82250    NaN    4       0       982.33   0.42    1210.55  Blue    SC      Silver    False
+NaN   61500    28.7   8       1       1142.01  NaN     2988.41  Red     NC      Gold      True
+51    94000    34.1   NaN     4       2118.77  0.88    NaN      Green   GA      Platinum  False
+29    47300    22.9   2       NaN     731.44   0.17    802.32   Blue    TN      Bronze    True
+46    88100    30.5   11      3       NaN      0.95    5123.76  Green   NC      Gold      False
+33    NaN      26.8   5       0       1011.29  0.38    1540.18  Red     SC      Silver    False
+57    121000   35.4   15      6       2890.10  NaN     7422.63  Green   GA      Platinum  True
+41    70500    NaN    7       1       1322.48  0.56    2018.90  Blue    NC      Gold      False
 
-So I built the thinking interface I wish I had on day one:
+```
 
-> question → direct answer → evidence → takeaway → your decision
+The goal is insights.
 
-`wm-notecards` helps a notebook remember the argument, teach the evidence, and return
-the consequential choice to the human. Teaching is a side effect. Thinking is the
-product.
+### what do you want to know everytime you look at a NUMERICAL variable?
 
-If you have ever reached cell 47 and forgotten what happened in cell 12, you are
-probably the person I built this for.
+Answer that. 
 
-Open source. If you think notebooks can be better, come help.
+### what do you want to know everytime you look at a CATERGORICAL variable?
+
+Answer just that. 
+
+
+### You have count but no missingness?
+
+Add it. 
+
+
+### What data types are likely incorrect? 
+
+Flag it and fix it and notify me.
+
+
+## What should change?
+
+### The quartiles are written for computers.
+
+Add the box plot on each of them. 
+
+
+### SPLASH water on your face 1x
+
+YOUR CURIOUSITY from simply reading the COLUMN names is incredible.
+
+```text
+customer_id  age  income  balance  tenure  visits  claims  premium  score  state  segment  bmi  smoker  policy_type  plan  deductible  risk_score  churn
+```
+
+The questions are predictable.
+ 
+The notebook should be too.
 
 ## Install
 
