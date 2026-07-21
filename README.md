@@ -3,9 +3,9 @@
 
 ![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](assets/wm-notecards-demo.gif)
 
-Data Science CAN look as good as Stripe or Notion.
-&
-df.describe() should be better.
+#Data Science CAN look as good as Stripe or Notion.
+
+#df.describe() should be better.
 
 ```text
 Age   Income   BMI    Visits  Claims  Premium  Score   Balance  Color   State   Segment   Churn
