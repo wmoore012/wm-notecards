@@ -96,7 +96,9 @@ class EDAComparisonResult:
     table: pd.DataFrame
     figure: go.Figure
 
-_IDENTIFIER_RE = re.compile(r"(^id$|_id$|id$|uuid|guid|(^|_)key$)", re.IGNORECASE)
+# Identifier hints must be complete snake-case tokens.  A loose ``id$`` check
+# silently misclassifies ordinary fields such as ``paid`` and ``valid``.
+_IDENTIFIER_RE = re.compile(r"(?:^|_)(?:id|uuid|guid|key)$", re.IGNORECASE)
 _TIME_NAME_RE = re.compile(r"date|time|timestamp|datetime|month|year|week", re.IGNORECASE)
 
 
@@ -482,6 +484,9 @@ def wm_validate_feature_manifest(
     reentered = sorted(forbidden & {str(column) for column in df.columns})
     if reentered:
         raise ValueError(f"Excluded fields re-entered the model frame: {', '.join(reentered)}")
+    unmanifested = sorted({str(column) for column in df.columns} - set(fields))
+    if unmanifested:
+        raise ValueError(f"Unmanifested fields entered the model frame: {', '.join(unmanifested)}")
     return pd.DataFrame(
         {
             "field": fields,

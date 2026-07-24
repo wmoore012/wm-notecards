@@ -61,6 +61,25 @@ def test_eda_contract_rejects_unknown_explicit_columns() -> None:
         eda.wm_build_eda_contract(_frame(), datetime_columns=["typo"])
 
 
+def test_identifier_inference_requires_a_complete_name_token() -> None:
+    contract = eda.wm_build_eda_contract(
+        pd.DataFrame(
+            {
+                "order_id": [1, 2],
+                "paid": [True, False],
+                "valid": [1, 0],
+            }
+        )
+    )
+
+    roles = contract.set_index("field")["role"].to_dict()
+    assert roles == {
+        "order_id": "identifier",
+        "paid": "boolean / flag",
+        "valid": "numeric",
+    }
+
+
 def test_category_share_table_is_grouped_and_ranked_by_share() -> None:
     result = eda.wm_build_category_share_table(
         _frame(),
@@ -220,6 +239,17 @@ def test_feature_manifest_blocks_excluded_fields_from_reentering() -> None:
     with pytest.raises(ValueError, match="Excluded fields re-entered"):
         eda.wm_validate_feature_manifest(
             pd.DataFrame({"amount": [1.0], "record_id": ["a"]}), decisions
+        )
+
+
+def test_feature_manifest_rejects_unreviewed_model_columns() -> None:
+    decisions = [
+        eda.FeatureDecision("amount", "numeric", "candidate", "Measures activity."),
+    ]
+
+    with pytest.raises(ValueError, match="Unmanifested fields entered.*leaked_feature"):
+        eda.wm_validate_feature_manifest(
+            pd.DataFrame({"amount": [1.0], "leaked_feature": [99.0]}), decisions
         )
 
 
