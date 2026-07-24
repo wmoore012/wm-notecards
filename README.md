@@ -1,5 +1,7 @@
 # wm-notecards
 
+### A living north star for notebooks that help people think
+
 > I’m new here. Thank you for having me—I mean that. I’m learning in public,
 > and this is the tool I needed while I was learning.
 
@@ -47,9 +49,7 @@ The questions are predictable.
 
 **The notebook should be too.**
 
-`wm-notecards` turns notebook output into a thinking interface:
-
-> question → direct answer → evidence → takeaway → your decision
+`wm-notecards` turns notebook output into a thinking interface.
 
 ## Two notebooks. Two jobs.
 
