@@ -570,11 +570,20 @@ def wm_compare_fields(
         numeric_field = next(field for field in resolved if pd.api.types.is_numeric_dtype(df[field]))
         category_field = next(field for field in resolved if field != numeric_field)
         pair = df[[category_field, numeric_field]].dropna()
-        grouped = cast("Any", pair.groupby(category_field, dropna=False)[numeric_field])
+        # pandas accepts any hashable column label at runtime, while older pandas-stubs
+        # narrow ``by`` to a scalar union. Keep the real label and isolate that typing gap.
+        grouped = cast(
+            "Any",
+            pair.groupby(cast("Any", category_field), dropna=False)[
+                cast("Any", numeric_field)
+            ],
+        )
         table = grouped.agg(
             rows="count", mean="mean", median="median", minimum="min", maximum="max"
         )
-        for category, values in pair.groupby(category_field, dropna=False)[numeric_field]:
+        for category, values in pair.groupby(cast("Any", category_field), dropna=False)[
+            cast("Any", numeric_field)
+        ]:
             figure.add_trace(go.Box(x=values, name=str(category), orientation="h"))
     elif comparison_kind == "categorical_by_categorical" and len(resolved) == 2:
         left, right = resolved
@@ -588,7 +597,11 @@ def wm_compare_fields(
     elif comparison_kind == "time_by_numeric" and len(resolved) == 2:
         time_field = next(field for field in resolved if pd.api.types.is_datetime64_any_dtype(df[field]))
         numeric_field = next(field for field in resolved if field != time_field)
-        pair = df[[time_field, numeric_field]].dropna().sort_values(time_field)
+        pair = (
+            df[[time_field, numeric_field]]
+            .dropna()
+            .sort_values(cast("Any", time_field))
+        )
         table = pair.set_index(time_field)
         figure.add_trace(go.Scatter(x=pair[time_field], y=pair[numeric_field], mode="lines"))
     elif comparison_kind == "missingness":
