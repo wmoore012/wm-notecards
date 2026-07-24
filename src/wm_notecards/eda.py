@@ -367,7 +367,10 @@ def wm_build_correlation_clues(
     columns = list(corr.columns)
     for left_index, left in enumerate(columns):
         for right in columns[left_index + 1 :]:
-            value = corr.loc[left, right]
+            # pandas-stubs has returned both a broad scalar union and ``Any``
+            # across supported Python/pandas combinations.  The correlation
+            # matrix is numeric by construction, so narrow at this boundary.
+            value = cast("Any", corr.loc[left, right])
             if pd.isna(value):
                 continue
             absolute = abs(float(value))
@@ -406,7 +409,9 @@ def wm_build_correlation_clues(
         .head(top_n)
         .reset_index(drop=True)
     )
-    return cast("pd.DataFrame", ranked)
+    # Normalizing through the constructor keeps the return type stable across
+    # pandas-stubs releases used by the supported Python matrix.
+    return pd.DataFrame(ranked)
 
 
 def wm_build_preprocessing_log(
@@ -536,6 +541,7 @@ def wm_compare_fields(
     resolved = _resolve_fields(df, fields)
     comparison_kind = _infer_comparison_kind(df, resolved) if kind == "auto" else kind
     figure = go.Figure()
+    table: pd.DataFrame
 
     if comparison_kind == "numeric" and len(resolved) == 1:
         field = resolved[0]
@@ -557,7 +563,8 @@ def wm_compare_fields(
         numeric_field = next(field for field in resolved if pd.api.types.is_numeric_dtype(df[field]))
         category_field = next(field for field in resolved if field != numeric_field)
         pair = df[[category_field, numeric_field]].dropna()
-        table = pair.groupby(category_field, dropna=False)[numeric_field].agg(
+        grouped = cast("Any", pair.groupby(category_field, dropna=False)[numeric_field])
+        table = grouped.agg(
             rows="count", mean="mean", median="median", minimum="min", maximum="max"
         )
         for category, values in pair.groupby(category_field, dropna=False)[numeric_field]:
