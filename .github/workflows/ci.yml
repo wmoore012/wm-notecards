@@ -62,6 +62,12 @@ jobs:
           examples/simple_seasonal_forecasting_lab.ipynb
           --output simple_seasonal_forecasting_lab.executed.ipynb --output-dir /tmp
           --ExecutePreprocessor.timeout=240
+      - name: Execute logistic-regression thinking interface
+        run: >-
+          uv run jupyter nbconvert --to notebook --execute
+          examples/logistic_regression_thinking_interface.ipynb
+          --output logistic_regression_thinking_interface.executed.ipynb --output-dir /tmp
+          --ExecutePreprocessor.timeout=300
       - name: Execute portable Colab notebooks
         run: |
           cp examples/40_column_eda_scratchbook_COLAB.ipynb /tmp/eda-colab-source.ipynb

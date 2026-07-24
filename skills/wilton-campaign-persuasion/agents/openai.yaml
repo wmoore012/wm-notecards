@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wilton Campaign Persuasion"
+  short_description: "Stage high-recall arguments in Wilton’s voice"
+  default_prompt: "Use $wilton-campaign-persuasion to turn this raw idea and its evidence into a visual, high-recall campaign."

@@ -251,11 +251,20 @@ def test_dtype_chips_call_out_fields_in_the_wrong_family(monkeypatch) -> None:
     )
 
     html = rendered[-1]
-    assert "Read one dtype row at a time" in html
+    assert "Read one dtype row at a time" not in html
+    assert "What arrived from the CSV?" in html
     assert "wm-chip-item--review" in html
     assert "month<small>→ TIME</small>" in html
     assert "amount<small>→ NUMERIC</small>" in html
     assert "label<small>" not in html
+
+    display_cols_by_dtype(
+        frame.dtypes,
+        WMTheme.light(),
+        "Which fields need a type review?",
+        instruction="Gold means inspect the source before conversion.",
+    )
+    assert "Gold means inspect the source before conversion." in rendered[-1]
 
 
 def test_dtype_chip_color_families_are_stable_and_brand_bright(monkeypatch) -> None:

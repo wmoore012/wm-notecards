@@ -570,6 +570,7 @@ def display_cols_by_dtype(
     group_label: str = "",
     *,
     expected_types: Mapping[str, str] | None = None,
+    instruction: str | None = None,
 ) -> None:
     """Show columns grouped by dtype as colourful chips.
 
@@ -577,18 +578,18 @@ def display_cols_by_dtype(
     bright per-column chips. Useful right after loading a CSV to see
     what you're working with at a glance.  Pass ``expected_types`` to make
     fields that landed in the wrong dtype family glow with their intended
-    destination.  This helper never converts the dataframe.
+    destination. Pass ``instruction`` only when the notebook needs a short,
+    analysis-specific reading cue. This helper never converts the dataframe.
     """
     expected = {str(column): str(family) for column, family in (expected_types or {}).items()}
     unknown = sorted(set(expected) - {str(column) for column in dtypes.index})
     if unknown:
         raise ValueError(f"Unknown dtype columns: {', '.join(unknown)}")
 
+    instruction_html = f"<span>{escape(instruction)}</span>" if instruction else ""
     header = (
         "<div class='wm-chip-intro'>"
-        f"<strong>{escape(group_label)}</strong>"
-        "<span>Read one dtype row at a time. A glowing chip landed in a different "
-        "family than expected; no conversion has been applied.</span></div>"
+        f"<strong>{escape(group_label)}</strong>{instruction_html}</div>"
         if group_label
         else ""
     )
