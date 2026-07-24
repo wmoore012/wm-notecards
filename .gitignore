@@ -15,6 +15,9 @@ htmlcov/
 .DS_Store
 .webapp-tester/
 .ipynb_checkpoints/
+outputs/
+examples/_vendor/
+examples/*.executed.ipynb
 
 # Private working material; not part of the distributable project.
 docs/ARTICLE_DRAFT.md

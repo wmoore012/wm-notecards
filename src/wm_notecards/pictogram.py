@@ -16,6 +16,7 @@ Usage::
         icon="arrow_down",
     )
 """
+
 from __future__ import annotations
 
 from html import escape
@@ -88,31 +89,35 @@ def pictogram_card(
     mode = getattr(theme, "mode", "light")
     pop = big_color or theme.accent
     empty_color = "#D0CFC9" if mode == "light" else "#1A2030"
-    meta_color = (
-        "rgba(17,17,17,0.22)" if mode == "light"
-        else "rgba(255,255,255,0.20)"
-    )
-    shadow = (
-        "0 12px 22px -14px rgba(0,0,0,0.18)"
-        if mode == "light" else "none"
+    meta_color = "rgba(17,17,17,0.22)" if mode == "light" else "rgba(255,255,255,0.20)"
+    hover_shadow = (
+        "0 20px 34px -20px rgba(0,0,0,0.28)"
+        if mode == "light"
+        else "0 20px 34px -18px rgba(0,0,0,0.62)"
     )
 
     grid_svg = _build_grid(
-        picon, filled, pop, empty_color,
-        filled_alpha, empty_alpha,
+        picon,
+        filled,
+        pop,
+        empty_color,
+        filled_alpha,
+        empty_alpha,
     )
     chip_frag = _chip_fragment(chip_text, theme, meta_color)
-    kicker_line = (
-        escape(WMKicker.parse(kicker).to_line()) if kicker else ""
-    )
+    kicker_line = escape(WMKicker.parse(kicker).to_line()) if kicker else ""
 
     html = f"""
+<style>
+.wm-pictogram-card{{box-shadow:none;transition:transform .18s ease,box-shadow .18s ease;}}
+.wm-pictogram-card:hover{{transform:translateY(-2px);box-shadow:{hover_shadow} !important;}}
+</style>
 <div class="wm-card wm-pictogram-card" style="
   max-width:{theme.width}px; margin:16px auto;
   background:{theme.card_bg} !important;
   color:{theme.text_main} !important;
   border:1px solid {theme.border}; border-radius:18px;
-  box-shadow:{shadow}; padding:22px 24px 18px 24px;
+  box-shadow:none; padding:22px 24px 18px 24px;
 ">
   <div style="display:flex;justify-content:flex-end;
     align-items:center;gap:10px;margin-bottom:8px;">
@@ -166,21 +171,16 @@ def _validate(
 ) -> None:
     """Guard against bad inputs before we start generating HTML."""
     if not isinstance(percent, (int, float)) or percent != percent:
-        raise TypeError(
-            f"percent must be a real number, got {type(percent).__name__}."
-        )
+        raise TypeError(f"percent must be a real number, got {type(percent).__name__}.")
     if not 0.0 <= percent <= 1.0:
         raise ValueError(f"percent must be in [0.0, 1.0], got {percent}.")
     if percent < 0.01:
         raise ValueError(
-            "percent below 1% makes the pictogram misleading; "
-            "use big_number_card instead."
+            "percent below 1% makes the pictogram misleading; use big_number_card instead."
         )
     if icon not in ICON_REGISTRY:
         available = ", ".join(sorted(ICON_REGISTRY)[:8])
-        raise ValueError(
-            f"Unknown icon {icon!r}.  Available: {available}, …"
-        )
+        raise ValueError(f"Unknown icon {icon!r}.  Available: {available}, …")
     if not 0.0 <= filled_alpha <= 1.0:
         raise ValueError("filled_alpha must be in [0.0, 1.0].")
     if not 0.0 <= empty_alpha <= 1.0:
@@ -211,10 +211,7 @@ def _build_grid(
         is_filled = idx < filled
         color = pop_color if is_filled else empty_color
         alpha = filled_alpha if is_filled else empty_alpha
-        cells.append(
-            f"<g transform='translate({x},{y})'>"
-            f"{builder(color, alpha)}</g>"
-        )
+        cells.append(f"<g transform='translate({x},{y})'>{builder(color, alpha)}</g>")
 
     grid_w = _COLS * cw + (_COLS - 1) * _GAP
     grid_h = _ROWS * ch + (_ROWS - 1) * _GAP
@@ -239,12 +236,12 @@ def _chip_fragment(
         return ""
     chip_color = getattr(theme, "heat_neg", theme.accent)
     return (
-        f"<div style=\"display:inline-flex;align-items:center;"
+        f'<div style="display:inline-flex;align-items:center;'
         f"padding:5px 11px;border-radius:999px;"
-        f"border:1px solid {rgba_css(chip_color, 0.28)};"
+        "border:0;box-shadow:none;text-shadow:none;"
         f"background:{rgba_css(chip_color, 0.10)};"
         f"color:{chip_color};font-family:{theme.font_mono};"
         f"font-size:12px;font-weight:700;letter-spacing:0.08em;"
-        f"text-transform:uppercase;\">"
+        f'text-transform:uppercase;">'
         f"{escape(chip_text)}</div>"
     )

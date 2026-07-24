@@ -9,6 +9,7 @@ Key functions
 - :func:`wm_fe_decision_table` — feature-engineering pass/fail table.
 - :func:`style_df_wm` — quick themed styling for a DataFrame / Styler.
 """
+
 from __future__ import annotations
 
 import numbers
@@ -38,14 +39,16 @@ if TYPE_CHECKING:
 
 # ── Constants ────────────────────────────────────────────────────────
 
-_ALLOWED_FE_CALLS = frozenset({
-    "Pass: lead candidate",
-    "Pass: support only",
-    "Pass: guardrail only",
-    "Pass: written-case only",
-    "Fail: descriptive only",
-    "Fail: stop here",
-})
+_ALLOWED_FE_CALLS = frozenset(
+    {
+        "Pass: lead candidate",
+        "Pass: support only",
+        "Pass: guardrail only",
+        "Pass: written-case only",
+        "Fail: descriptive only",
+        "Fail: stop here",
+    }
+)
 
 _NUMERIC_RE = re.compile(r"^-?[\d,$%().\s]+$")
 
@@ -87,12 +90,24 @@ _SEMANTIC_STATUSES: tuple[str, ...] = (
 
 # Maps dtype strings → palette index for dtype chips.
 _DTYPE_PALETTE: dict[str, int] = {
-    "int8": 0, "int16": 0, "int32": 0, "int64": 0,
-    "uint8": 0, "uint16": 0, "uint32": 0, "uint64": 0,
-    "float16": 1, "float32": 1, "float64": 1,
-    "object": 2, "string": 2,
+    "int8": 0,
+    "int16": 0,
+    "int32": 0,
+    "int64": 0,
+    "uint8": 0,
+    "uint16": 0,
+    "uint32": 0,
+    "uint64": 0,
+    "float16": 2,
+    "float32": 2,
+    "float64": 2,
+    "object": 1,
+    "string": 1,
+    "str": 1,
     "bool": 3,
-    "datetime64": 4, "datetime64[ns]": 4, "datetime64[ns, UTC]": 4,
+    "datetime64": 4,
+    "datetime64[ns]": 4,
+    "datetime64[ns, UTC]": 4,
     "category": 5,
 }
 
@@ -120,8 +135,10 @@ class WMTableTheme:
         """Generate the full ``<style>`` block for this table config."""
         shell = card_shell_css(theme, card_class=self.card_class)
         hover = self._hover_css(theme) if self.interactive_rows else ""
-        return f"{shell}<style>{self._base_css(theme)}{hover}" \
-               f"{self._scrollbar_css(theme)}{self._print_css()}</style>"
+        return (
+            f"{shell}<style>{self._base_css(theme)}{hover}"
+            f"{self._scrollbar_css(theme)}{self._print_css()}</style>"
+        )
 
     # -- CSS sub-sections (kept separate for readability) --
 
@@ -133,14 +150,23 @@ class WMTableTheme:
             "0 20px 34px -20px rgba(0,0,0,0.28)"
             if self.interactive_shell and theme.mode == "light"
             else "0 12px 22px -14px rgba(0,0,0,0.20)"
-            if theme.mode == "light" else "none"
+            if theme.mode == "light"
+            else "none"
         )
         return f"""
-div.{cc} {{ overflow: hidden; }}
+div.{cc} {{
+  --wm-role-idle: {rgba_css(theme.accent, 0.34)};
+  --wm-role-hover: {theme.accent};
+  width: 100% !important; min-width: 0 !important;
+  max-width: {theme.width}px !important; box-sizing: border-box !important;
+  overflow: hidden;
+}}
+div.{cc} .wm-shell-inner {{ min-width: 0; max-width: 100%; }}
+div.{cc} .wm-shell-eyebrow {{ color: {theme.accent} !important; }}
 div.{cc}:hover {{ transform: {lift}; box-shadow: {shadow_hover}; }}
 div.{cc} .wm-table-scroll {{
   overflow: auto;
-  width: 100%; max-width: 100%; box-sizing: border-box;
+  width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: {theme.table_header_bg} transparent;
   border-radius: 14px;
@@ -296,13 +322,12 @@ def _looks_numeric(series: pd.Series[Any]) -> bool:
     # Text columns that look like dates ("2024-01-15 …").
     if pd.api.types.is_object_dtype(series) or pd.api.types.is_string_dtype(series):
         sample = series.dropna().astype(str).head(20)
-        if not sample.empty and sample.map(
-            lambda v: bool(re.match(r"^\d{4}-\d{2}-\d{2}", v))
-        ).all():
+        if (
+            not sample.empty
+            and sample.map(lambda v: bool(re.match(r"^\d{4}-\d{2}-\d{2}", v))).all()
+        ):
             return True
-        if not sample.empty and sample.map(
-            lambda v: bool(_NUMERIC_RE.match(v))
-        ).all():
+        if not sample.empty and sample.map(lambda v: bool(_NUMERIC_RE.match(v))).all():
             return True
     return False
 
@@ -338,8 +363,7 @@ def _align_css(
             )
         elif _looks_numeric(df[col]):
             rules.append(
-                f"table.{table_class} tbody td.col{idx}"
-                f" {{ text-align:right; white-space:nowrap; }}"
+                f"table.{table_class} tbody td.col{idx} {{ text-align:right; white-space:nowrap; }}"
             )
         else:
             rules.append(
@@ -429,9 +453,7 @@ def _semantic_td_classes(
         if column not in df.columns:
             continue
         classes[column] = df[column].map(
-            lambda value: (
-                f"wm-semantic--{key}" if (key := _semantic_key(value)) else ""
-            )
+            lambda value: f"wm-semantic--{key}" if (key := _semantic_key(value)) else ""
         )
     for column, status in (semantic_by_column or {}).items():
         if column not in df.columns:
@@ -473,7 +495,8 @@ def style_semantic_wm(
 
 
 def style_describe_wm(
-    summary: pd.DataFrame, theme: ThemeLike,
+    summary: pd.DataFrame,
+    theme: ThemeLike,
 ) -> Styler:
     """Style ``df.describe()`` with colour-coded rows for key stats.
 
@@ -497,16 +520,15 @@ def style_describe_wm(
             row = row.iloc[0]
         counts = pd.to_numeric(row, errors="coerce")
         for column in counts.index[counts != counts.max()]:
-            styles.loc["count", column] = (
-                f"background-color:{theme.color_count_bg}; color:inherit"
-            )
+            styles.loc["count", column] = f"background-color:{theme.color_count_bg}; color:inherit"
 
     styled: Any = summary.style.apply(lambda _: styles, axis=None).format(_fmt)
     return cast("Styler", styled)
 
 
 def style_outlier_report_wm(
-    df: pd.DataFrame, theme: ThemeLike,
+    df: pd.DataFrame,
+    theme: ThemeLike,
 ) -> Styler:
     """Colour-code an outlier report by severity.
 
@@ -516,6 +538,7 @@ def style_outlier_report_wm(
     - ≤ 10 % → blue-ish (count tint)
     - > 10 % → pink (min tint — draws attention)
     """
+
     def _row_bg(row: pd.Series[Any]) -> list[str]:
         rate = _to_float(row.get("outlier_rate", pd.NA))
         if rate is None:
@@ -545,85 +568,258 @@ def display_cols_by_dtype(
     dtypes: pd.Series[Any],
     theme: ThemeLike,
     group_label: str = "",
+    *,
+    expected_types: Mapping[str, str] | None = None,
 ) -> None:
     """Show columns grouped by dtype as colourful chips.
 
     Each dtype family gets its own row with a dark label pill and
     bright per-column chips. Useful right after loading a CSV to see
-    what you're working with at a glance.
+    what you're working with at a glance.  Pass ``expected_types`` to make
+    fields that landed in the wrong dtype family glow with their intended
+    destination.  This helper never converts the dataframe.
     """
-    palette = list(theme.category_palette)
-
-    def _label(name: str) -> str:
-        if name.startswith("datetime64"):
-            return "datetime"
-        return "text" if name == "object" else name
-
-    def _color(name: str) -> str:
-        idx = _DTYPE_PALETTE.get(name, hash(name) % len(palette))
-        return palette[idx % len(palette)]
-
-    names = dtypes.map(
-        lambda d: d.name if hasattr(d, "name") else str(d)
-    )
-    groups: list[str] = []
-    for raw_name, grp in dtypes.groupby(names, sort=False):
-        name = str(raw_name)
-        lbl = _label(name)
-        count = f" • {len(grp)} columns" if len(grp) > 3 else ""
-        chips = "".join(
-            f"<span class='wm-chip-item' style='background:{_color(name)};"
-            f" color:{_fg_for_fill(_color(name))};'>"
-            f"{escape(str(c))}</span>"
-            for c in grp.index
-        )
-        groups.append(
-            f"<div class='wm-chip-group'>"
-            f"<span class='wm-chip-label'>{escape(lbl + count)}</span>"
-            f"<div class='wm-chip-row'>{chips}</div></div>"
-        )
+    expected = {str(column): str(family) for column, family in (expected_types or {}).items()}
+    unknown = sorted(set(expected) - {str(column) for column in dtypes.index})
+    if unknown:
+        raise ValueError(f"Unknown dtype columns: {', '.join(unknown)}")
 
     header = (
-        f"<div class='wm-chip-note'>{escape(group_label)}</div>"
-        if group_label else ""
+        "<div class='wm-chip-intro'>"
+        f"<strong>{escape(group_label)}</strong>"
+        "<span>Read one dtype row at a time. A glowing chip landed in a different "
+        "family than expected; no conversion has been applied.</span></div>"
+        if group_label
+        else ""
     )
     css = _dtype_chip_css(theme)
-    display(HTML(
-        f"{css}<div class='wm-chip-groups'>"
-        f"{header}{''.join(groups)}</div>"
-    ))
+    display(
+        HTML(
+            f"{css}<div class='wm-chip-groups'>"
+            f"{header}{_dtype_groups_markup(dtypes, theme, expected_types=expected)}</div>"
+        )
+    )
+
+
+def display_dtype_change_chips(
+    before: pd.Series[Any],
+    after: pd.Series[Any],
+    *,
+    theme: ThemeLike,
+    title: str = "What moved after the reviewed type conversions?",
+    subtitle: str = (
+        "The left side is what arrived. The right side is the dataframe you explicitly changed."
+    ),
+) -> None:
+    """Compare raw and reviewed dtype groups without hiding the conversion.
+
+    The helper renders a responsive side-by-side schema comparison and highlights
+    every field whose dtype changed.  It does not mutate either dataframe.
+    """
+    before_names = {str(column) for column in before.index}
+    after_names = {str(column) for column in after.index}
+    if before_names != after_names:
+        missing_after = sorted(before_names - after_names)
+        missing_before = sorted(after_names - before_names)
+        details = []
+        if missing_after:
+            details.append(f"missing after: {', '.join(missing_after)}")
+        if missing_before:
+            details.append(f"new after: {', '.join(missing_before)}")
+        raise ValueError("Schema columns must match (" + "; ".join(details) + ").")
+
+    before_lookup = {str(column): dtype for column, dtype in before.items()}
+    after_lookup = {str(column): dtype for column, dtype in after.items()}
+    changed = {
+        column: _dtype_label(_dtype_name(after_lookup[column]))
+        for column in before_names
+        if _dtype_name(before_lookup[column]) != _dtype_name(after_lookup[column])
+    }
+    before_markup = _dtype_groups_markup(
+        before,
+        theme,
+        change_labels=changed,
+        change_variant="before",
+    )
+    after_markup = _dtype_groups_markup(
+        after,
+        theme,
+        change_labels={column: "reviewed" for column in changed},
+        change_variant="after",
+    )
+    changed_note = (
+        f"{len(changed)} field{'s' if len(changed) != 1 else ''} moved dtype families."
+        if changed
+        else "No dtype families changed."
+    )
+    css = _dtype_chip_css(theme)
+    display(
+        HTML(
+            f"{css}<section class='wm-schema-compare'>"
+            "<div class='wm-schema-compare-head'>"
+            f"<strong>{escape(title)}</strong><span>{escape(subtitle)} {escape(changed_note)}</span>"
+            "</div><div class='wm-schema-compare-grid'>"
+            "<section class='wm-schema-panel'><div class='wm-schema-panel-label'>Raw schema</div>"
+            f"{before_markup}</section>"
+            "<section class='wm-schema-panel'><div class='wm-schema-panel-label'>Reviewed schema</div>"
+            f"{after_markup}</section></div></section>"
+        )
+    )
+
+
+def _dtype_name(dtype: object) -> str:
+    return str(getattr(dtype, "name", dtype))
+
+
+def _dtype_label(name: str) -> str:
+    if name.startswith("datetime64"):
+        return "datetime"
+    return "text" if name in {"object", "string", "str"} else name
+
+
+def _dtype_family(name: str) -> str:
+    lowered = _dtype_label(name).lower()
+    if lowered == "datetime" or lowered.startswith("period"):
+        return "time"
+    if lowered.startswith(("int", "uint", "float", "decimal")):
+        return "numeric"
+    if lowered in {"bool", "boolean"}:
+        return "boolean"
+    if lowered == "category":
+        return "categorical"
+    return "text"
+
+
+def _expected_family(value: str) -> str:
+    lowered = value.strip().lower()
+    aliases = {
+        "date": "time",
+        "datetime": "time",
+        "integer": "numeric",
+        "int": "numeric",
+        "float": "numeric",
+        "number": "numeric",
+        "bool": "boolean",
+        "flag": "boolean",
+        "string": "text",
+        "object": "text",
+        "category": "categorical",
+    }
+    return aliases.get(lowered, lowered)
+
+
+def _dtype_groups_markup(
+    dtypes: pd.Series[Any],
+    theme: ThemeLike,
+    *,
+    expected_types: Mapping[str, str] | None = None,
+    change_labels: Mapping[str, str] | None = None,
+    change_variant: str = "",
+) -> str:
+    palette = list(theme.category_palette)
+
+    def color(name: str) -> str:
+        stable_fallback = sum(name.encode("utf-8")) % len(palette)
+        idx = _DTYPE_PALETTE.get(name, stable_fallback)
+        return palette[idx % len(palette)]
+
+    names = dtypes.map(_dtype_name)
+    groups: list[str] = []
+    for raw_name, group in dtypes.groupby(names, sort=False):
+        name = str(raw_name)
+        label = _dtype_label(name)
+        count = f" • {len(group)} columns" if len(group) > 3 else ""
+        chips: list[str] = []
+        for column in group.index:
+            column_name = str(column)
+            expected = (expected_types or {}).get(column_name)
+            mismatch = bool(expected and _dtype_family(name) != _expected_family(str(expected)))
+            change_label = (change_labels or {}).get(column_name)
+            classes = ["wm-chip-item"]
+            badge = ""
+            if mismatch:
+                classes.append("wm-chip-item--review")
+                badge = f"<small>→ {escape(str(expected).upper())}</small>"
+            elif change_label:
+                classes.append(f"wm-chip-item--change-{escape(change_variant or 'after')}")
+                badge = f"<small>→ {escape(str(change_label).upper())}</small>"
+            fill = color(name)
+            chips.append(
+                f"<span class='{' '.join(classes)}' style='background:{fill};"
+                f" color:{_fg_for_fill(fill)};'>"
+                f"{escape(column_name)}{badge}</span>"
+            )
+        groups.append(
+            "<div class='wm-chip-group'>"
+            f"<span class='wm-chip-label'>{escape(label + count)}</span>"
+            f"<div class='wm-chip-row'>{''.join(chips)}</div></div>"
+        )
+    return "".join(groups)
 
 
 def _dtype_chip_css(theme: ThemeLike) -> str:
     """CSS for the dtype chip layout (used by display_cols_by_dtype)."""
     return f"""<style>
 .wm-chip-groups {{ max-width:{theme.width}px; margin:18px auto 24px auto; }}
-.wm-chip-note {{
-  margin-bottom:10px; font-family:{theme.font_mono};
-  font-size:11px; letter-spacing:0.18em;
-  text-transform:uppercase; color:{theme.text_muted};
+.wm-chip-intro{{display:grid;gap:4px;margin-bottom:20px;}}
+.wm-chip-intro strong{{
+  font-family:{theme.font_display};font-size:14px;font-weight:900;color:{theme.text_main};
 }}
-.wm-chip-group {{ margin:0 0 24px 0; }}
+.wm-chip-intro span{{
+  max-width:72ch;font-family:{theme.font_mono};font-size:11px;
+  line-height:1.55;color:{theme.text_muted};
+}}
+.wm-chip-group {{ margin:0 0 18px 0; }}
 .wm-chip-label {{
-  display:inline-block; padding:10px 18px; border-radius:18px;
+  display:inline-block; padding:8px 13px; border-radius:999px;
   background:{theme.text_main}; color:{theme.card_bg};
-  font-family:{theme.font_mono}; font-size:12px; font-weight:700;
+  font-family:{theme.font_mono}; font-size:11px; font-weight:800;
 }}
 .wm-chip-row {{
-  display:flex; flex-wrap:wrap; gap:12px 14px; margin-top:12px;
+  display:flex; flex-wrap:wrap; gap:9px 10px; margin-top:10px;
 }}
 .wm-chip-item {{
-  display:inline-block; padding:10px 18px; border-radius:18px;
-  font-family:{theme.font_mono}; font-size:13px; font-weight:800;
+  display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;
+  border:0;
+  font-family:{theme.font_mono}; font-size:12px; font-weight:800;
   line-height:1.2; letter-spacing:0.01em;
-  text-shadow:0 1px 0 rgba(0,0,0,0.16);
-  box-shadow:0 10px 18px -14px rgba(0,0,0,0.32);
-  transition:transform 0.16s ease, box-shadow 0.16s ease;
+  text-shadow:none;box-shadow:none;
+  transition:filter 0.16s ease;
+}}
+.wm-chip-item small{{font:900 9px/1.2 {theme.font_mono};opacity:.78;white-space:nowrap;}}
+.wm-chip-item--review,.wm-chip-item--change-before{{
+  box-shadow:0 0 0 5px {rgba_css(theme.color_missing_accent, 0.22)},
+             0 0 22px -4px {rgba_css(theme.color_missing_accent, 0.76)};
+}}
+.wm-chip-item--change-after{{
+  box-shadow:0 0 0 4px {rgba_css(theme.accent, 0.14)};
 }}
 .wm-chip-item:hover {{
-  transform:translateY(-1px);
-  box-shadow:0 14px 24px -16px rgba(0,0,0,0.34);
+  filter:brightness(.94);
 }}
+.wm-schema-compare{{
+  width:100%;max-width:{theme.width + 260}px;margin:18px auto 28px;
+  box-sizing:border-box;display:grid;gap:16px;
+}}
+.wm-schema-compare-head{{display:grid;gap:5px;}}
+.wm-schema-compare-head strong{{
+  font:900 22px/1.12 {theme.font_display};color:{theme.text_main};
+}}
+.wm-schema-compare-head span{{
+  max-width:78ch;font:500 12px/1.55 {theme.font_mono};color:{theme.text_muted};
+}}
+.wm-schema-compare-grid{{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}}
+.wm-schema-panel{{
+  min-width:0;padding:18px 18px 4px;border:1px solid {theme.border};border-radius:18px;
+  background:{theme.card_bg};box-shadow:none;
+  transition:transform .18s ease,box-shadow .18s ease;
+}}
+.wm-schema-panel:hover{{transform:translateY(-2px);box-shadow:0 18px 30px -22px rgba(0,0,0,.30);}}
+.wm-schema-panel-label{{
+  margin-bottom:16px;font:900 10px/1.3 {theme.font_mono};letter-spacing:.15em;
+  text-transform:uppercase;color:{theme.text_muted};
+}}
+@media(max-width:760px){{.wm-schema-compare-grid{{grid-template-columns:1fr;}}}}
 </style>"""
 
 
@@ -639,29 +835,21 @@ def style_with_bg(
     missing values by painting them gold.
     """
     fill = bg or theme.color_missing_bg
-    frame = (
-        obj.to_frame(obj.name or "value")
-        if isinstance(obj, pd.Series) else obj
-    )
+    frame = obj.to_frame(obj.name or "value") if isinstance(obj, pd.Series) else obj
     cell = f"background-color:{fill}"
     if txt != "inherit":
         cell += f"; color:{txt}"
     styles = pd.DataFrame(cell, index=frame.index, columns=frame.columns)
     table_styles: list[dict[str, Any]] = [
-        {"selector": "table",
-         "props": [("font-family", theme.font_mono),
-                   ("font-size", "13px")]},
-        {"selector": "th",
-         "props": [("font-family", theme.font_display),
-                   ("font-weight", "700")]},
-        {"selector": "td",
-         "props": [("font-family", theme.font_mono),
-                   ("font-variant-numeric", "tabular-nums")]},
+        {"selector": "table", "props": [("font-family", theme.font_mono), ("font-size", "13px")]},
+        {"selector": "th", "props": [("font-family", theme.font_display), ("font-weight", "700")]},
+        {
+            "selector": "td",
+            "props": [("font-family", theme.font_mono), ("font-variant-numeric", "tabular-nums")],
+        },
     ]
-    return (
-        frame.style
-        .apply(lambda _: styles, axis=None)
-        .set_table_styles(cast("Any", table_styles), overwrite=False)
+    return frame.style.apply(lambda _: styles, axis=None).set_table_styles(
+        cast("Any", table_styles), overwrite=False
     )
 
 
@@ -716,64 +904,80 @@ def style_df_wm(
         f" margin-bottom:16px;'></div></div>"
     )
 
-    shadow = (
-        "0 10px 18px -10px rgba(0,0,0,0.18)"
-        if theme.mode == "light" else "none"
-    )
+    shadow = "0 10px 18px -10px rgba(0,0,0,0.18)" if theme.mode == "light" else "none"
     data = cast("pd.DataFrame", cast("Any", styler).data)
     align_styles = [
-        {"selector": f"tbody td.col{i}",
-         "props": (
-             [("text-align", "right"), ("white-space", "nowrap")]
-             if _looks_numeric(data[c])
-             else [("text-align", "left"), ("white-space", "normal"),
-                   ("line-height", "1.5"), ("max-width", "360px"),
-                   ("overflow-wrap", "anywhere")]
-         )}
+        {
+            "selector": f"tbody td.col{i}",
+            "props": (
+                [("text-align", "right"), ("white-space", "nowrap")]
+                if _looks_numeric(data[c])
+                else [
+                    ("text-align", "left"),
+                    ("white-space", "normal"),
+                    ("line-height", "1.5"),
+                    ("max-width", "360px"),
+                    ("overflow-wrap", "anywhere"),
+                ]
+            ),
+        }
         for i, c in enumerate(data.columns)
     ]
     base_styles: list[dict[str, Any]] = [
-        {"selector": "table",
-         "props": [("background-color", theme.card_bg),
-                   ("color", theme.text_main),
-                   ("font-family", theme.font_mono),
-                   ("font-size", "13px"),
-                   ("border-collapse", "separate"),
-                   ("border-spacing", "0"),
-                   ("border-radius", "16px"),
-                   ("overflow-x", "auto"),
-                   ("box-shadow", shadow),
-                   ("width", "100%")]},
-        {"selector": "thead th",
-         "props": [("font-family", theme.font_display),
-                   ("font-size", "12px"), ("font-weight", "700"),
-                   ("color", theme.text_muted),
-                   ("text-transform", "uppercase"),
-                   ("letter-spacing", "0.08em"),
-                   ("padding", "12px 16px"),
-                   ("border-bottom", f"1px solid {theme.border}"),
-                   ("border-right", f"1px solid {theme.grid}"),
-                   ("background-color", theme.table_header_bg),
-                   ("vertical-align", "bottom")]},
-        {"selector": "td",
-         "props": [("padding", "12px 16px"),
-                   ("border-bottom", f"1px solid {theme.grid}"),
-                   ("border-right", f"1px solid {theme.grid}"),
-                   ("font-variant-numeric", "tabular-nums"),
-                   ("line-height", "1.5"),
-                   ("vertical-align", "top")]},
-        {"selector": "thead th:last-child, tbody td:last-child",
-         "props": [("border-right", "none")]},
-        {"selector": "tbody tr:nth-child(even) td",
-         "props": [("background-color", theme.table_stripe_bg)]},
-        {"selector": "caption",
-         "props": [("caption-side", "top")]},
+        {
+            "selector": "table",
+            "props": [
+                ("background-color", theme.card_bg),
+                ("color", theme.text_main),
+                ("font-family", theme.font_mono),
+                ("font-size", "13px"),
+                ("border-collapse", "separate"),
+                ("border-spacing", "0"),
+                ("border-radius", "16px"),
+                ("overflow-x", "auto"),
+                ("box-shadow", shadow),
+                ("width", "100%"),
+            ],
+        },
+        {
+            "selector": "thead th",
+            "props": [
+                ("font-family", theme.font_display),
+                ("font-size", "12px"),
+                ("font-weight", "700"),
+                ("color", theme.text_muted),
+                ("text-transform", "uppercase"),
+                ("letter-spacing", "0.08em"),
+                ("padding", "12px 16px"),
+                ("border-bottom", f"1px solid {theme.border}"),
+                ("border-right", f"1px solid {theme.grid}"),
+                ("background-color", theme.table_header_bg),
+                ("vertical-align", "bottom"),
+            ],
+        },
+        {
+            "selector": "td",
+            "props": [
+                ("padding", "12px 16px"),
+                ("border-bottom", f"1px solid {theme.grid}"),
+                ("border-right", f"1px solid {theme.grid}"),
+                ("font-variant-numeric", "tabular-nums"),
+                ("line-height", "1.5"),
+                ("vertical-align", "top"),
+            ],
+        },
+        {
+            "selector": "thead th:last-child, tbody td:last-child",
+            "props": [("border-right", "none")],
+        },
+        {
+            "selector": "tbody tr:nth-child(even) td",
+            "props": [("background-color", theme.table_stripe_bg)],
+        },
+        {"selector": "caption", "props": [("caption-side", "top")]},
         *align_styles,
     ]
-    styler = (
-        styler.set_caption(caption)
-        .set_table_styles(cast("Any", base_styles), overwrite=False)
-    )
+    styler = styler.set_caption(caption).set_table_styles(cast("Any", base_styles), overwrite=False)
     if hide_index:
         styler = styler.hide(axis="index")
     return styler
@@ -781,13 +985,15 @@ def style_df_wm(
 
 # Convenience wrappers matching the old wm_theme.py API.
 
+
 def style_describe(summary: pd.DataFrame, theme: ThemeLike) -> Styler:
     """Alias for :func:`style_describe_wm` (backward compat)."""
     return style_describe_wm(summary, theme)
 
 
 def style_outlier_report(
-    df: pd.DataFrame, theme: ThemeLike,
+    df: pd.DataFrame,
+    theme: ThemeLike,
 ) -> Styler:
     """Alias for :func:`style_outlier_report_wm` (backward compat)."""
     return style_outlier_report_wm(df, theme)
@@ -806,9 +1012,7 @@ def wm_render_styler(
     title: str | None = None,
     kicker: str | None = None,
     subtitle: str | None = None,
-    wrap_columns: (
-        dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
-    ) = None,
+    wrap_columns: (dict[str, int] | list[str] | tuple[str, ...] | set[str] | None) = None,
     chip_text: str | None = None,
     max_height: int | None = None,
 ) -> None:
@@ -831,11 +1035,10 @@ def wm_render_styler(
     """
     if interactive_rows is not None:
         table_theme = replace(
-            table_theme, interactive_rows=interactive_rows,
+            table_theme,
+            interactive_rows=interactive_rows,
         )
-    styler = styler.set_table_attributes(
-        f'class="{table_theme.table_class}"'
-    )
+    styler = styler.set_table_attributes(f'class="{table_theme.table_class}"')
     html_table = styler.to_html()
     css = table_theme.css(theme)
     data = cast("pd.DataFrame", cast("Any", styler).data)
@@ -885,9 +1088,7 @@ def wm_semantic_table(
     title: str | None = None,
     kicker: str | None = None,
     subtitle: str | None = None,
-    wrap_columns: (
-        dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
-    ) = None,
+    wrap_columns: (dict[str, int] | list[str] | tuple[str, ...] | set[str] | None) = None,
     chip_text: str | None = None,
     hide_index: bool = True,
     max_height: int | None = None,
@@ -930,9 +1131,7 @@ def wm_before_after_table(
     subtitle: str | None = None,
     kicker: str | None = None,
     chip_text: str | None = "Before / after",
-    wrap_columns: (
-        dict[str, int] | list[str] | tuple[str, ...] | set[str] | None
-    ) = None,
+    wrap_columns: (dict[str, int] | list[str] | tuple[str, ...] | set[str] | None) = None,
     hide_index: bool = True,
 ) -> None:
     """Render a before/after comparison table with semantic column roles."""
@@ -1004,8 +1203,12 @@ def wm_fe_decision_table(
         )
 
     header = shell_header_html(
-        title=title, theme=theme, subtitle=subtitle,
-        kicker=kicker, chip_text=chip_text, eyebrow="TABLE",
+        title=title,
+        theme=theme,
+        subtitle=subtitle,
+        kicker=kicker,
+        chip_text=chip_text,
+        eyebrow="TABLE",
     )
     cc = "wm-fe-decision-card"
     tc = "wm-fe-decision-table"
@@ -1028,7 +1231,11 @@ def wm_fe_decision_table(
 def _fe_table_css(theme: ThemeLike, tc: str, cc: str) -> str:
     """CSS specific to the FE decision table."""
     return f"""<style>
-div.{cc} {{ overflow:hidden; }}
+div.{cc} {{
+  --wm-role-idle:{rgba_css(theme.accent, 0.34)};
+  --wm-role-hover:{theme.accent};
+  overflow:hidden;
+}}
 table.{tc} {{
   width:100%; border-collapse:separate; border-spacing:0;
   font-family:{theme.font_mono}; font-size:13px;
@@ -1083,14 +1290,15 @@ def wm_render_micro_profile_cards(
     max_cards: int = 24,
     visible_cards: int = 5,
     max_categories: int = 6,
+    skew_threshold: float = 1.0,
 ) -> None:
     """Render compact variable profile cards in a horizontal rail.
 
     This is the system's answer to ``df.describe()``: one mini card
     per column, showing dtype, distribution shape, and key stats.
 
-    Numeric cards show a KDE violin, missing/mean/max/median/min/mode.
-    Categorical cards show mode + top-category horizontal bars.
+    Numeric cards show a static violin, missing/mean/max/median/min/skew.
+    Categorical cards show mode + top-category shares in descending order.
 
     Parameters
     ----------
@@ -1105,38 +1313,42 @@ def wm_render_micro_profile_cards(
         How many cards fit before the rail scrolls (1–5).
     max_categories : int
         Max categories to show in categorical bar charts.
+    skew_threshold : float
+        Absolute skew value that earns a visible ``CHECK`` cue.  The
+        threshold is printed on the card so the reader knows the rule the
+        notebook chose.
     """
     if df.empty:
-        display(HTML(
-            "<div style='opacity:0.75; font-family:monospace'>"
-            "No rows to profile.</div>"
-        ))
+        display(HTML("<div style='opacity:0.75; font-family:monospace'>No rows to profile.</div>"))
         return
 
     cols = list(df.columns) if columns is None else list(columns)
     selected = [str(c) for c in cols if str(c) in df.columns][:max_cards]
     if not selected:
         return
+    if not np.isfinite(skew_threshold) or skew_threshold <= 0:
+        raise ValueError("skew_threshold must be a finite number greater than 0.")
 
     ordinal_set = {str(c) for c in ordinal_columns}
     rail_w = max(1, min(int(visible_cards), 5))
     cards: list[str] = []
-    include_plotlyjs: str | bool = "cdn"
 
     # Colour tokens.
     accent = theme.accent
     cw = getattr(theme, "colorway", [accent])
     warning = cw[4] if len(cw) > 4 else "#F28C28"
-    skew_color = cw[3] if len(cw) > 3 else "#2F6BFF"
+    skew_color = theme.color_skew_accent
     chip_fg = cw[3] if len(cw) > 3 else accent
-    chip_border = rgba_css(chip_fg, 0.22)
 
     ordinal_cmap = mcolors.LinearSegmentedColormap.from_list(
-        "wm_ord", [accent, accent, warning],
+        "wm_ord",
+        [accent, accent, warning],
     )
     # Semantic bar colours for yes/no/true/false columns.
     semantic = {
-        "yes": accent, "true": accent, "1": accent,
+        "yes": accent,
+        "true": accent,
+        "1": accent,
         "no": cw[0] if cw else accent,
         "false": cw[0] if cw else accent,
         "0": cw[0] if cw else accent,
@@ -1147,27 +1359,41 @@ def wm_render_micro_profile_cards(
         dtype_name = str(series.dtype)
         is_num = bool(pd.api.types.is_numeric_dtype(series))
         missing = int(series.isna().sum())
-        dtype_chip = (
-            f"<span class='wm-micro-dtype'>{escape(dtype_name)}</span>"
-        )
+        dtype_chip = f"<span class='wm-micro-dtype'>{escape(dtype_name)}</span>"
+
+        # Profile cards are one reading lane, so they share one calm cyan family.
+        # Role colour already lives in the field chips above; repeating the entire
+        # palette here creates cognitive noise instead of information.
+        profile_color = accent
 
         if is_num:
-            card, include_plotlyjs = _numeric_card(
-                col, series, dtype_chip, missing, theme,
-                accent, skew_color, include_plotlyjs,
+            card = _numeric_card(
+                col,
+                series,
+                dtype_chip,
+                missing,
+                theme,
+                profile_color,
+                skew_color,
+                float(skew_threshold),
             )
         else:
             card = _categorical_card(
-                col, series, dtype_chip, missing, theme,
-                accent, max_categories, ordinal_set,
-                ordinal_cmap, semantic,
+                col,
+                series,
+                dtype_chip,
+                missing,
+                theme,
+                profile_color,
+                max_categories,
+                ordinal_set,
+                ordinal_cmap,
+                semantic,
             )
         cards.append(card)
 
-    css = _micro_css(theme, rail_w, skew_color, chip_fg, chip_border)
-    display(HTML(
-        f"{css}<section class='wm-micro-rail'>{''.join(cards)}</section>"
-    ))
+    css = _micro_css(theme, rail_w, skew_color, chip_fg)
+    display(HTML(f"{css}<section class='wm-micro-rail'>{''.join(cards)}</section>"))
 
 
 def _numeric_card(
@@ -1178,45 +1404,23 @@ def _numeric_card(
     theme: ThemeLike,
     accent: str,
     skew_color: str,
-    include_plotlyjs: str | bool,
-) -> tuple[str, str | bool]:
+    skew_threshold: float,
+) -> str:
     """Build one numeric micro-profile card (violin + stats grid)."""
     numeric = pd.to_numeric(series, errors="coerce")
     valid = numeric.dropna()
-    skew_value = valid.skew() if len(valid) >= 3 else 0.0
-    skew = float(cast("Any", skew_value))
-    high_skew = abs(skew) >= 1.0
+    unique = int(valid.nunique())
+    skew_value = valid.skew() if len(valid) >= 3 and unique > 1 else 0.0
+    skew = float(cast("Any", skew_value)) if not pd.isna(skew_value) else 0.0
+    high_skew = abs(skew) >= skew_threshold
 
     if valid.empty:
         violin = "<div class='wm-micro-empty'>No numeric values</div>"
     else:
-        import plotly.graph_objects as go
-
-        fig = go.Figure(data=[go.Violin(
-            x=valid, orientation="h", points=False,
-            line=dict(color=theme.text_main, width=1.4),
-            fillcolor=rgba_css(accent, 0.22), opacity=1.0,
-            box=dict(visible=True, width=0.34,
-                     fillcolor=rgba_css(theme.card_bg, 0.94),
-                     line=dict(color=theme.text_main, width=1.4)),
-            meanline_visible=False, hoverinfo="skip",
-            spanmode="soft", showlegend=False,
-        )])
-        fig.update_layout(
-            width=296, height=82,
-            margin=dict(l=8, r=8, t=10, b=8),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(showgrid=False, zeroline=False, visible=False),
-            yaxis=dict(showgrid=False, zeroline=False, visible=False),
-        )
-        violin = fig.to_html(
-            full_html=False, include_plotlyjs=include_plotlyjs,
-            config={"displayModeBar": False, "responsive": False},
-        )
-        include_plotlyjs = False
+        violin = _render_micro_violin_svg(valid, theme=theme, accent=accent)
 
     miss_bg = theme.color_missing_bg if missing > 0 else "transparent"
+
     def _m(v: float | None) -> str:  # noqa: E301
         return _fmt(v)
 
@@ -1224,30 +1428,112 @@ def _numeric_card(
     max_v = float(valid.max()) if not valid.empty else None
     med_v = float(valid.median()) if not valid.empty else None
     min_v = float(valid.min()) if not valid.empty else None
+    skew_bg = rgba_css(skew_color, 0.14) if high_skew else "transparent"
     stats = [
-        ("Missing", str(missing), miss_bg),
-        ("Mean", _m(mean_v), "transparent"),
-        ("Max", _m(max_v), "transparent"),
-        ("Median", _m(med_v), "transparent"),
-        ("Min", _m(min_v), "transparent"),
-        ("Mode", _mode_text(series), "transparent"),
+        ("Missing", str(missing), miss_bg, "wm-micro-metric--missing" if missing else ""),
+        ("Mean", _m(mean_v), theme.color_mean_bg, "wm-micro-metric--mean"),
+        ("Max", _m(max_v), theme.color_max_bg, "wm-micro-metric--max"),
+        ("Median", _m(med_v), "transparent", ""),
+        ("Min", _m(min_v), theme.color_min_bg, "wm-micro-metric--min"),
+        ("Skew", f"{skew:+.2f}", skew_bg, "wm-micro-metric--skew" if high_skew else ""),
     ]
     grid = "".join(
-        f"<div class='wm-micro-metric' style='--wm-bg:{bg};'>"
+        f"<div class='wm-micro-metric {metric_class}' style='--wm-bg:{bg};'>"
         f"<span class='wm-micro-key'>{k}</span>"
         f"<span class='wm-micro-val'>{escape(v)}</span></div>"
-        for k, v, bg in stats
+        for k, v, bg, metric_class in stats
     )
     cls = "wm-micro-card--high-skew" if high_skew else ""
+    skew_cue = (
+        f"<div class='wm-micro-skew-cue'>CHECK · |SKEW| ≥ {skew_threshold:g}</div>"
+        if high_skew
+        else f"<div class='wm-micro-skew-cue wm-micro-skew-cue--quiet'>SKEW CHECK AT ±{skew_threshold:g}</div>"
+    )
     html = (
         f"<article class='wm-micro-card {cls}'>"
         f"<div class='wm-micro-head'>"
         f"<span class='wm-micro-name'>{escape(col)}</span>"
         f"{dtype_chip}</div>"
-        f"<div class='wm-micro-violin'>{violin}</div>"
+        f"{skew_cue}"
+        f"<div class='wm-micro-violin' role='img' "
+        f"aria-label='{escape(col)} distribution with minimum {_m(min_v)}, mean {_m(mean_v)}, and maximum {_m(max_v)}'>"
+        f"{violin}</div>"
         f"<div class='wm-micro-grid'>{grid}</div></article>"
     )
-    return html, include_plotlyjs
+    return html
+
+
+def _render_micro_violin_svg(
+    valid: pd.Series[Any],
+    *,
+    theme: ThemeLike,
+    accent: str,
+) -> str:
+    """Render an offline-safe static mini violin with a box overlay."""
+    import inspect
+    import io
+    import re
+
+    import matplotlib.pyplot as plt
+
+    values = np.asarray(valid, dtype=float)
+    figure, axis = plt.subplots(figsize=(3.0, 0.78), dpi=100)
+    figure.patch.set_alpha(0.0)
+    axis.set_facecolor("none")
+    if len(values) < 2 or np.allclose(values, values[0]):
+        axis.scatter(values, np.ones_like(values), s=28, color=accent, alpha=0.78)
+    else:
+        violin_kwargs: dict[str, object] = {
+            "positions": [1.0],
+            "widths": 0.62,
+            "showmeans": False,
+            "showmedians": False,
+            "showextrema": False,
+        }
+        if "orientation" in inspect.signature(axis.violinplot).parameters:
+            violin_kwargs["orientation"] = "horizontal"
+        else:  # Matplotlib < 3.10
+            violin_kwargs["vert"] = False
+        violin = axis.violinplot(values, **cast("Any", violin_kwargs))
+        for body in cast("Any", violin)["bodies"]:
+            body.set_facecolor(accent)
+            body.set_edgecolor(theme.text_main)
+            body.set_linewidth(1.15)
+            body.set_alpha(0.52)
+        box_kwargs: dict[str, object] = {
+            "positions": [1.0],
+            "widths": 0.18,
+            "patch_artist": True,
+            "showfliers": False,
+            "boxprops": {
+                "facecolor": theme.card_bg,
+                "edgecolor": theme.text_main,
+                "linewidth": 1.15,
+            },
+            "medianprops": {"color": theme.heat_neg, "linewidth": 1.4},
+            "whiskerprops": {"color": theme.text_main, "linewidth": 1.0},
+            "capprops": {"color": theme.text_main, "linewidth": 1.0},
+        }
+        if "orientation" in inspect.signature(axis.boxplot).parameters:
+            box_kwargs["orientation"] = "horizontal"
+        else:  # Matplotlib < 3.10
+            box_kwargs["vert"] = False
+        axis.boxplot(values, **cast("Any", box_kwargs))
+    axis.set_axis_off()
+    axis.margins(x=0.05, y=0.20)
+    buffer = io.StringIO()
+    figure.savefig(
+        buffer,
+        format="svg",
+        transparent=True,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+    plt.close(figure)
+    svg = buffer.getvalue()
+    svg = re.sub(r"<\?xml[^>]*>\s*", "", svg, count=1)
+    svg = re.sub(r"<!DOCTYPE[^>]*>\s*", "", svg, count=1)
+    return svg.strip()
 
 
 def _categorical_card(
@@ -1263,17 +1549,15 @@ def _categorical_card(
     semantic: dict[str, str],
 ) -> str:
     """Build one categorical micro-profile card (bars + mode)."""
-    counts = (
-        series.astype("string").fillna("<NA>")
-        .value_counts(dropna=False)
-    )
+    counts = series.dropna().astype("string").value_counts(dropna=True)
     top = counts.head(max_categories)
     mode = _mode_text(series)
-    max_count = max(int(top.iloc[0]), 1) if not top.empty else 1
+    total_rows = max(len(series), 1)
 
     bars: list[str] = []
     for rank, (label, count) in enumerate(top.items()):
-        pct = int(round((int(count) / max_count) * 100))
+        share = int(count) / total_rows
+        pct = max(1, int(round(share * 100))) if int(count) else 0
         norm = str(label).strip().lower()
         bar_color = semantic.get(norm)
         if bar_color is None and col in ordinal_set:
@@ -1284,13 +1568,14 @@ def _categorical_card(
         bars.append(
             "<div class='wm-cat-row'>"
             f"<span class='wm-cat-label'>{escape(str(label))}</span>"
-            f"<span class='wm-cat-count'>{int(count):,}</span>"
+            f"<span class='wm-cat-count'>{int(count):,} · {share:.1%}</span>"
             f"<span class='wm-cat-bar-track'>"
             f"<span class='wm-cat-bar'"
             f" style='width:{pct}%;background:{bar_color};'>"
             f"</span></span></div>"
         )
 
+    missing_class = " wm-micro-missing--attention" if missing else " wm-micro-missing--quiet"
     return (
         f"<article class='wm-micro-card'>"
         f"<div class='wm-micro-head'>"
@@ -1299,7 +1584,7 @@ def _categorical_card(
         f"<div class='wm-micro-mode'>"
         f"<span>Mode</span><strong>{mode}</strong></div>"
         f"<div class='wm-cat-wrap'>{''.join(bars)}</div>"
-        f"<div class='wm-micro-missing'>"
+        f"<div class='wm-micro-missing{missing_class}'>"
         f"Missing: <strong>{missing:,}</strong></div>"
         f"</article>"
     )
@@ -1310,30 +1595,37 @@ def _micro_css(
     rail_w: int,
     skew_color: str,
     chip_fg: str,
-    chip_border: str,
 ) -> str:
     """CSS for the micro profile card rail."""
     max_w = min(
-        theme.width + 112, rail_w * 346 + (rail_w - 1) * 18,
+        theme.width + 112,
+        rail_w * 346 + (rail_w - 1) * 18,
     )
     return f"""<style>
 .wm-micro-rail {{
-  max-width:{max_w}px; margin:18px auto 24px auto;
+  width:100%; max-width:{max_w}px; margin:18px auto 24px auto;
   display:grid; grid-auto-flow:column;
-  grid-auto-columns:332px; gap:18px;
-  overflow-x:auto; padding:10px 10px 16px 10px;
+  grid-auto-columns:min(342px, calc(100vw - 48px)); gap:18px;
+  overflow-x:auto; padding:12px 10px 18px 10px;
+  box-sizing:border-box;scroll-snap-type:x proximity;
+  scrollbar-gutter:stable;
 }}
 .wm-micro-card {{
-  border:1px solid {theme.border}; border-radius:16px;
+  border:1px solid {theme.border}; border-radius:18px;
   background:{theme.card_bg} !important;
   color:{theme.text_main} !important;
-  padding:18px 16px;
-  box-shadow:0 8px 16px -16px rgba(0,0,0,0.14);
+  padding:20px 18px;min-width:0;box-sizing:border-box;
+  box-shadow:none;
+  transition:transform .18s ease,box-shadow .18s ease;
+  scroll-snap-align:start;overflow:hidden;
+}}
+.wm-micro-card:hover{{
+  transform:translateY(-2px);box-shadow:0 18px 30px -22px rgba(0,0,0,.30);
 }}
 .wm-micro-card--high-skew {{
-  box-shadow:0 8px 16px -16px rgba(0,0,0,0.14),
-    inset 0 3px 0 {rgba_css(skew_color, 0.92)};
+  border-top:3px solid {skew_color};
 }}
+.wm-micro-card--high-skew:hover{{box-shadow:0 18px 32px -22px {rgba_css(skew_color, 0.54)};}}
 .wm-micro-head {{
   display:flex; justify-content:space-between;
   align-items:flex-start; gap:10px; margin-bottom:12px;
@@ -1344,22 +1636,39 @@ def _micro_css(
 }}
 .wm-micro-dtype {{
   font-family:{theme.font_mono}; font-size:11px; font-weight:800;
-  color:{chip_fg}; border:1px solid {chip_border};
+  color:{chip_fg}; border:0;box-shadow:none;text-shadow:none;
   background:{theme.card_bg}; padding:3px 10px; border-radius:999px;
 }}
 .wm-micro-violin {{
-  height:102px; padding:8px; background:{theme.plot_bg};
+  height:104px; padding:10px; background:{theme.plot_bg};
   border:1px solid {theme.grid}; border-radius:14px;
   overflow:hidden; margin-bottom:12px; box-sizing:border-box;
 }}
+.wm-micro-violin svg{{display:block;width:100%;height:100%;max-width:100%;}}
+.wm-micro-skew-cue{{
+  width:max-content;max-width:100%;margin:0 0 10px auto;
+  padding:5px 8px;border-radius:999px;
+  background:{rgba_css(skew_color, 0.14)};color:{skew_color};
+  border:0;box-shadow:none;text-shadow:none;
+  font-family:{theme.font_mono};font-size:9px;font-weight:900;
+  letter-spacing:.10em;text-transform:uppercase;
+}}
+.wm-micro-skew-cue--quiet{{
+  color:{theme.text_muted};background:transparent;
+}}
 .wm-micro-grid {{
-  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;
 }}
 .wm-micro-metric {{
   background:var(--wm-bg,transparent);
   border:1px solid {theme.grid}; border-radius:10px;
   padding:8px 12px; display:flex; justify-content:space-between;
   gap:10px; min-width:0;
+}}
+.wm-micro-metric--missing:not([style*="transparent"]) {{
+  border-color:{rgba_css(theme.color_missing_accent, 0.54)};
+  box-shadow:0 0 0 4px {rgba_css(theme.color_missing_accent, 0.22)},
+             0 0 22px -4px {rgba_css(theme.color_missing_accent, 0.76)};
 }}
 .wm-micro-key {{
   font-family:{theme.font_mono}; font-size:10px;
@@ -1369,13 +1678,15 @@ def _micro_css(
 .wm-micro-val {{
   font-family:{theme.font_mono}; font-size:12px;
   font-weight:700; color:{theme.text_main};
-  text-align:right; white-space:nowrap;
+  text-align:right; overflow-wrap:anywhere; min-width:0;
 }}
 .wm-micro-mode {{
   display:flex; justify-content:space-between;
   font-family:{theme.font_mono}; font-size:12px;
-  margin:6px 0 10px 0; color:{theme.text_main};
+  margin:6px 0 12px 0; color:{theme.text_main};gap:10px;
+  min-width:0;
 }}
+.wm-micro-mode strong{{overflow-wrap:anywhere;text-align:right;min-width:0;}}
 .wm-cat-wrap {{ display:grid; gap:8px; }}
 .wm-cat-row {{
   display:grid; grid-template-columns:minmax(80px,1fr) auto;
@@ -1397,15 +1708,28 @@ def _micro_css(
 .wm-micro-missing {{
   margin-top:10px; display:inline-flex; align-items:center;
   gap:6px; padding:6px 10px; border-radius:999px;
-  border:1px solid {rgba_css(theme.color_missing_txt, 0.18)};
-  background:{theme.color_missing_bg};
   font-family:{theme.font_mono}; font-size:11px;
-  color:{theme.color_missing_txt};
+}}
+.wm-micro-missing--quiet {{
+  padding-left:0;border:0;background:transparent;color:{theme.text_muted};
+}}
+.wm-micro-missing--attention {{
+  border:0;
+  background:{theme.color_missing_bg};color:{theme.color_missing_txt};
+  box-shadow:0 0 0 4px {rgba_css(theme.color_missing_accent, 0.22)},
+             0 0 22px -4px {rgba_css(theme.color_missing_accent, 0.76)};
+  text-shadow:none;
 }}
 .wm-micro-missing strong {{ color:{theme.text_main}; }}
 .wm-micro-empty {{
   display:flex; align-items:center; justify-content:center;
   height:100%; font-family:{theme.font_mono}; font-size:11px;
   color:{theme.text_muted};
+}}
+@media(max-width:420px){{
+  .wm-micro-card{{padding:18px 14px;}}
+  .wm-micro-metric{{padding:8px 9px;gap:6px;}}
+  .wm-micro-key{{font-size:9px;}}
+  .wm-micro-val{{font-size:11px;}}
 }}
 </style>"""

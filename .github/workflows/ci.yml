@@ -36,3 +36,35 @@ jobs:
         run: uv run pytest --cov=wm_notecards --cov-report=term-missing
       - name: Build distribution
         run: uv build
+
+  public-notebooks:
+    name: Public notebook contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+      - name: Install notebook environment
+        run: uv sync --extra dev --extra svg
+      - name: Execute canonical EDA notebook
+        run: >-
+          uv run jupyter nbconvert --to notebook --execute
+          examples/40_column_eda_scratchbook.ipynb
+          --output 40_column_eda_scratchbook.executed.ipynb --output-dir /tmp
+          --ExecutePreprocessor.timeout=240
+      - name: Execute canonical forecasting notebook
+        run: >-
+          uv run jupyter nbconvert --to notebook --execute
+          examples/simple_seasonal_forecasting_lab.ipynb
+          --output simple_seasonal_forecasting_lab.executed.ipynb --output-dir /tmp
+          --ExecutePreprocessor.timeout=240
+      - name: Execute portable Colab notebooks
+        run: |
+          cp examples/40_column_eda_scratchbook_COLAB.ipynb /tmp/eda-colab-source.ipynb
+          cp examples/simple_seasonal_forecasting_lab_COLAB.ipynb /tmp/forecast-colab-source.ipynb
+          uv run jupyter nbconvert --to notebook --execute /tmp/eda-colab-source.ipynb --output eda-colab.ipynb --output-dir /tmp --ExecutePreprocessor.timeout=300
+          uv run jupyter nbconvert --to notebook --execute /tmp/forecast-colab-source.ipynb --output forecast-colab.ipynb --output-dir /tmp --ExecutePreprocessor.timeout=300

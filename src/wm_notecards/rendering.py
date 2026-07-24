@@ -75,6 +75,35 @@ def _export_svg_bytes(fig: go.Figure, *, file_stub: str) -> bytes:
     )
 
 
+def _export_image_bytes(
+    fig: go.Figure,
+    *,
+    file_stub: str,
+    image_format: str,
+    width: int,
+    height: int,
+    scale: float,
+) -> bytes:
+    """Export bytes while preventing styled HTML titles becoming filenames."""
+    import kaleido  # optional dependency — imported lazily
+
+    with tempfile.TemporaryDirectory(prefix="wm-notecards-export-") as temp_dir:
+        safe_path = Path(temp_dir) / f"{_safe_export_stub(file_stub)}.{image_format}"
+        return cast(
+            "bytes",
+            kaleido.calc_fig_sync(
+                fig,
+                path=safe_path,
+                opts={
+                    "format": image_format,
+                    "width": width,
+                    "height": height,
+                    "scale": scale,
+                },
+            ),
+        )
+
+
 def _inline_svg_markup(svg_bytes: bytes, *, file_stub: str) -> str:
     """Clean up raw SVG bytes and wrap in a centred ``<div>``.
 
@@ -255,10 +284,15 @@ def _prepare_figure_card(
         top_margin = int(getattr(current_margin, "t", 0) or 0)
         current_height = int(getattr(fig.layout, "height", 0) or theme_height)
         new_top_margin = max(top_margin + 64, 218)
-        charts_mod._add_header_chip(fig, chip_text=chip_text, theme=theme)
         fig.update_layout(
             margin=dict(t=new_top_margin),
             height=current_height + max(0, new_top_margin - top_margin),
+        )
+        charts_mod._add_header_chip(
+            fig,
+            chip_text=chip_text,
+            theme=theme,
+            y=charts_mod._header_chip_y(fig, top_margin=new_top_margin),
         )
 
 
@@ -334,15 +368,19 @@ def export_figure_wm(
         raise ValueError("scale must be greater than zero.")
 
     export_width = width or int(getattr(fig.layout, "width", 0) or 860)
-    export_height = height or int(getattr(fig.layout, "height", 0) or 420)
+    layout_height = int(getattr(fig.layout, "height", 0) or 0)
+    export_height = height if height is not None else max(layout_height, 520)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_image(
-        str(output_path),
-        format=suffix.removeprefix("."),
+    export_scale = scale if suffix == ".png" else 1.0
+    image_bytes = _export_image_bytes(
+        fig,
+        file_stub=output_path.stem,
+        image_format=suffix.removeprefix("."),
         width=export_width,
         height=export_height,
-        scale=scale,
+        scale=export_scale,
     )
+    output_path.write_bytes(image_bytes)
     return output_path
 
 
@@ -408,7 +446,7 @@ def wm_render_figure_card_reliable(
         file_stub=file_stub,
         role=role,
         kicker=kicker,
-        chip_text=chip_text,
+        chip_text=None,
         mode=mode,
     )
 
@@ -430,9 +468,16 @@ def wm_render_figure_card_reliable(
                     _inline_svg_markup(svg_bytes, file_stub=file_stub),
                     theme,
                     figure_width=figure_width,
+                    chip_text=chip_text,
                 )
             )
         )
         return
 
-    charts_mod.show_fig_wm(fig, file_stub=file_stub, theme=theme, mode=mode)
+    charts_mod.show_fig_wm(
+        fig,
+        file_stub=file_stub,
+        theme=theme,
+        mode=mode,
+        chip_text=chip_text,
+    )

@@ -6,6 +6,7 @@ chrome (CSS, wrapper divs, eyebrow, kicker, rule, divider) is
 delegated to :mod:`._html` — this module only builds card-specific
 content then wraps it with the shared shell.
 """
+
 from __future__ import annotations
 
 import io
@@ -19,6 +20,8 @@ import pandas as pd
 from IPython.display import HTML, Markdown, display
 
 from ._html import (
+    _classes,
+    _theme_css_custom_properties,
     card_shell_css,
     card_shell_html,
     shell_header_html,
@@ -428,6 +431,30 @@ def wm_md(text: str) -> None:
     display(Markdown(text))
 
 
+def _safe_inline_markdown(text: str) -> str:
+    """Render the small Markdown subset supported inside prose cards.
+
+    Card copy commonly needs emphasis and inline code, but it must never be
+    able to inject arbitrary notebook HTML. Escape first, protect code spans,
+    then add only the three explicitly supported tags.
+    """
+    escaped = escape(text)
+    fragments = re.split(r"(`[^`\n]+`)", escaped)
+    rendered: list[str] = []
+    for fragment in fragments:
+        if fragment.startswith("`") and fragment.endswith("`"):
+            rendered.append(f"<code>{fragment[1:-1]}</code>")
+            continue
+        fragment = re.sub(r"\*\*([^*\n]+)\*\*", r"<strong>\1</strong>", fragment)
+        fragment = re.sub(
+            r"(?<!\*)\*([^*\n]+)\*(?!\*)",
+            r"<em>\1</em>",
+            fragment,
+        )
+        rendered.append(fragment)
+    return "".join(rendered).replace("\n", "<br>")
+
+
 def wm_markdown_card(
     *,
     title: str,
@@ -489,13 +516,12 @@ def wm_markdown_card(
         parts.append(
             f"<div style='font-family:{theme.font_display};"
             f"color:{theme.text_main};font-size:16px;line-height:1.62;'>"
-            f"{escape(body).replace(chr(10), '<br>')}</div>"
+            f"{_safe_inline_markdown(body)}</div>"
         )
 
     if bullets:
         items = "".join(
-            f"<li style='margin:6px 0;line-height:1.55;'>"
-            f"{escape(item)}</li>"
+            f"<li style='margin:6px 0;line-height:1.55;'>{_safe_inline_markdown(item)}</li>"
             for item in bullets
         )
         parts.append(
@@ -507,13 +533,17 @@ def wm_markdown_card(
     if note:
         parts.append(_note_html(note, theme))
 
-    display(HTML(card_shell_html(
-        "".join(parts),
-        theme,
-        card_class="wm-markdown-card",
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                "".join(parts),
+                theme,
+                card_class="wm-markdown-card",
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+            )
+        )
+    )
 
 
 # ── Question cards ──────────────────────────────────────────────────
@@ -558,6 +588,15 @@ def _question_card_css(theme: ThemeLike) -> str:
         "margin:0;max-width:none;height:100%;display:flex;}"
         ".wm-question-pair .wm-question-card-shell .wm-shell-inner{"
         "flex:1 1 auto;display:flex;flex-direction:column;}"
+        "@media (max-width:640px){"
+        ".wm-question-card-shell .wm-question-head{"
+        "flex-direction:column;align-items:stretch;gap:10px;}"
+        ".wm-question-card-shell .wm-question-head-main{width:100%;}"
+        ".wm-question-card-shell .wm-question-head>.wm-shell-chip{"
+        "align-self:flex-start;margin-left:22px;}"
+        ".wm-question-card-shell .wm-question-title{"
+        "font-size:clamp(28px,8.5vw,34px) !important;}"
+        "}"
         "</style>"
     )
 
@@ -597,9 +636,7 @@ def _question_card_markup(
     chip_block = _chip_html(chip_text or "", theme)
 
     subtitle_block = (
-        f"<div class='wm-question-subtitle'>{escape(subtitle)}</div>"
-        if subtitle
-        else ""
+        f"<div class='wm-question-subtitle'>{escape(subtitle)}</div>" if subtitle else ""
     )
     body_block = (
         f"<div class='wm-question-body' style='font-size:{body_px}px;'>"
@@ -610,7 +647,8 @@ def _question_card_markup(
 
     return (
         f"{base_css}{extra_css}"
-        f"<div class='wm-question-card-shell' style='"
+        f"<div class='{_classes('wm-question-card-shell')}' style='"
+        f"{_theme_css_custom_properties(theme)}"
         f"--wm-role-idle:{meta.idle_marker};"
         f"--wm-role-hover:{meta.hover_marker};"
         f"margin:{margin};max-width:{theme.width}px;'>"
@@ -658,15 +696,19 @@ def question_card(
     chip_text : str, optional
         Status chip shown beside the title row.
     """
-    display(HTML(_question_card_markup(
-        title=title,
-        theme=theme,
-        body=body,
-        kicker=kicker,
-        subtitle=subtitle,
-        size=size,
-        chip_text=chip_text,
-    )))
+    display(
+        HTML(
+            _question_card_markup(
+                title=title,
+                theme=theme,
+                body=body,
+                kicker=kicker,
+                subtitle=subtitle,
+                size=size,
+                chip_text=chip_text,
+            )
+        )
+    )
 
 
 def question_pair(
@@ -711,7 +753,7 @@ def question_pair(
         theme=theme,
         body=left.get("body"),
         subtitle=left.get("subtitle"),
-        kicker=left.get("kicker"),
+        kicker=left.get("kicker") or kicker,
         size=size,
         embedded=True,
         chip_text=chip_text,
@@ -721,7 +763,7 @@ def question_pair(
         theme=theme,
         body=right.get("body"),
         subtitle=right.get("subtitle"),
-        kicker=right.get("kicker"),
+        kicker=right.get("kicker") or kicker,
         size=size,
         embedded=True,
         chip_text=chip_text,
@@ -730,7 +772,7 @@ def question_pair(
         left_html=left_html,
         right_html=right_html,
         theme=theme,
-        kicker=kicker,
+        kicker=None,
         min_col_px=320,
         gap_px=16,
     )
@@ -759,16 +801,16 @@ def _two_up_markup(
     layout_css = (
         "<style>"
         f".{pair_class}{{"
-        f"max-width:{theme.width}px;margin:16px auto;display:grid;"
-        f"grid-template-columns:repeat(auto-fit, minmax({min_col_px}px, 1fr));"
-        f"gap:{gap_px}px;align-items:stretch;}}"
-        f".{pair_class} > *{{height:100%;}}"
+        f"width:100%;max-width:{theme.width}px;margin:16px auto;display:grid;"
+        "grid-template-columns:repeat(2,minmax(0,1fr));"
+        f"gap:{gap_px}px;align-items:stretch;box-sizing:border-box;}}"
+        f".{pair_class} > *{{height:100%;min-width:0;}}"
+        f"@media(max-width:{min_col_px * 2 + gap_px + 48}px){{"
+        f".{pair_class}{{grid-template-columns:minmax(0,1fr);}}"
+        "}"
         "</style>"
     )
-    return (
-        f"{layout_css}{wrapper_meta}"
-        f"<div class='{pair_class}'>{left_html}{right_html}</div>"
-    )
+    return f"{layout_css}{wrapper_meta}<div class='{pair_class}'>{left_html}{right_html}</div>"
 
 
 def two_up(
@@ -795,14 +837,18 @@ def two_up(
     gap_px : int
         Gap between the two columns.
     """
-    display(HTML(_two_up_markup(
-        left_html=left_html,
-        right_html=right_html,
-        theme=theme,
-        kicker=kicker,
-        min_col_px=min_col_px,
-        gap_px=gap_px,
-    )))
+    display(
+        HTML(
+            _two_up_markup(
+                left_html=left_html,
+                right_html=right_html,
+                theme=theme,
+                kicker=kicker,
+                min_col_px=min_col_px,
+                gap_px=gap_px,
+            )
+        )
+    )
 
 
 # ── Diagnostic / check card ─────────────────────────────────────────
@@ -828,9 +874,8 @@ def _check_card_css(theme: ThemeLike) -> str:
         ".wm-check-badge{"
         "transition:transform 0.18s ease,box-shadow 0.18s ease,"
         "background-color 0.18s ease,color 0.18s ease;"
-        "display:inline-block;"
-        "box-shadow:0 0 0 1px var(--wm-check-dot-bg) inset,"
-        "0 0 18px -8px var(--wm-check-glow);}"
+        "display:inline-block;border:0;text-shadow:none;"
+        "box-shadow:none;}"
         ".wm-check-status-dot{"
         "width:11px;height:11px;border-radius:999px;"
         "background:var(--wm-check-dot-fg);"
@@ -856,8 +901,7 @@ def _check_card_css(theme: ThemeLike) -> str:
         "0 10px 18px -12px rgba(0,0,0,0.45);}"
         ".wm-check-card-shell .wm-check-row:hover .wm-check-badge{"
         "transform:scale(1.06);"
-        "box-shadow:0 0 0 1px var(--wm-check-dot-bg) inset,"
-        "0 0 28px 0 var(--wm-check-glow),"
+        "box-shadow:0 0 28px 0 var(--wm-check-glow),"
         "0 10px 18px -12px rgba(0,0,0,0.45);}"
         "</style>"
     )
@@ -914,9 +958,7 @@ def wm_check_card(
         if not label:
             raise ValueError("each check row needs a non-empty 'label'.")
         if status not in _CHECK_TONE_COLORS:
-            raise ValueError(
-                f"unsupported status {status!r}; use PASS, CHECK, or FAIL."
-            )
+            raise ValueError(f"unsupported status {status!r}; use PASS, CHECK, or FAIL.")
 
         fg, bg, glow = _CHECK_TONE_COLORS[status]
         detail_block = (
@@ -952,14 +994,18 @@ def wm_check_card(
 
     # REGRESSION WARNING: the shell must pair open+close divs exactly.
     # card_shell_html handles this internally.
-    display(HTML(card_shell_html(
-        content,
-        theme,
-        card_class="wm-check-card-shell",
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-        extra_css=_check_card_css(theme),
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                content,
+                theme,
+                card_class="wm-check-card-shell",
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+                extra_css=_check_card_css(theme),
+            )
+        )
+    )
 
 
 # ── Glossary card ───────────────────────────────────────────────────
@@ -996,6 +1042,13 @@ def glossary_card(
     if isinstance(terms, dict):
         items = list(terms.items())
     else:
+        unknown = [term for term in terms if wm_term_definition(term) is None]
+        if unknown:
+            missing = ", ".join(repr(term) for term in unknown)
+            raise ValueError(
+                "No built-in glossary definition for "
+                f"{missing}. Pass a dict of term-to-definition values."
+            )
         items = [(term, wm_term_definition(term) or "") for term in terms]
 
     rows_html = "".join(
@@ -1026,13 +1079,17 @@ def glossary_card(
         )
 
     content = header + intro_block + rows_html + _note_html(note or "", theme)
-    display(HTML(card_shell_html(
-        content,
-        theme,
-        card_class="wm-glossary-card",
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                content,
+                theme,
+                card_class="wm-glossary-card",
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+            )
+        )
+    )
 
 
 # ── Convenience wrappers ────────────────────────────────────────────
@@ -1276,13 +1333,17 @@ def big_number_card(
         "</div>"
     )
 
-    display(HTML(card_shell_html(
-        header + number_block,
-        theme,
-        card_class="wm-big-number-card",
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                header + number_block,
+                theme,
+                card_class="wm-big-number-card",
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+            )
+        )
+    )
 
 
 def stat_card(
@@ -1340,7 +1401,8 @@ def stat_card(
 
 _WM_TEXT_CMD_RE: re.Pattern[str] = re.compile(r"\\text\{([^{}]+)\}")
 _WM_DISPLAY_WRAPPER_RE: re.Pattern[str] = re.compile(
-    r"^\\\[(.*)\\\]$", flags=re.DOTALL,
+    r"^\\\[(.*)\\\]$",
+    flags=re.DOTALL,
 )
 
 
@@ -1378,12 +1440,14 @@ def _normalize_latex_for_svg(latex: str) -> str:
         normalized = wrapped.group(1).strip()
 
     normalized = _WM_TEXT_CMD_RE.sub(
-        lambda m: "\\mathrm{" + m.group(1) + "}", normalized,
+        lambda m: "\\mathrm{" + m.group(1) + "}",
+        normalized,
     )
     normalized = normalized.replace(r"\Pr", r"\mathrm{Pr}")
     normalized = normalized.replace(r"\mathbb{1}", r"\mathbf{1}")
     normalized = normalized.replace(
-        r"\min_{\{c_i\},\{\mu_k\}}", r"\min_{c_i,\mu_k}",
+        r"\min_{\{c_i\},\{\mu_k\}}",
+        r"\min_{c_i,\mu_k}",
     )
     normalized = normalized.replace(r"\left\lVert", r"\Vert ")
     normalized = normalized.replace(r"\right\rVert", r"\Vert")
@@ -1423,14 +1487,21 @@ def _render_latex_svg(theme: ThemeLike, latex: str) -> str | None:
     figure.patch.set_alpha(0.0)
     try:
         figure.text(
-            0.01, 0.5, f"${normalized}$",
-            fontsize=16, color=theme.text_main,
-            va="center", ha="left",
+            0.01,
+            0.5,
+            f"${normalized}$",
+            fontsize=16,
+            color=theme.text_main,
+            va="center",
+            ha="left",
         )
         buffer = io.StringIO()
         figure.savefig(
-            buffer, format="svg",
-            bbox_inches="tight", pad_inches=0.04, transparent=True,
+            buffer,
+            format="svg",
+            bbox_inches="tight",
+            pad_inches=0.04,
+            transparent=True,
         )
     except Exception:
         return None
@@ -1490,27 +1561,13 @@ def _math_panel_html(
     if latex_svg:
         latex_block = f"<div class='wm-math-svg'>{latex_svg}</div>"
     elif latex and not fallback:
-        latex_block = (
-            f"<div class='wm-math-tex'>"
-            f"{escape(_normalize_latex_for_svg(latex))}</div>"
-        )
+        latex_block = f"<div class='wm-math-tex'>{escape(_normalize_latex_for_svg(latex))}</div>"
     else:
         latex_block = ""
 
-    fallback_block = (
-        f"<div class='wm-math-fallback'>{escape(fallback)}</div>"
-        if fallback
-        else ""
-    )
-    label_block = (
-        f"<div class='wm-math-label'>{escape(label)}</div>"
-        if label
-        else ""
-    )
-    return (
-        f"<div class='wm-math-panel'>"
-        f"{label_block}{latex_block}{fallback_block}</div>"
-    )
+    fallback_block = f"<div class='wm-math-fallback'>{escape(fallback)}</div>" if fallback else ""
+    label_block = f"<div class='wm-math-label'>{escape(label)}</div>" if label else ""
+    return f"<div class='wm-math-panel'>{label_block}{latex_block}{fallback_block}</div>"
 
 
 # ── Formula / counterintuitive cards ────────────────────────────────
@@ -1564,14 +1621,18 @@ def wm_formula_card(
         + "</div>"
     )
 
-    display(HTML(card_shell_html(
-        header + grid,
-        theme,
-        card_class=card_cls,
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-        extra_css=_math_block_css(theme, card_class=card_cls),
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                header + grid,
+                theme,
+                card_class=card_cls,
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+                extra_css=_math_block_css(theme, card_class=card_cls),
+            )
+        )
+    )
 
 
 def wm_counterintuitive_card(
@@ -1648,13 +1709,17 @@ def wm_counterintuitive_card(
         for sec_label, sec_body in sections
     )
 
-    display(HTML(card_shell_html(
-        header + math_block + section_html,
-        theme,
-        card_class=card_cls,
-        role_idle=meta.idle_marker,
-        role_hover=meta.hover_marker,
-    )))
+    display(
+        HTML(
+            card_shell_html(
+                header + math_block + section_html,
+                theme,
+                card_class=card_cls,
+                role_idle=meta.idle_marker,
+                role_hover=meta.hover_marker,
+            )
+        )
+    )
 
 
 # ── Data summary ────────────────────────────────────────────────────
@@ -1682,11 +1747,7 @@ def wm_build_reason_summary(
     """
     counts: dict[str, int] = {}
     for raw in reasons.fillna("").astype(str):
-        parts = [
-            wm_reason_display_label(part.strip())
-            for part in raw.split(" | ")
-            if part.strip()
-        ]
+        parts = [wm_reason_display_label(part.strip()) for part in raw.split(" | ") if part.strip()]
         for part in dict.fromkeys(parts):
             counts[part] = counts.get(part, 0) + 1
 
@@ -1697,7 +1758,9 @@ def wm_build_reason_summary(
         return pd.DataFrame(columns=["reason", "count"])
     result = (
         summary.sort_values(
-            ["count", "reason"], ascending=[False, True], kind="stable",
+            ["count", "reason"],
+            ascending=[False, True],
+            kind="stable",
         )
         .head(top_n)
         .reset_index(drop=True)
