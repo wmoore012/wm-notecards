@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 from IPython.display import HTML, display
 from plotly.subplots import make_subplots
 
-from wm_notecards._html import plot_shell_html, rgba_css
+from wm_notecards._html import chip_html, plot_shell_html, rgba_css
 from wm_notecards.kicker import WMKicker
 
 if TYPE_CHECKING:
@@ -179,6 +179,66 @@ def _figure_uses_colorbar(fig: go.Figure) -> bool:
 def _header_height_growth(*, title_lines: int, subtitle_lines: int) -> int:
     """Extra pixels needed when the header wraps beyond one line."""
     return max(0, title_lines - 1) * 26 + max(0, subtitle_lines - 1) * 16
+
+
+def _absorb_unsafe_top_annotations(fig: go.Figure) -> list[str]:
+    """Move unboxed annotations above the plot into the managed header flow.
+
+    Plotly positions ``yref='paper'`` annotations independently from titles.
+    In Colab and static exports, an annotation above ``y=1`` can therefore land
+    directly on a wrapped subtitle. Plain prose belongs in the WM header flow,
+    where wrapping and top-margin growth are deterministic. Bordered/background
+    annotations are treated as intentional chips and remain untouched.
+    """
+    annotations = list(getattr(fig.layout, "annotations", ()) or ())
+    kept: list[go.layout.Annotation] = []
+    absorbed: list[str] = []
+
+    for annotation in annotations:
+        yref = str(getattr(annotation, "yref", "") or "")
+        y = getattr(annotation, "y", None)
+        is_above_plot = (
+            yref == "paper"
+            and isinstance(y, Number)
+            and float(cast("Any", y)) > 1.0
+        )
+        is_plain_prose = (
+            not bool(getattr(annotation, "showarrow", False))
+            and not int(getattr(annotation, "borderwidth", 0) or 0)
+            and not getattr(annotation, "bgcolor", None)
+        )
+        text = str(getattr(annotation, "text", "") or "").strip()
+        if is_above_plot and is_plain_prose and text:
+            absorbed.append(text)
+        else:
+            kept.append(annotation)
+
+    if absorbed:
+        fig.layout.annotations = tuple(kept)
+    return absorbed
+
+
+def _merge_header_notes(subtitle: str | None, notes: list[str]) -> str | None:
+    """Append non-redundant annotation notes to a subtitle.
+
+    A notebook author may describe the same validation boundary in both the
+    subtitle and an annotation. Once the annotation is absorbed, repeating it
+    would waste a line and push prose back toward the plot. Token overlap makes
+    this deduplication work across small wording changes such as ``starts`` vs
+    ``begins``.
+    """
+    merged = subtitle
+    for note in notes:
+        if merged:
+            existing_tokens = set(re.findall(r"[a-z0-9]+", merged.lower()))
+            note_tokens = set(re.findall(r"[a-z0-9]+", note.lower()))
+            overlap = len(existing_tokens & note_tokens)
+            if note_tokens and overlap / len(note_tokens) >= 0.5:
+                continue
+            merged = f"{merged} · {note}"
+        else:
+            merged = note
+    return merged
 
 
 def _minimum_plot_area_height(fig: go.Figure) -> int:
@@ -385,6 +445,7 @@ def _add_header_chip(
     *,
     chip_text: str,
     theme: ThemeLike,
+    y: float = 1.0,
 ) -> None:
     """Add a status-chip annotation to the top-right of the figure."""
     chip_color: str = getattr(theme, "heat_neg", theme.accent)
@@ -400,7 +461,7 @@ def _add_header_chip(
             xref="paper",
             yref="paper",
             x=0.970,
-            y=1.255,
+            y=y,
             xanchor="right",
             yanchor="top",
             align="right",
@@ -418,6 +479,15 @@ def _add_header_chip(
         )
     )
     fig.update_layout(annotations=annotations)
+
+
+def _header_chip_y(fig: go.Figure, *, top_margin: int) -> float:
+    """Place a chip in the top margin, 48px below the figure edge."""
+    height = int(getattr(fig.layout, "height", 0) or 420)
+    margin = getattr(fig.layout, "margin", None)
+    bottom_margin = int(getattr(margin, "b", 0) or 0)
+    plot_height = max(1, height - top_margin - bottom_margin)
+    return 1.0 + max(0, top_margin - 48) / plot_height
 
 
 # ── Value formatting ────────────────────────────────────────────────
@@ -516,7 +586,9 @@ def style_fig_wm(
         _normalize_legacy_trace_colors(fig, theme)
 
     show_legend = _should_show_legend(fig)
-    margin = dict(l=64, r=72, t=102, b=112 if (legend_bottom and show_legend) else 62)
+    # The top band is protected space: title, subtitle, and any self-healed
+    # annotation prose must finish before the plotting domain begins.
+    margin = dict(l=64, r=72, t=126, b=112 if (legend_bottom and show_legend) else 62)
     if margin_overrides:
         margin.update(margin_overrides)
 
@@ -530,6 +602,7 @@ def style_fig_wm(
         margin["r"] = max(margin["r"], 124)
 
     existing_subtitle = _read_existing_subtitle(fig)
+    absorbed_annotations = _absorb_unsafe_top_annotations(fig)
     figure_width = int(getattr(fig.layout, "width", 0) or theme.width)
     plot_width = max(360, figure_width - margin["l"] - margin["r"])
 
@@ -538,6 +611,7 @@ def style_fig_wm(
         max_chars=max(24, min(42, plot_width // 17)),
     )
     subtitle_text = subtitle if subtitle is not None else existing_subtitle
+    subtitle_text = _merge_header_notes(subtitle_text, absorbed_annotations)
     subtitle_html, subtitle_lines = _wrap_plot_text(
         subtitle_text,
         max_chars=max(46, min(96, plot_width // 8)),
@@ -665,7 +739,10 @@ def _apply_layout(
             ),
             x=title_x,
             xanchor="center" if center_title else "left",
-            y=0.975,
+            # Kaleido crops glyph ascenders when the title baseline sits too
+            # close to the canvas edge. Keep a visible safety lane in every
+            # notebook, slide, SVG, PNG, and PDF export.
+            y=0.94,
             yanchor="top",
             pad=dict(t=10, b=0),
             font=dict(size=30, color=theme.text_main),
@@ -689,7 +766,7 @@ def _apply_layout(
             bgcolor=tooltip_bg,
             bordercolor=theme.border,
             font=dict(
-                family=theme.font_mono, size=12, color=theme.text_main,
+                family=theme.font_mono, size=12, color=theme.accent,
             ),
         ),
     )
@@ -769,6 +846,7 @@ def show_fig_wm(
     file_stub: str,
     theme: ThemeLike,
     mode: Literal["notebook", "export"] = "notebook",
+    chip_text: str | None = None,
 ) -> None:
     """Display a styled Plotly figure inside a centred card shell.
 
@@ -791,6 +869,8 @@ def show_fig_wm(
         Active visual theme.
     mode : ``"notebook"`` | ``"export"``
         Rendering target (currently both go through ``IPython.display``).
+    chip_text : str, optional
+        Status label kept in a separate shell row so it cannot cover titles.
     """
     export_scale = float(getattr(theme, "export_scale", 2.0) or 2.0)
     config: dict[str, object] = {
@@ -831,6 +911,14 @@ def show_fig_wm(
                 "scale": export_scale,
             },
         }
+        if chip_text:
+            display(
+                HTML(
+                    "<div style='display:flex;justify-content:flex-end;"
+                    f"max-width:{figure_width}px;margin:0 auto 8px auto;'>"
+                    f"{chip_html(chip_text, theme)}</div>"
+                )
+            )
         fig.show(config=config, renderer="colab")
         return
 
@@ -847,6 +935,7 @@ def show_fig_wm(
                 figure_html,
                 theme,
                 figure_width=figure_width,
+                chip_text=chip_text,
             )
         )
     )
@@ -867,8 +956,9 @@ def wm_render_figure_card(
 ) -> None:
     """Render a Plotly figure inside a complete WM card shell.
 
-    Attaches kicker and chip annotations to the figure, then delegates
-    to :func:`show_fig_wm` for shell-wrapped display.
+    Attaches the kicker to the figure, then delegates to
+    :func:`show_fig_wm`. Status chips live in the surrounding shell so
+    they cannot cover chart titles, subtitles, or subplot labels.
 
     .. warning::
 
@@ -914,8 +1004,13 @@ def wm_render_figure_card(
     )
 
     _apply_kicker_annotation(fig, kicker=kicker, theme=theme)
-    _apply_chip_annotation(fig, chip_text=chip_text, theme=theme)
-    show_fig_wm(fig, file_stub=file_stub, theme=theme, mode=mode)
+    show_fig_wm(
+        fig,
+        file_stub=file_stub,
+        theme=theme,
+        mode=mode,
+        chip_text=chip_text,
+    )
 
 
 def _apply_kicker_annotation(
@@ -934,29 +1029,6 @@ def _apply_kicker_annotation(
     current_height = int(getattr(fig.layout, "height", 0) or theme_height)
     _prepend_kicker_to_title(fig, kicker_text=annotation_text, theme=theme)
     new_top = max(top_margin + 22, 128)
-    fig.update_layout(
-        margin=dict(t=new_top),
-        height=current_height + max(0, new_top - top_margin),
-    )
-
-
-def _apply_chip_annotation(
-    fig: go.Figure,
-    *,
-    chip_text: str | None,
-    theme: ThemeLike,
-) -> None:
-    """Add a chip annotation with margin adjustments."""
-    if not chip_text:
-        return
-    current_margin = getattr(fig.layout, "margin", None)
-    top_margin = int(getattr(current_margin, "t", 0) or 0)
-    theme_height = int(getattr(theme, "height", 400) or 400)
-    current_height = int(getattr(fig.layout, "height", 0) or theme_height)
-    # KEEP THIS HIGH.  If this margin shrinks, the validation chip lands
-    # on top of subplot titles and looks broken in saved notebooks.
-    new_top = max(top_margin + 64, 218)
-    _add_header_chip(fig, chip_text=chip_text, theme=theme)
     fig.update_layout(
         margin=dict(t=new_top),
         height=current_height + max(0, new_top - top_margin),

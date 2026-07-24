@@ -1,5 +1,6 @@
-# wm-notecards 
-### A living northstar
+# wm-notecards
+
+### A living north star
 
 ![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](assets/wm-notecards-demo.gif)
 
@@ -23,43 +24,55 @@ NaN   61500    28.7   8       1       1142.01  NaN     2988.41  Red     NC      
 
 The goal is insights.
 
-### what do you want to know everytime you look at a NUMERICAL variable?
+### What do you want to know every time you look at a NUMERICAL variable?
 
-Answer that. 
+Answer that.
 
-### what do you want to know everytime you look at a CATERGORICAL variable?
+### What do you want to know every time you look at a CATEGORICAL variable?
 
-Answer just that. 
+Answer just that.
 
 
 ### You have count but no missingness?
 
-Add it. 
+Add it.
 
 
-### What data types are likely incorrect? 
+### What data types are likely incorrect?
 
-Flag it and fix it and notify me.
+Flag it. Show me the evidence. Ask before changing the data.
 
 
 ## What should change?
 
 ### The quartiles are written for computers.
 
-Add the box plot on each of them. 
+Add the box plot on each of them.
 
 
 ### SPLASH water on your face 1x
 
-YOUR CURIOUSITY from simply reading the COLUMN names is incredible.
+YOUR CURIOSITY from simply reading the COLUMN names is incredible.
 
 ```text
 customer_id  age  income  balance  tenure  visits  claims  premium  score  state  segment  bmi  smoker  policy_type  plan  deductible  risk_score  churn
 ```
 
 The questions are predictable.
- 
+
 The notebook should be too.
+
+## See the notebook—not a mockup
+
+- [Logistic regression thinking interface](examples/logistic_regression_thinking_interface.ipynb):
+  native Markdown, native Pandas, then the matching notecard response.
+- [40-column EDA scratchbook](examples/40_column_eda_scratchbook.ipynb): dtype
+  suspicions, missingness, skew, candidate fixes, and the applied audit trail.
+- [Simple seasonal forecasting lab](examples/simple_seasonal_forecasting_lab.ipynb):
+  questions, formulas, hold-out evidence, model comparison, and your decision.
+
+The examples are executable notebooks. Their HTML files are exports of the same cell
+order—not separately staged marketing pages.
 
 ## Install
 
@@ -209,12 +222,16 @@ uv run python scripts/build_colab_bootstrap.py \
 Use `--skip-scratch` for a release notebook. Inspect the generated notebook before
 sharing; embedded source is still source.
 
-## Notecard Teacher Style skill
+## The AI skills are part of the product
 
 The distributable AI-authoring skill lives at
 [`skills/notecard-teacher-style`](skills/notecard-teacher-style). It preserves the
 lead-first teaching loop, careful anomaly language, visual QA requirement, and the
 human-in-the-loop decision boundary.
+
+[`skills/wilton-campaign-persuasion`](skills/wilton-campaign-persuasion) teaches the
+show-the-receipt rule: same rows, split, model, and metrics; native notebook evidence;
+no screenshot-only Pandas impersonations.
 
 ## Development gates
 

@@ -1,0 +1,20 @@
+include assets/*.gif
+include assets/*.png
+recursive-include docs *.md
+global-exclude ARTICLE_DRAFT.md
+include examples/40_column_eda_scratchbook.ipynb
+include examples/40_column_eda_scratchbook_COLAB.ipynb
+include examples/40_column_eda_scratchbook.html
+include examples/simple_seasonal_forecasting_lab.ipynb
+include examples/simple_seasonal_forecasting_lab_COLAB.ipynb
+include examples/simple_seasonal_forecasting_lab.executed.html
+include examples/logistic_regression_thinking_interface.ipynb
+include examples/logistic_regression_thinking_interface.html
+recursive-include scripts *.py
+include showcase/index.html
+include skills/notecard-teacher-style/SKILL.md
+include skills/notecard-teacher-style/agents/openai.yaml
+include skills/notecard-teacher-style/references/*.md
+include skills/wilton-campaign-persuasion/SKILL.md
+include skills/wilton-campaign-persuasion/agents/openai.yaml
+include skills/wilton-campaign-persuasion/references/*.md

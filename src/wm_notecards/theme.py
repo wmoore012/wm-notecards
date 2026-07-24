@@ -80,7 +80,7 @@ WM_DARK_CATEGORY_PALETTE: tuple[str, ...] = (
 # ---------------------------------------------------------------------------
 
 WM_DEFAULT_WIDTH: int = 860
-WM_DEFAULT_HEIGHT: int = 420
+WM_DEFAULT_HEIGHT: int = 520
 WM_DEFAULT_EXPORT_SCALE: int = 3
 
 
@@ -167,9 +167,9 @@ class WMTheme:
 
     # -- shell geometry -----------------------------------------------------
     shell_radius: int = 18
-    shell_pad_x: int = 24
-    shell_pad_top: int = 22
-    shell_pad_bottom: int = 18
+    shell_pad_x: int = 36
+    shell_pad_top: int = 32
+    shell_pad_bottom: int = 32
     shell_title_size: int = 34
     shell_table_title_size: int = 24
     shell_title_gap: int = 14
@@ -189,7 +189,7 @@ class WMTheme:
     text_muted: str = "rgba(17,17,17,0.60)"
     grid: str = "rgba(17,17,17,0.10)"
     border: str = "rgba(17,17,17,0.14)"
-    tooltip_bg: str = "#FFFFFF"
+    tooltip_bg: str = "#10212B"
 
     # -- colours: heatmap ---------------------------------------------------
     heat_neg: str = "#B74C5F"
@@ -202,7 +202,15 @@ class WMTheme:
     color_max_bg: str = "rgba(0, 184, 204, 0.15)"
     color_count_bg: str = "rgba(17, 17, 17, 0.06)"
     color_missing_bg: str = "rgba(184, 138, 27, 0.18)"
-    color_missing_txt: str = "#9B6E00"
+    color_missing_txt: str = "#6B4C00"
+    color_missing_accent: str = "#F7C948"
+    color_skew_accent: str = "#2F6BFF"
+    chip_candidate_primary: str = "#16C7E8"
+    chip_candidate_secondary: str = "#EAFBFE"
+    chip_candidate_secondary_text: str = "#10212B"
+    chip_identifier: str = "#A48DFF"
+    chip_time: str = "#2F6BFF"
+    chip_target: str = "#FF4D8D"
 
     # -- colours: table chrome ----------------------------------------------
     table_header_bg: str = "#ECECE7"
@@ -238,13 +246,14 @@ class WMTheme:
             colorway=("#111111", accent, support, "#2F6BFF", warning, "#149E9E"),
             card_bg=card_bg,
             plot_bg=plot_bg,
-            tooltip_bg=card_bg,
+            tooltip_bg=hover_bg,
             heat_neg=support,
             heat_mid=plot_bg,
             heat_pos=accent,
             color_count_bg="rgba(17, 17, 17, 0.06)",
-            color_missing_bg="rgba(184, 138, 27, 0.18)",
-            color_missing_txt="#9B6E00",
+            color_missing_bg="#FFF5C4",
+            color_missing_txt="#6B4C00",
+            color_missing_accent="#F7C948",
             table_header_bg=table_header_bg,
             table_hover_bg=hover_bg,
             table_hover_text=hover_text,
@@ -252,16 +261,16 @@ class WMTheme:
             category_palette=(
                 accent,
                 "#2F6BFF",
-                support,
-                warning,
-                "#0F766E",
-                "#4C6475",
-                "#7A7F36",
-                "#00A3E0",
-                "#A05A2C",
-                "#5B6C8F",
-                "#9B6E00",
-                "#4C6475",
+                "#FF4D8D",
+                "#FFB735",
+                "#00D6A5",
+                "#A48DFF",
+                "#8FEA5B",
+                "#45DEFF",
+                "#FF7A45",
+                "#7C68FF",
+                "#F7C948",
+                "#00B8CC",
             ),
         )
 
@@ -286,8 +295,11 @@ class WMTheme:
             color_min_bg="rgba(255, 51, 102, 0.15)",
             color_max_bg="rgba(0, 229, 255, 0.12)",
             color_count_bg="rgba(255, 255, 255, 0.08)",
-            color_missing_bg="rgba(216, 140, 46, 0.22)",
-            color_missing_txt="#F4B556",
+            color_missing_bg="rgba(247, 201, 72, 0.20)",
+            color_missing_txt="#FFE28A",
+            color_missing_accent="#F7C948",
+            chip_candidate_secondary="#10212B",
+            chip_candidate_secondary_text="#EAFBFE",
             table_header_bg="#0E141E",
             table_stripe_bg="rgba(255,255,255,0.045)",
             table_hover_bg="#08131A",

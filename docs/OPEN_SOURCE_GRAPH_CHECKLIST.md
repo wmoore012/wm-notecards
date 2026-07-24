@@ -20,6 +20,10 @@ reader journey must be observed.
 
 - [ ] Source, extraction date, unit of observation, and population are documented.
 - [ ] Filters, exclusions, joins, deduplication, and missing-data treatment are stated.
+- [ ] Before action, missingness evidence offers bounded candidate methods and keeps the
+      decision human-owned. After action, the log names every affected field,
+      method/fill value, training-only fit scope, before/after counts, and any retained
+      missingness indicator. A no-op does not receive a ceremonial decision card.
 - [ ] Row counts reconcile before and after transformations.
 - [ ] Category coverage and unknown/unmapped values are reported.
 - [ ] Time zones, currencies, units, and date frequencies are explicit.
@@ -83,6 +87,9 @@ reader journey must be observed.
       an unnecessary vertical scrollbar.
 - [ ] Font roles are consistent: display for headings, mono for metadata/numbers.
 - [ ] Card padding, rule widths, radii, and spacing use shared tokens.
+- [ ] Notecards keep their paper border and rest flat; elevation appears only on hover.
+- [ ] Data/status chips are borderless with crisp text; semantic halos do not blur the
+      label itself.
 - [ ] Empty, loading, error, and no-data states occupy intentional space—never a blank
       white card.
 

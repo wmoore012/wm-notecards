@@ -21,11 +21,14 @@ Before calling a notecard notebook complete:
 - Verify that title, evidence, annotation, and metadata form an intentional
   preattentive reading order.
 - Test typography, spacing, contrast, keyboard scrolling, and reduced motion.
+- Test light cards inside host dark mode and genuine dark cards inside host light mode.
+- Verify collapsed cells are tagged intentionally and essential evidence remains open.
 
 ## Proof
 
 - Restart/run all.
 - Observe desktop and narrow widths.
+- Execute a clean portable build, not only the canonical notebook.
 - Observe empty/error/long-content states.
 - Verify SVG and 3× PNG when sharing is supported.
 - Add a regression test for fixed bugs.

@@ -16,7 +16,7 @@ from typing import Any, cast
 import pandas as pd
 import plotly.io as pio
 from IPython.core.getipython import get_ipython
-from IPython.display import HTML, display
+from IPython.display import HTML, Javascript, display
 
 # ---------------------------------------------------------------------------
 # Module-level sentinel
@@ -216,10 +216,27 @@ def _dark_mode_defense_css() -> str:
     """
     return """
 <style id="wm-dark-mode-defense">
-.wm-card, .wm-card * { color-scheme: light !important; }
 .wm-card {
-  background: var(--wm-card-bg, #FFFFFF) !important;
-  color: var(--wm-text-main, #111111) !important;
+  color-scheme: var(--wm-color-scheme, light) !important;
+  isolation: isolate !important;
+  forced-color-adjust: none;
+}
+.wm-card p,
+.wm-card li,
+.wm-card dt,
+.wm-card dd,
+.wm-card code,
+.wm-card pre {
+  color: inherit !important;
+}
+.wm-card .wm-shell-eyebrow,
+.wm-card .wm-shell-kicker,
+.wm-card .wm-shell-subtitle,
+.wm-card .wm-question-subtitle {
+  color: var(--wm-text-muted, rgba(17,17,17,0.60)) !important;
+}
+.wm-card a {
+  color: var(--wm-accent, #087B91) !important;
 }
 .wm-card .wm-semantic--before,
 .wm-card .wm-semantic--fail {
@@ -254,6 +271,53 @@ def _dark_mode_defense_css() -> str:
 """.strip()
 
 
+def _colab_output_height_javascript(max_height: int) -> str:
+    """Return a guarded Colab output-frame resize adapter.
+
+    Colab renders rich output inside an iframe that may acquire its own scroll
+    region. The host API is feature-detected so Jupyter, VS Code, saved HTML,
+    and future Colab versions fall back to normal document flow.
+    """
+    if not 800 <= max_height <= 20_000:
+        raise ValueError("colab_max_output_height must be between 800 and 20000 pixels.")
+
+    return f"""
+(function () {{
+  const output = window.google && window.google.colab && window.google.colab.output;
+  if (!output || typeof output.setIframeHeight !== "function") {{
+    return;
+  }}
+
+  document.documentElement.classList.add("wm-colab-output");
+  let framePending = false;
+  let observer = null;
+
+  const resize = function () {{
+    if (framePending) return;
+    framePending = true;
+    window.requestAnimationFrame(function () {{
+      framePending = false;
+      try {{
+        output.setIframeHeight(0, true, {{ maxHeight: {max_height} }});
+      }} catch (_error) {{
+        // Host adapters must fail open: the card remains readable and scrollable.
+      }}
+    }});
+  }};
+
+  resize();
+  if (typeof window.ResizeObserver === "function") {{
+    observer = new window.ResizeObserver(resize);
+    observer.observe(document.documentElement);
+  }}
+  window.addEventListener("load", resize, {{ once: true }});
+  window.addEventListener("pagehide", function () {{
+    if (observer) observer.disconnect();
+  }}, {{ once: true }});
+}})();
+""".strip()
+
+
 def _mathjax_bootstrap_html() -> str:
     """Return a ``<script>`` block that configures and lazy-loads MathJax 3."""
     return """
@@ -269,6 +333,10 @@ def _mathjax_bootstrap_html() -> str:
       const tryTypeset = function () {
         if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
           window.MathJax.typesetPromise([node]).catch(function () {});
+          return true;
+        }
+        if (window.MathJax && window.MathJax.Hub && typeof window.MathJax.Hub.Queue === "function") {
+          window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, node]);
           return true;
         }
         return false;
@@ -292,7 +360,13 @@ def _mathjax_bootstrap_html() -> str:
     };
   }
 
-  if (!window.wmMathJaxConfigured) {
+  const existingMathJaxScript = document.querySelector('script[src*="mathjax" i]');
+  const loadedMathJax = window.MathJax && (
+    typeof window.MathJax.typesetPromise === "function" ||
+    (window.MathJax.Hub && typeof window.MathJax.Hub.Queue === "function")
+  );
+
+  if (!window.wmMathJaxConfigured && !loadedMathJax && !existingMathJaxScript) {
     window.MathJax = window.MathJax || {};
     window.MathJax.tex = Object.assign(
       {
@@ -315,7 +389,7 @@ def _mathjax_bootstrap_html() -> str:
     window.wmMathJaxConfigured = true;
   }
 
-  if (!document.getElementById("wm-mathjax-script")) {
+  if (!loadedMathJax && !existingMathJaxScript && !document.getElementById("wm-mathjax-script")) {
     const script = document.createElement("script");
     script.id = "wm-mathjax-script";
     script.async = true;
@@ -374,6 +448,8 @@ def init_notebook(
     html_styler: bool = True,
     inline_matplotlib: bool = True,
     retina: bool = True,
+    expand_colab_outputs: bool = True,
+    colab_max_output_height: int = 5_000,
 ) -> None:
     """Initialise notebook display defaults once per kernel.
 
@@ -391,6 +467,13 @@ def init_notebook(
         Run ``%matplotlib inline``.  Default *True*.
     retina : bool, optional
         Use retina-resolution figures.  Default *True*.
+    expand_colab_outputs : bool, optional
+        Ask Colab to grow rich-output iframes with their notecards instead of
+        creating nested scroll regions. Feature-detected and ignored outside
+        Colab. Default *True*.
+    colab_max_output_height : int, optional
+        Safety ceiling for a single Colab output iframe. Must be between 800
+        and 20,000 pixels. Default 5,000.
     """
     global _NOTEBOOK_READY  # noqa: WPS420
 
@@ -417,6 +500,9 @@ def init_notebook(
             + _mathjax_bootstrap_html()
         ),
     )
+
+    if expand_colab_outputs and "google.colab" in sys.modules:
+        display(Javascript(_colab_output_height_javascript(colab_max_output_height)))
 
     _NOTEBOOK_READY = True
 
