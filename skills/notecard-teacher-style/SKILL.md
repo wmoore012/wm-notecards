@@ -9,10 +9,17 @@ Build a guided conversation with the learner, not a decorated analysis dump.
 
 ## Required references
 
-Read both before creating or revising a notebook:
+Read all three before creating or revising a notebook:
 
 - `references/story-grammar.md`
+- `references/eda-and-text-contract.md`
 - `references/release-contract.md`
+
+Read `references/scratch-and-share-contract.md` when a repo has scratch, takeover,
+Colab, final, or public-example notebooks, or when naming a shared notebook.
+
+Read `references/portable-and-host-contract.md` when building for Colab, saved HTML,
+dark mode, collapsing noisy cells, or a published story.
 
 ## Core sequence
 
@@ -37,6 +44,8 @@ labels.
 - Reuse existing `wm_*` cards, kickers, chart styling, and table renderers.
 - Identify the source, unit of observation, split logic, and decision the notebook
   supports.
+- If the section is EDA or text/NLP, follow `references/eda-and-text-contract.md` and
+  keep every suggested conversion or threshold visible to the learner.
 - Run the notebook or inspect computed outputs before writing a claim.
 
 ### 2. Build the narrative skeleton
@@ -90,10 +99,20 @@ Use the repository's Colab builder instead of manually duplicating notebooks. Cl
 execution state and inspect the embedded source. Remove credentials, local paths,
 proprietary comments, private product names, and non-public data from release artifacts.
 
+Declare cell presentation intent with metadata. Use `wm-essential` for evidence and
+decisions, `wm-hide-source` for implementation code that is not the lesson,
+`wm-collapse-output` for long raw audit output, and `wm-noise` for bootstrap/setup. Do
+not infer collapse behavior from prose or function names.
+
 ## Prohibited shortcuts
 
 - Do not replace the teaching flow with raw `df.describe()` output.
+- Do not silently impute, coerce, parse, drop, or transform inside an EDA display helper.
+- Do not make every optional visual recipe into a canonical card type.
 - Do not write a conclusion before checking the computed evidence.
+- Do not invent a takeaway because the card grammar has a takeaway slot. Unresolved
+  evidence ends with a question, check, or next-think card.
+- Do not narrate the interface in public copy. Show the data decision itself.
 - Do not let an LLM choose arbitrary fonts, colors, card variants, or overflow behavior.
 - Do not call a notebook visually verified because tests passed.
 - Do not hide a math, data-quality, accessibility, or environment limitation.
