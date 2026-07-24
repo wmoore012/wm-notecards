@@ -22,7 +22,7 @@ from wm_notecards.cards import question_card
 from wm_notecards.tables import wm_render_micro_profile_cards, wm_render_styler
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Hashable, Mapping, Sequence
 
     from wm_notecards._types import ThemeLike
 
@@ -91,7 +91,7 @@ class FeatureDecision:
 class EDAComparisonResult:
     """Exact tabular and visual evidence for one EDA question."""
 
-    resolved_fields: tuple[str, ...]
+    resolved_fields: tuple[Hashable, ...]
     comparison_kind: str
     table: pd.DataFrame
     figure: go.Figure
@@ -497,11 +497,11 @@ def wm_validate_feature_manifest(
     )
 
 
-def _resolve_fields(df: pd.DataFrame, fields: Sequence[str | int]) -> tuple[str, ...]:
+def _resolve_fields(df: pd.DataFrame, fields: Sequence[str | int]) -> tuple[Hashable, ...]:
     if not 1 <= len(fields) <= 2:
         raise ValueError("fields must contain one or two column names or positions.")
-    resolved: list[str] = []
-    columns = [str(column) for column in df.columns]
+    resolved: list[Hashable] = []
+    columns = list(df.columns)
     for field in fields:
         if isinstance(field, int):
             try:
@@ -517,7 +517,7 @@ def _resolve_fields(df: pd.DataFrame, fields: Sequence[str | int]) -> tuple[str,
     return tuple(resolved)
 
 
-def _infer_comparison_kind(df: pd.DataFrame, fields: tuple[str, ...]) -> str:
+def _infer_comparison_kind(df: pd.DataFrame, fields: tuple[Hashable, ...]) -> str:
     numeric = [pd.api.types.is_numeric_dtype(df[field]) for field in fields]
     datetime = [pd.api.types.is_datetime64_any_dtype(df[field]) for field in fields]
     if len(fields) == 1:
@@ -552,7 +552,9 @@ def wm_compare_fields(
         field = resolved[0]
         numeric = pd.to_numeric(df[field], errors="coerce").dropna()
         table = numeric.describe().rename("value").to_frame()
-        figure.add_trace(go.Box(x=numeric, name=field, boxpoints="outliers", orientation="h"))
+        figure.add_trace(
+            go.Box(x=numeric, name=str(field), boxpoints="outliers", orientation="h")
+        )
     elif comparison_kind == "categorical" and len(resolved) == 1:
         field = resolved[0]
         counts = df[field].astype("string").fillna("<missing>").value_counts().head(top_n)

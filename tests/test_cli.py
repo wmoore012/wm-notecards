@@ -20,6 +20,11 @@ def test_doctor_reports_local_helpers_without_reading_outputs(tmp_path: Path) ->
     outputs = tmp_path / "outputs"
     outputs.mkdir()
     (outputs / "ignored.ipynb").write_text(json.dumps(notebook), encoding="utf-8")
+    checkpoints = tmp_path / ".ipynb_checkpoints"
+    checkpoints.mkdir()
+    (checkpoints / "lesson-checkpoint.ipynb").write_text(
+        json.dumps(notebook), encoding="utf-8"
+    )
 
     findings = scan_project(tmp_path)
 

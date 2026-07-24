@@ -28,7 +28,15 @@ _HELPER_MARKERS = (
     "def wm_formula_card(",
     "class WMTheme",
 )
-_IGNORED_PARTS = {".git", ".venv", ".webapp-tester", "node_modules", "outputs", "build"}
+_IGNORED_PARTS = {
+    ".git",
+    ".ipynb_checkpoints",
+    ".venv",
+    ".webapp-tester",
+    "node_modules",
+    "outputs",
+    "build",
+}
 
 
 @dataclass(frozen=True, slots=True)

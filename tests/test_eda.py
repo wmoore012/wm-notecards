@@ -262,6 +262,16 @@ def test_compare_fields_returns_exact_table_and_visual() -> None:
     assert result.figure.data[0].orientation == "h"
 
 
+def test_compare_fields_preserves_non_string_column_labels_for_positions() -> None:
+    frame = pd.DataFrame({0: [1.0, 2.0, 3.0]})
+
+    result = eda.wm_compare_fields(frame, fields=[0])
+
+    assert result.resolved_fields == (0,)
+    assert result.comparison_kind == "numeric"
+    assert result.table.loc["mean", "value"] == 2.0
+
+
 def test_candidate_chip_alternation_skips_absent_roles(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
