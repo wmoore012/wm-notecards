@@ -53,6 +53,12 @@ reader journey must be observed.
 - [ ] Model comparisons use the same rows, targets, splits, and preprocessing.
 - [ ] Uncertainty, sample size, and sensitivity analysis are shown when they can change
       the decision.
+- [ ] Rare-outcome classification shows prevalence, PR with its outcome-prevalence
+      baseline,
+      threshold-specific confusion counts, and calibration when probabilities guide
+      action; accuracy or ROC is not used alone.
+- [ ] PCA projections are preceded by explained variance and loadings and are labeled
+      as lossy; SHAP and feature importance are not described as causal evidence.
 
 ## 4. Visual encoding and color
 
@@ -69,6 +75,10 @@ reader journey must be observed.
 - [ ] Zero baselines are used when bar length is being compared.
 - [ ] Truncated axes are deliberate, disclosed, and do not exaggerate gaps.
 - [ ] Ordering is intentional (value, time, category flow, or teaching sequence).
+- [ ] Actual/prior/target comparisons define the prior period and match the target's
+      population, unit, aggregation, and period.
+- [ ] Reference lines are directly labeled; comparison status has a non-color cue, and
+      a red marker does not silently imply failure, fraud, or statistical significance.
 - [ ] More than 24 named categories is rejected unless top-N/faceting is explicitly
       reviewed; 10–24 named vertical bars become horizontal by default.
 

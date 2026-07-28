@@ -229,10 +229,6 @@ The distributable AI-authoring skill lives at
 lead-first teaching loop, careful anomaly language, visual QA requirement, and the
 human-in-the-loop decision boundary.
 
-[`skills/wilton-campaign-persuasion`](skills/wilton-campaign-persuasion) teaches the
-show-the-receipt rule: same rows, split, model, and metrics; native notebook evidence;
-no screenshot-only Pandas impersonations.
-
 ## Development gates
 
 ```bash

@@ -45,6 +45,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -52,6 +53,7 @@ from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
     confusion_matrix,
+    precision_recall_curve,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -59,13 +61,19 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from wm_notecards import PreprocessingDecision, WMTheme, init_notebook, wm_build_preprocessing_log
+from wm_notecards import (
+    PreprocessingDecision,
+    WMTheme,
+    init_notebook,
+    wm_build_preprocessing_log,
+)
 from wm_notecards.cards import (
     preview_card,
     question_card,
     takeaway_card,
     wm_counterintuitive_card,
 )
+from wm_notecards.charts import style_fig_wm, wm_render_figure_card
 from wm_notecards.eda import display_data_chips
 from wm_notecards.tables import (
     display_cols_by_dtype,
@@ -210,6 +218,37 @@ describe_columns = [
 reviewed[describe_columns].describe().round(2).T"""
         ),
         _code(
+            """missing_counts = reviewed.isna().sum().loc[lambda values: values.gt(0)].sort_values(ascending=False)
+missing_counts.rename("missing").to_frame()"""
+        ),
+        _code(
+            """missing_fig = go.Figure(go.Bar(
+    x=missing_counts.values,
+    y=missing_counts.index,
+    orientation="h",
+    marker_color=[theme.color_missing_accent] * len(missing_counts),
+    text=[f"{count:,}" for count in missing_counts.values],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{y}: %{x:,} missing<extra></extra>",
+))
+missing_fig.update_xaxes(title="Missing rows", rangemode="tozero")
+missing_fig.update_yaxes(autorange="reversed", title=None)
+style_fig_wm(
+    missing_fig,
+    theme=theme,
+    title="Three fields need a missing-value decision before modeling",
+    subtitle=f"{int(missing_counts.sum()):,} empty cells across {len(missing_counts)} fields · no values filled yet",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    missing_fig,
+    theme=theme,
+    file_stub="logistic_missingness_first_pass",
+    kicker="02, missingness, evidence",
+)"""
+        ),
+        _code(
             """wm_render_micro_profile_cards(
     reviewed,
     theme=theme,
@@ -217,10 +256,6 @@ reviewed[describe_columns].describe().round(2).T"""
     visible_cards=2,
     skew_threshold=1.0,
 )"""
-        ),
-        _code(
-            """missing_counts = reviewed.isna().sum().loc[lambda values: values.gt(0)].sort_values(ascending=False)
-missing_counts.rename("missing").to_frame()"""
         ),
         _code(
             """missing_decisions = pd.DataFrame([
@@ -244,11 +279,12 @@ missing_counts.rename("missing").to_frame()"""
     },
 ])
 wm_render_styler(
-    missing_decisions.style,
+    missing_decisions[["field", "candidate", "decision"]].style,
     theme=theme,
     title="What should happen to each gap?",
+    subtitle="The chart above finds every gap; this receipt records the next action.",
     kicker="02, missingness, human decision",
-    wrap_columns={"candidate": 190, "reason": 280},
+    wrap_columns={"candidate": 220},
 )"""
         ),
         _code(
@@ -315,6 +351,160 @@ categorical fields."""
 )"""
         ),
         _code(
+            """feature_ledger = pd.DataFrame([
+    {
+        "field": "customer_id",
+        "observed evidence": "Unique on every row.",
+        "allowed role": "Review lookup only",
+        "candidate transformation": "None",
+        "validation test": "Confirm exclusion from model matrix.",
+        "boundary": "Direct identifier; do not learn customer identity.",
+        "decision": "EXCLUDE",
+    },
+    {
+        "field": "signup_date",
+        "observed evidence": "A customer signup date.",
+        "allowed role": "Time context",
+        "candidate transformation": "Signup month or tenure",
+        "validation test": "Fit derived rules on training rows only.",
+        "boundary": "Raw date can proxy product or campaign changes.",
+        "decision": "DERIVE",
+    },
+    {
+        "field": "region",
+        "observed evidence": "19 missing values; four named markets.",
+        "allowed role": "Candidate context",
+        "candidate transformation": "Training-only category encoding",
+        "validation test": "Compare PR and error slices with/without region.",
+        "boundary": "Review geographic proxy and fairness risk.",
+        "decision": "TEST",
+    },
+    {
+        "field": "comment",
+        "observed evidence": "Free text with 27 missing values.",
+        "allowed role": "Human review context",
+        "candidate transformation": "Separate text study",
+        "validation test": "No text enters this baseline model.",
+        "boundary": "May contain private or post-outcome information.",
+        "decision": "HOLD OUT",
+    },
+])
+feature_ledger"""
+        ),
+        _code(
+            """feature_decision_counts = (
+    feature_ledger["decision"].value_counts().rename_axis("decision").reset_index(name="fields")
+)
+decision_fig = go.Figure(go.Bar(
+    x=feature_decision_counts["fields"],
+    y=feature_decision_counts["decision"],
+    orientation="h",
+    marker_color=theme.accent,
+    text=feature_decision_counts["fields"],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{y}: %{x} field(s)<extra></extra>",
+))
+decision_fig.update_xaxes(title="Fields", dtick=1, rangemode="tozero")
+decision_fig.update_yaxes(title=None, autorange="reversed")
+style_fig_wm(
+    decision_fig,
+    theme=theme,
+    title="Four fields, four different modeling decisions",
+    subtitle="Identity, time, geography, and free text do not belong in one default pipeline",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    decision_fig,
+    theme=theme,
+    file_stub="logistic_feature_decisions",
+    kicker="04, feature decisions, overview",
+)"""
+        ),
+        _code(
+            """feature_receipt = feature_ledger[[
+    "field", "decision", "observed evidence", "validation test"
+]].rename(columns={
+    "observed evidence": "evidence",
+    "validation test": "next check",
+})
+wm_render_styler(
+    feature_receipt.style,
+    theme=theme,
+    title="What enters the model, what changes form, and what stays out?",
+    subtitle="The full ledger remains in the dataframe; this is the decision-sized view.",
+    kicker="04, feature decision ledger",
+    wrap_columns={
+        "evidence": 230,
+        "next check": 260,
+    },
+)"""
+        ),
+        _code(
+            """cohort_rate = (
+    prepared.assign(cohort_month=prepared["signup_date"].dt.to_period("M").dt.to_timestamp())
+    .groupby("cohort_month", as_index=False)
+    .agg(leavers=("left_service", "sum"), customers=("left_service", "size"))
+)
+cohort_rate["leave rate"] = cohort_rate["leavers"] / cohort_rate["customers"]
+cohort_rate = cohort_rate.tail(12).reset_index(drop=True)
+cohort_rate["previous month rate"] = cohort_rate["leave rate"].shift(1)
+cohort_rate["rose vs previous month"] = (
+    cohort_rate["leave rate"] > cohort_rate["previous month rate"]
+)
+review_target = 0.25
+cohort_rate[["cohort_month", "customers", "leavers", "leave rate",
+             "previous month rate", "rose vs previous month"]]"""
+        ),
+        _code(
+            """focus_index = len(cohort_rate) - 1
+bar_colors = ["#D8DEE3"] * len(cohort_rate)
+bar_colors[focus_index] = theme.accent
+
+reference_fig = go.Figure()
+reference_fig.add_trace(go.Bar(
+    x=cohort_rate["cohort_month"],
+    y=cohort_rate["leave rate"],
+    marker_color=bar_colors,
+    text=[f"{value:.1%}" for value in cohort_rate["leave rate"]],
+    textposition="outside",
+    name="Observed leave rate",
+    showlegend=False,
+    hovertemplate="%{x|%b %Y}<br>%{y:.1%}<extra></extra>",
+))
+rose = cohort_rate[cohort_rate["rose vs previous month"]]
+reference_fig.add_trace(go.Scatter(
+    x=rose["cohort_month"],
+    y=[0.012] * len(rose),
+    mode="markers",
+    marker={"symbol": "triangle-up", "size": 9, "color": "#B74C5F"},
+    name="Higher than previous month",
+    showlegend=False,
+    hovertemplate="Higher than previous month<extra></extra>",
+))
+reference_fig.add_hline(
+    y=review_target,
+    line_dash="dash",
+    line_color="#38444D",
+    annotation_text="Review line: 25%",
+    annotation_position="top right",
+)
+reference_fig.update_yaxes(tickformat=".0%", range=[0, max(0.40, cohort_rate["leave rate"].max() + 0.06)])
+style_fig_wm(
+    reference_fig,
+    theme=theme,
+    title="Which signup months crossed the 25% review line?",
+    subtitle="Monthly leave rate · ▲ higher than the prior month",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    reference_fig,
+    theme=theme,
+    file_stub="logistic_cohort_reference_comparison",
+    kicker="04, actual vs prior vs target",
+)"""
+        ),
+        _code(
             """target = "left_service"
 numeric_features = [
     "monthly_spend", "tenure_months", "sessions_30d", "days_since_login",
@@ -359,6 +549,7 @@ model_specs = {
     "Activity + account context": (numeric_features, categorical_features),
 }
 models: dict[str, Pipeline] = {}
+model_probabilities: dict[str, np.ndarray] = {}
 score_rows: list[dict[str, float | str]] = []
 for name, (numeric, categorical) in model_specs.items():
     features = numeric + categorical
@@ -367,6 +558,7 @@ for name, (numeric, categorical) in model_specs.items():
     probabilities = model.predict_proba(validation[features])[:, 1]
     predictions = (probabilities >= 0.50).astype(int)
     models[name] = model
+    model_probabilities[name] = probabilities
     score_rows.append({
         "model": name,
         "accuracy": accuracy_score(validation[target], predictions),
@@ -381,6 +573,29 @@ assert scores["PR AUC"].between(0, 1).all()
 assert scores.iloc[0]["model"] == 'Activity + account context'"""
         ),
         _code(
+            """validation_prevalence = float(validation[target].mean())
+prevalence_receipt = pd.DataFrame([{
+    "validation rows": len(validation),
+    "leavers": int(validation[target].sum()),
+    "stayers": int((validation[target] == 0).sum()),
+    "leave prevalence": validation_prevalence,
+    "outcome prevalence": validation_prevalence,
+}])
+prevalence_receipt"""
+        ),
+        _code(
+            """wm_render_styler(
+    prevalence_receipt.style.format({
+        "leave prevalence": "{:.1%}",
+        "outcome prevalence": "{:.1%}",
+    }),
+    theme=theme,
+    title="How hard is the less-common outcome before a model gets credit?",
+    subtitle="A random ranking starts at the share of validation customers who left.",
+    kicker="05, target prevalence, evidence",
+)"""
+        ),
+        _code(
             """scores.round(3)"""
         ),
         _code(
@@ -390,6 +605,41 @@ assert scores.iloc[0]["model"] == 'Activity + account context'"""
     title="Which model survives validation?",
     subtitle="PR AUC leads because leaving is the less common outcome.",
     kicker="05, validation, evidence",
+)"""
+        ),
+        _code(
+            """pr_fig = go.Figure()
+for model_name, probabilities in model_probabilities.items():
+    precision_values, recall_values, _ = precision_recall_curve(
+        validation[target], probabilities
+    )
+    pr_fig.add_trace(go.Scatter(
+        x=recall_values,
+        y=precision_values,
+        mode="lines",
+        name=model_name,
+        line={"width": 3},
+    ))
+pr_fig.add_hline(
+    y=validation_prevalence,
+    line_dash="dash",
+    line_color="#38444D",
+    annotation_text=f"Outcome prevalence: {validation_prevalence:.1%}",
+    annotation_position="bottom right",
+)
+pr_fig.update_xaxes(title="Recall", tickformat=".0%", range=[0, 1])
+pr_fig.update_yaxes(title="Precision", tickformat=".0%", range=[0, 1])
+style_fig_wm(
+    pr_fig,
+    theme=theme,
+    title="How much precision survives as we ask the model to find more leavers?",
+    subtitle=f"Validation only · {len(validation):,} customers · dashed line = random-ranking precision",
+)
+wm_render_figure_card(
+    pr_fig,
+    theme=theme,
+    file_stub="logistic_precision_recall",
+    kicker="05, precision recall, validation",
 )"""
         ),
         _code(
@@ -412,6 +662,50 @@ for threshold in [0.30, 0.40, 0.50, 0.60]:
     })
 thresholds = pd.DataFrame(threshold_rows)
 thresholds.round(3)"""
+        ),
+        _code(
+            """threshold_fig = go.Figure()
+threshold_fig.add_trace(go.Scatter(
+    x=thresholds["threshold"],
+    y=thresholds["precision"],
+    mode="lines+markers",
+    name="Precision",
+    line={"width": 3, "color": theme.accent},
+))
+threshold_fig.add_trace(go.Scatter(
+    x=thresholds["threshold"],
+    y=thresholds["recall"],
+    mode="lines+markers",
+    name="Recall",
+    line={"width": 3, "color": "#B74C5F"},
+))
+threshold_fig.update_xaxes(title="Outreach threshold", tickformat=".0%")
+threshold_fig.update_yaxes(title="Share", tickformat=".0%", range=[0, 1])
+style_fig_wm(
+    threshold_fig,
+    theme=theme,
+    title="Lowering the threshold finds more leavers—and contacts more stayers",
+    subtitle="Validation evidence · exact false-positive and missed-leaver counts remain in the table",
+)
+wm_render_figure_card(
+    threshold_fig,
+    theme=theme,
+    file_stub="logistic_threshold_tradeoff",
+    kicker="07, threshold, visual tradeoff",
+)"""
+        ),
+        _code(
+            """selected_threshold = 0.40
+selected_prediction = (winner_probability >= selected_threshold).astype(int)
+selected_tn, selected_fp, selected_fn, selected_tp = confusion_matrix(
+    validation[target], selected_prediction
+).ravel()
+confusion_receipt = pd.DataFrame([
+    {"actual": "Stayed", "predicted stayed": selected_tn, "predicted left": selected_fp},
+    {"actual": "Left", "predicted stayed": selected_fn, "predicted left": selected_tp},
+])
+assert int(confusion_receipt[["predicted stayed", "predicted left"]].to_numpy().sum()) == len(validation)
+confusion_receipt"""
         ),
         new_markdown_cell(
             """## Accuracy can be misleading
@@ -441,6 +735,46 @@ customers who leave. Precision and recall have to stay in the conversation."""
     title="What changes when recall matters more?",
     subtitle="Moving the threshold finds more leavers and also creates more outreach.",
     kicker="07, threshold, tradeoff",
+)"""
+        ),
+        _code(
+            """wm_render_styler(
+    confusion_receipt.style,
+    theme=theme,
+    title="At 0.40, who receives outreach—and who gets missed?",
+    subtitle=f"Validation confusion counts · threshold {selected_threshold:.2f} · n={len(validation):,}",
+    kicker="07, confusion counts, selected threshold",
+)"""
+        ),
+        _code(
+            """confusion_values = np.array([
+    [selected_tn, selected_fp],
+    [selected_fn, selected_tp],
+])
+confusion_fig = go.Figure(go.Heatmap(
+    z=confusion_values,
+    x=["Predicted stayed", "Predicted left"],
+    y=["Actually stayed", "Actually left"],
+    text=confusion_values,
+    texttemplate="%{text:,}",
+    colorscale=[[0, "#F4F5F2"], [1, theme.accent]],
+    showscale=False,
+    hovertemplate="%{y}<br>%{x}: %{z:,}<extra></extra>",
+))
+confusion_fig.update_yaxes(autorange="reversed", title=None)
+confusion_fig.update_xaxes(title=None)
+style_fig_wm(
+    confusion_fig,
+    theme=theme,
+    title="At 0.40, who receives outreach—and who gets missed?",
+    subtitle=f"Validation counts · threshold {selected_threshold:.2f} · n={len(validation):,}",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    confusion_fig,
+    theme=theme,
+    file_stub="logistic_confusion_matrix",
+    kicker="07, confusion matrix, selected threshold",
 )"""
         ),
         _code(

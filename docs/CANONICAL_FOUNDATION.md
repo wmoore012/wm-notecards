@@ -22,6 +22,21 @@ be tested without asking an AI to improvise its layout.
 Question pairs, before/after tables, split summaries, formula pairs, and EDA boards are
 compositions of these roles. They are not new prose-card families.
 
+Visual diversity means **evidence-family diversity**, not card-type diversity. A chart
+may be a distribution, reference comparison, threshold view, calibration view, or
+projection while remaining an evidence visual inside the same card grammar. Simple
+means low decoding effort, not generic styling or shallow analysis.
+
+wm-notecards is specialized for sequential notebook analysis and self-contained slide
+exports. Dashboard examples can teach hierarchy, neutral context, focal emphasis, and
+reference-line discipline; they do not justify importing filters, KPI walls, or dense
+tiled monitoring layouts.
+
+The distributable skill's `visual-evidence-router.md` owns the question-to-evidence
+selection contract. In particular, actual/prior/target comparisons keep context marks
+neutral, reserve one accent for the focal period, label the target reference line, and
+use a non-color marker or signed delta for the prior-period comparison.
+
 ## The canonical EDA conversation
 
 `wm_eda_overview(...)` is the replacement for “print everything and hope the learner

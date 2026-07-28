@@ -130,7 +130,7 @@ wm_formula_card(
         },
         {
             "label": "Pipeline rule",
-            "latex": r"\[x \rightarrow \text{{inspect}} \rightarrow \text{{split in time}} \rightarrow \hat{{y}}\]",
+            "latex": r"\[x \rightarrow \mathrm{inspect} \rightarrow \mathrm{split\;in\;time} \rightarrow \hat{y}\]",
             "fallback": "inspect first -> preserve time order -> fit -> forecast",
         },
     ],

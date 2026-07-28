@@ -21,6 +21,10 @@ Colab, final, or public-example notebooks, or when naming a shared notebook.
 Read `references/portable-and-host-contract.md` when building for Colab, saved HTML,
 dark mode, collapsing noisy cells, or a published story.
 
+Read `references/visual-evidence-router.md` before choosing charts, comparison
+encodings, classification evidence, PCA/SHAP visuals, or geography. It preserves the
+notebook/slide specialization while borrowing sound hierarchy from dashboards.
+
 ## Core sequence
 
 Structure each analytical section as:
@@ -72,6 +76,9 @@ the result. Use a counterintuitive card when a smart beginner could overread the
 - Let dense named bar charts become horizontal.
 - Reduce or facet charts above the category limit; do not force an unreadable override.
 - Use semantic color roles consistently and add a non-color channel.
+- Choose an evidence family from the reader's comparison before choosing a plotting
+  library. Treat actual-versus-prior-versus-target as a reference-comparison recipe,
+  not a dashboard component.
 - Design a preattentive reading order: answer-first title, evidence, then quiet
   methodology; use salience sparingly instead of highlighting everything.
 - Keep alternating row shades visible on neutral tables, with semantic fills reserved

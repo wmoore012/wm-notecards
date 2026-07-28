@@ -15,6 +15,3 @@ include showcase/index.html
 include skills/notecard-teacher-style/SKILL.md
 include skills/notecard-teacher-style/agents/openai.yaml
 include skills/notecard-teacher-style/references/*.md
-include skills/wilton-campaign-persuasion/SKILL.md
-include skills/wilton-campaign-persuasion/agents/openai.yaml
-include skills/wilton-campaign-persuasion/references/*.md
