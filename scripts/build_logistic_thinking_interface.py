@@ -1,8 +1,8 @@
 """Build the public logistic-regression thinking-interface notebook.
 
-Ordinary Markdown and Pandas output appear first; the corresponding notecard
-response follows in the next cell. Screenshot-only notebook imitations are not
-part of this builder.
+The notebook deliberately keeps ordinary Pandas inspection and wm-notecards in
+the same analysis. Pandas is the fast audit surface; notecards preserve the
+question, reading order, boundaries, and human decision.
 """
 
 from __future__ import annotations
@@ -17,30 +17,30 @@ OUTPUT = Path("examples/logistic_regression_thinking_interface.ipynb")
 
 def _code(source: str, *, noise: bool = False) -> nbformat.NotebookNode:
     """Return a code cell with the public-example source visibility contract."""
-    tags = ["wm-noise"] if noise else ["wm-essential", "wm-hide-source"]
     cell = new_code_cell(source)
-    cell.metadata["tags"] = tags
+    cell.metadata["tags"] = ["wm-noise"] if noise else ["wm-essential", "wm-hide-source"]
+    return cell
+
+
+def _markdown(source: str) -> nbformat.NotebookNode:
+    """Return visible notebook prose that survives plain Jupyter and Colab."""
+    cell = new_markdown_cell(source)
+    cell.metadata["tags"] = ["wm-essential"]
     return cell
 
 
 def build_notebook() -> nbformat.NotebookNode:
     """Return a deterministic, screenshot-ready logistic-regression notebook."""
     cells = [
-        new_markdown_cell(
-            """# Can a logistic model find customers who may leave next month?
+        _markdown(
+            """# Can recent behavior help us find customers who may leave next month?
 
-> I’m new here. Thank you for having me—I mean that. I’m learning in public,
-> and this is the tool I needed while I was learning.
+This notebook follows a customer file from first inspection to one final test. We will
+use ordinary Pandas when it is the fastest honest check, and wm-notecards when the
+result needs a reading order, a boundary, or a decision.
 
-We are data scientists. We make visualizations for a living.
-
-**Why are we still doing machine learning in MS-DOS?**
-
-This public lab uses one deterministic synthetic customer file. Every rerun keeps
-the same rows, the same missing values, and the same outcome-generating process,
-so the story changes only when the analysis changes.
-
-"""
+The data is synthetic and seeded. The workflow is real: inspect, document, split,
+prepare, compare, choose, and test once."""
         ),
         _code(
             """from __future__ import annotations
@@ -57,6 +57,7 @@ from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
     confusion_matrix,
+    f1_score,
     precision_recall_curve,
     precision_score,
     recall_score,
@@ -74,11 +75,13 @@ from wm_notecards import (
 from wm_notecards.cards import (
     question_card,
     takeaway_card,
+    wm_check_card,
     wm_counterintuitive_card,
     wm_formula_card,
 )
 from wm_notecards.charts import style_fig_wm, wm_render_figure_card
 from wm_notecards.eda import display_data_chips
+from wm_notecards.pictogram import pictogram_card
 from wm_notecards.tables import (
     display_cols_by_dtype,
     wm_render_micro_profile_cards,
@@ -91,7 +94,8 @@ RNG_SEED = 20260724""",
             noise=True,
         ),
         _code(
-            """rng = np.random.default_rng(RNG_SEED)
+            """# Seeded data keeps the lesson reproducible without pretending it is production evidence.
+rng = np.random.default_rng(RNG_SEED)
 rows = 1_200
 snapshot_month = np.repeat(pd.date_range("2024-01-01", periods=12, freq="MS"), 100)
 signup_date = snapshot_month - pd.to_timedelta(rng.integers(45, 900, rows), unit="D")
@@ -103,9 +107,8 @@ support_tickets = rng.poisson(1.2, rows)
 sessions_30d = rng.poisson(8.5, rows)
 days_since_login = np.clip(rng.gamma(2.1, 3.4, rows), 0, 45)
 monthly_spend = np.round(
-    rng.lognormal(3.25, 0.38, rows) + np.select(
-        [plan == "Plus", plan == "Pro"], [18.0, 52.0], default=0.0
-    ),
+    rng.lognormal(3.25, 0.38, rows)
+    + np.select([plan == "Plus", plan == "Pro"], [18.0, 52.0], default=0.0),
     2,
 )
 discount_rate = rng.choice([0.0, 0.10, 0.20], rows, p=[0.62, 0.27, 0.11])
@@ -121,8 +124,7 @@ logit = (
     - 0.70 * (plan == "Pro")
     + 0.72 * (discount_rate >= 0.20)
 )
-leave_probability = 1 / (1 + np.exp(-logit))
-left_service = rng.binomial(1, leave_probability)
+left_service = rng.binomial(1, 1 / (1 + np.exp(-logit)))
 
 customers = pd.DataFrame({
     "customer_id": [f"CUS-{i:05d}" for i in range(rows)],
@@ -173,96 +175,102 @@ customers.loc[rng.choice(rows, 27, replace=False), "comment"] = None
 assert customers.shape == (rows, 40)
 assert 0.10 < customers["left_service"].mean() < 0.45"""
         ),
-        new_markdown_cell(
-            """## Can recent behavior separate customers who leave from customers who stay?
-
-Account activity, subscription context, and support behavior are measured at one
-monthly snapshot. The target records whether the customer leaves in the next month."""
-        ),
         _code(
             """question_card(
     theme=theme,
-    title="Can recent behavior separate customers who leave from customers who stay?",
-    body=("Before we model anything: is leaving measured clearly, and did time, money, "
-          "and category fields arrive in forms we can trust?"),
-    kicker="01, source question",
+    title="What arrived in the file?",
+    body="Start with rows a human can recognize. Then check types, gaps, and the target.",
+    kicker="01, source, question",
 )"""
         ),
+        _markdown("""### First look: six customer snapshots
+
+Pandas stays here because the fastest way to understand a file is still to look at it."""),
         _code(
-            """raw_preview = customers[[
-    "customer_id", "signup_date", "left_service", "plan", "monthly_spend",
-]].head(6)
-raw_preview"""
+            """customers[[
+    "customer_id", "snapshot_month", "left_service", "plan", "channel",
+    "region", "monthly_spend", "days_since_login",
+]].head(6)"""
         ),
         _code(
             """display_cols_by_dtype(
     customers.dtypes,
     theme,
-    "Which fields arrived ready to model?",
+    "Which fields arrived in the wrong type family?",
     expected_types={
         "signup_date": "time",
+        "snapshot_month": "time",
         "monthly_spend": "numeric",
         "renewal_month": "numeric",
     },
 )"""
         ),
         _code(
-            """reviewed = customers.copy()
+            """# Conversions are explicit. The inspection helper never changes the source.
+reviewed = customers.copy()
 reviewed["signup_date"] = pd.to_datetime(reviewed["signup_date"], errors="raise")
 reviewed["snapshot_month"] = pd.to_datetime(reviewed["snapshot_month"], errors="raise")
 reviewed["monthly_spend"] = pd.to_numeric(reviewed["monthly_spend"], errors="coerce")
 reviewed["renewal_month"] = pd.to_numeric(reviewed["renewal_month"], errors="raise")
 
-describe_columns = [
-    "monthly_spend", "tenure_months", "sessions_30d", "days_since_login",
-    "support_tickets",
+source_checks = [
+    {"label": "1,200 rows loaded", "status": "PASS", "detail": "No rows disappeared during parsing."},
+    {"label": "No duplicate rows or customer IDs", "status": "PASS", "detail": "The customer snapshot key is unique."},
+    {"label": "Target contains only 0 and 1", "status": "PASS", "detail": "0 = stayed; 1 = left next month."},
+    {"label": "Observation month parsed for every row", "status": "PASS", "detail": "Time can support a chronological split."},
 ]
-reviewed[describe_columns].describe().round(2).T"""
-        ),
-        _code(
-            """source_checks = pd.DataFrame([
-    {"check": "Rows loaded", "result": f"{len(reviewed):,}", "status": "PASS"},
-    {"check": "Duplicate rows", "result": int(reviewed.duplicated().sum()), "status": "PASS"},
-    {"check": "Duplicate customer IDs", "result": int(reviewed["customer_id"].duplicated().sum()), "status": "PASS"},
-    {"check": "Target outside 0/1", "result": int((~reviewed["left_service"].isin([0, 1])).sum()), "status": "PASS"},
-    {"check": "Unparsed observation months", "result": int(reviewed["snapshot_month"].isna().sum()), "status": "PASS"},
-])
-wm_render_styler(
-    source_checks.style,
+wm_check_card(
     theme=theme,
-    title="Did the file arrive intact?",
-    subtitle="Identity, target, and time checks pass before missingness gets its own decision.",
-    kicker="02, source contract, checks",
+    title="The file passed its arrival checks.",
+    checks=source_checks,
+    subtitle="Identity, target, and time are intact. Missingness is the next decision.",
+    kicker="01, source contract, checks",
 )"""
         ),
         _code(
-            """missing_counts = reviewed.isna().sum().loc[lambda values: values.gt(0)].sort_values(ascending=False)
-missing_counts.rename("missing").to_frame()"""
+            """missing_counts = reviewed.isna().sum().loc[lambda s: s.gt(0)].sort_values(ascending=False)
+missing_roles = pd.DataFrame({
+    "field": missing_counts.index,
+    "type": ["numeric", "text", "categorical"],
+    "missing": missing_counts.values,
+    "share": missing_counts.values / len(reviewed),
+})
+question_card(
+    theme=theme,
+    title="Three fields need a decision before we profile anything.",
+    body=(
+        f"NUMERIC: monthly_spend ({missing_counts['monthly_spend']:,})  |  "
+        f"TEXT: comment ({missing_counts['comment']:,})  |  "
+        f"CATEGORICAL: region ({missing_counts['region']:,}). "
+        "The next views keep this order so nothing has to be remembered."
+    ),
+    kicker="02, missingness, memory bridge",
+    chip_text="3 fields",
+)"""
         ),
         _code(
-            """missing_summary = missing_counts.rename("missing").to_frame()
+            """missing_summary = missing_roles.copy()
 missing_summary["complete"] = len(reviewed) - missing_summary["missing"]
-missing_summary["missing share"] = missing_summary["missing"] / len(reviewed)
+role_colors = {"numeric": theme.accent, "text": "#8B74D6", "categorical": "#3F79E8"}
 
 missing_fig = go.Figure()
 missing_fig.add_trace(go.Bar(
     x=missing_summary["complete"],
-    y=missing_summary.index,
+    y=missing_summary["field"],
     orientation="h",
-    marker_color="#D8DEE3",
+    marker_color=[role_colors[kind] for kind in missing_summary["type"]],
+    opacity=0.28,
     name="Complete",
     hovertemplate="%{y}: %{x:,} complete<extra></extra>",
 ))
 missing_fig.add_trace(go.Bar(
     x=missing_summary["missing"],
-    y=missing_summary.index,
+    y=missing_summary["field"],
     orientation="h",
     marker_color=theme.color_missing_accent,
     text=[
-        f"{count:,} missing · {share:.1%}"
-        for count, share in zip(
-            missing_summary["missing"], missing_summary["missing share"], strict=True
-        )
+        f"{count:,} missing | {share:.1%}"
+        for count, share in zip(missing_summary["missing"], missing_summary["share"], strict=True)
     ],
     textposition="outside",
     cliponaxis=False,
@@ -270,13 +278,13 @@ missing_fig.add_trace(go.Bar(
     hovertemplate="%{y}: %{x:,} missing<extra></extra>",
 ))
 missing_fig.update_layout(barmode="stack", showlegend=False)
-missing_fig.update_xaxes(title="Rows", range=[0, len(reviewed) * 1.16], tickformat=",")
+missing_fig.update_xaxes(title="Rows", range=[0, len(reviewed) * 1.18], tickformat=",")
 missing_fig.update_yaxes(autorange="reversed", title=None)
 style_fig_wm(
     missing_fig,
     theme=theme,
-    title="Most fields are complete. Three are not.",
-    subtitle="Gold marks the exact gaps the preprocessing decision must account for",
+    title="Most fields are complete. These three are not.",
+    subtitle="Exact counts and shares stay visible before any value is filled",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -290,30 +298,29 @@ wm_render_figure_card(
             """missing_decisions = pd.DataFrame([
     {
         "field": "monthly_spend",
-        "candidate": "training median + missing flag",
-        "reason": "Right-skewed measure; keep the missing event visible.",
-        "decision": "USE",
-    },
-    {
-        "field": "region",
-        "candidate": "confirm source meaning",
-        "reason": "Unknown and not applicable are not the same category.",
-        "decision": "WAIT",
+        "evidence": "34 gaps in a right-skewed numeric measure.",
+        "candidate action": "Training median plus a missing flag",
+        "human decision": "TEST",
     },
     {
         "field": "comment",
-        "candidate": "leave missing",
-        "reason": "Optional prose does not need an invented sentence.",
-        "decision": "KEEP NULL",
+        "evidence": "27 gaps in optional free text.",
+        "candidate action": "Keep null; exclude text from this baseline",
+        "human decision": "HOLD OUT",
+    },
+    {
+        "field": "region",
+        "evidence": "19 gaps across four named regions.",
+        "candidate action": "Confirm what a blank means before encoding",
+        "human decision": "CHECK",
     },
 ])
 wm_render_styler(
-    missing_decisions[["field", "candidate", "decision"]].style,
+    missing_decisions.style,
     theme=theme,
-    title="What should happen to each gap?",
-    subtitle="The chart above finds every gap; this receipt records the next action.",
-    kicker="02, missingness, human decision",
-    wrap_columns={"candidate": 220},
+    title="What could happen to each gap?",
+    subtitle="These are candidate actions. The preprocessing receipt appears only after a method runs.",
+    kicker="02, missingness, options",
 )"""
         ),
         _code(
@@ -322,8 +329,43 @@ wm_render_styler(
     theme=theme,
     target="left_service",
     identifier_columns=["customer_id"],
-    datetime_columns=["signup_date"],
+    datetime_columns=["signup_date", "snapshot_month"],
     categorical_columns=["plan", "channel", "region", "device", "market"],
+)"""
+        ),
+        _markdown("""### Numeric fields: Pandas first, then the shapes
+
+The table is the audit trail. The cards put spread, missingness, and skew beside the
+same field so the next decision is easier to see."""),
+        _code(
+            """numeric_fields = [
+    "monthly_spend", "tenure_months", "sessions_30d", "days_since_login",
+    "support_tickets", "discount_rate",
+]
+reviewed[numeric_fields].describe().round(2).T"""
+        ),
+        _code(
+            """wm_render_micro_profile_cards(
+    reviewed,
+    theme=theme,
+    columns=numeric_fields,
+    visible_cards=3,
+    skew_threshold=1.0,
+)"""
+        ),
+        _markdown("""### Categorical fields: counts first, then composition
+
+Missing fields appear first. Counts and percentages use the same denominator."""),
+        _code(
+            """categorical_fields = ["region", "plan", "channel", "device", "market"]
+reviewed[categorical_fields].describe(include="all").T"""
+        ),
+        _code(
+            """wm_render_micro_profile_cards(
+    reviewed,
+    theme=theme,
+    columns=categorical_fields,
+    visible_cards=3,
 )"""
         ),
         _code(
@@ -335,57 +377,63 @@ wm_render_styler(
     .reset_index(name="customers")
 )
 target_counts["share"] = target_counts["customers"] / len(reviewed)
-target_counts"""
-        ),
-        _code(
-            """target_fig = go.Figure(go.Bar(
-    x=target_counts["outcome"],
-    y=target_counts["customers"],
-    marker_color=["#D8DEE3", theme.accent],
-    text=[f"{count:,} · {share:.1%}" for count, share in zip(
-        target_counts["customers"], target_counts["share"], strict=True
-    )],
-    textposition="outside",
-    cliponaxis=False,
-    hovertemplate="%{x}: %{y:,} customers<extra></extra>",
-))
-target_fig.update_xaxes(title=None)
-target_fig.update_yaxes(title="Customers", rangemode="tozero")
-style_fig_wm(
-    target_fig,
+leave_count = int(reviewed["left_service"].sum())
+leave_rate = float(reviewed["left_service"].mean())
+
+question_card(
     theme=theme,
-    title="Leaving is the smaller outcome—but not a tiny one",
-    subtitle="The validation metrics must reward finding leavers, not merely predicting the majority",
-    category_policy="preserve",
+    title="What exactly are we asking the model to predict?",
+    body=(
+        "TARGET: left_service. One row is one customer snapshot. "
+        "A 1 means the customer left during the next month. There are no missing target values. "
+        "The observed outcome is already binary: the customer left or stayed. The model can rank "
+        "outreach review, but the outreach cutoff remains a separate business choice."
+    ),
+    kicker="03, target contract, question",
+    chip_text="BINARY TARGET",
 )
-wm_render_figure_card(
-    target_fig,
+pictogram_card(
+    percent=leave_rate,
+    headline="Customers who left in the next month",
+    subtitle=(
+        f"{leave_count:,} of {len(reviewed):,} customers left. "
+        "This base rate becomes the precision-recall baseline later."
+    ),
+    big_text=f"{leave_rate:.1%}",
     theme=theme,
-    file_stub="logistic_target_balance",
-    kicker="03, target balance, evidence",
+    kicker="03, target prevalence, evidence",
 )"""
         ),
         _code(
-            """wm_render_micro_profile_cards(
-    reviewed,
+            """target_contract = pd.DataFrame([
+    {"question": "Definition", "answer": "Left service during the month after this snapshot"},
+    {"question": "Missing target", "answer": "0 rows"},
+    {"question": "Decision", "answer": "Rank a human-reviewed outreach queue"},
+    {"question": "Business cost", "answer": "Missed leavers vs unwanted outreach to stayers"},
+    {"question": "Goodwill boundary", "answer": "A high score does not make contact welcome"},
+    {"question": "Expected clues", "answer": "Recent absence and support friction are hypotheses, not facts"},
+])
+wm_render_styler(
+    target_contract.style,
     theme=theme,
-    columns=[
-        "monthly_spend", "tenure_months", "sessions_30d",
-        "days_since_login", "support_tickets",
-    ],
-    visible_cards=3,
-    skew_threshold=1.0,
+    title="The target has a definition, a clock, and a consequence.",
+    kicker="03, target contract, documentation",
 )"""
         ),
         _code(
-            """numeric_by_outcome = reviewed.assign(
+            """question_card(
+    theme=theme,
+    title="Does recent absence separate customers who stay from customers who leave?",
+    body="Read the medians and middle halves first. The dots are individual values beyond the whiskers.",
+    kicker="03, numeric relationship, question",
+)
+
+numeric_by_outcome = reviewed.assign(
     outcome=reviewed["left_service"].map({0: "Stayed", 1: "Left next month"})
 )
 relationship_fig = go.Figure()
 for outcome, color in [("Stayed", "#AAB5BD"), ("Left next month", theme.accent)]:
-    values = numeric_by_outcome.loc[
-        numeric_by_outcome["outcome"].eq(outcome), "days_since_login"
-    ]
+    values = numeric_by_outcome.loc[numeric_by_outcome["outcome"].eq(outcome), "days_since_login"]
     relationship_fig.add_trace(go.Box(
         y=values,
         name=outcome,
@@ -398,8 +446,8 @@ relationship_fig.update_xaxes(title=None)
 style_fig_wm(
     relationship_fig,
     theme=theme,
-    title="Customers who leave have usually been away longer",
-    subtitle="The box shows the middle half; points beyond the whiskers remain visible",
+    title="Customers who left had usually been away longer.",
+    subtitle="The distributions still overlap, so absence alone cannot decide who leaves",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -410,11 +458,13 @@ wm_render_figure_card(
 )"""
         ),
         _code(
-            """wm_render_micro_profile_cards(
-    reviewed,
+            """wm_counterintuitive_card(
     theme=theme,
-    columns=["plan", "channel", "region"],
-    visible_cards=3,
+    title="A long absence is a clue, not a verdict.",
+    why_misread="Some customers who stayed also had long gaps between logins.",
+    ordinary_process="Vacations, seasonality, and low-frequency use can create the same pattern.",
+    conclusion_boundary="Absence earns a modeling test. It does not justify outreach by itself.",
+    kicker="03, target relationship, reading guide",
 )"""
         ),
         _code(
@@ -424,19 +474,28 @@ wm_render_figure_card(
     .sort_values("leave_rate", ascending=True)
     .reset_index()
 )
-plan_rates"""
-        ),
-        _code(
-            """plan_fig = go.Figure(go.Bar(
+question_card(
+    theme=theme,
+    title="Do the plan groups leave at the same rate?",
+    body="Read the percentage with its numerator and denominator. A small group should not sound louder than it is.",
+    kicker="03, categorical relationship, question",
+)
+wm_render_styler(
+    plan_rates.style.format({"leave_rate": "{:.1%}"}),
+    theme=theme,
+    title="Plan size and leave rate",
+    kicker="03, categorical relationship, exact values",
+)
+
+plan_fig = go.Figure(go.Bar(
     x=plan_rates["leave_rate"],
     y=plan_rates["plan"],
     orientation="h",
     marker_color=["#B9C4CB", "#82DCE8", theme.accent],
     text=[
-        f"{rate:.1%} · {leavers}/{customers}"
+        f"{rate:.1%} | {leavers}/{customers}"
         for rate, leavers, customers in zip(
-            plan_rates["leave_rate"], plan_rates["leavers"],
-            plan_rates["customers"], strict=True
+            plan_rates["leave_rate"], plan_rates["leavers"], plan_rates["customers"], strict=True
         )
     ],
     textposition="outside",
@@ -448,8 +507,8 @@ plan_fig.update_yaxes(title=None)
 style_fig_wm(
     plan_fig,
     theme=theme,
-    title="Starter-plan customers leave more often in this sample",
-    subtitle="Rates include both numerator and denominator so a small group cannot look louder than it is",
+    title="Starter customers left more often in this sample.",
+    subtitle="This is an association in synthetic data, not a reason to contact a customer",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -460,18 +519,13 @@ wm_render_figure_card(
 )"""
         ),
         _code(
-            """eda_takeaway = takeaway_card(
+            """wm_counterintuitive_card(
     theme=theme,
-    title="Three clues earn the modeling test: absence, support friction, and plan context.",
-    metric=f"Leave rate: {reviewed['left_service'].mean():.1%}",
-    body=("Customers who left had usually been away longer, while plan groups did not "
-          "share one common leave rate. These are associations in synthetic data—not causes."),
-    bullets=[
-        "Missing monthly spend stays visible through a missingness indicator.",
-        "Days since login and support tickets are candidate behavior signals.",
-        "Plan is context worth testing, not a reason to contact someone by itself.",
-    ],
-    kicker="03, EDA, takeaway",
+    title="How to read the plan comparison",
+    why_misread="The longest bar can look like the plan caused customers to leave.",
+    ordinary_process="Plan choice can travel with price sensitivity, tenure, channel, and customer needs.",
+    conclusion_boundary="Plan context may improve prediction. The chart does not prove cause or justify different treatment.",
+    kicker="03, categorical relationship, reading guide",
 )"""
         ),
         _code(
@@ -490,17 +544,18 @@ numeric_associations = (
     .assign(magnitude=lambda frame: frame["correlation with leaving"].abs())
     .sort_values("magnitude", ascending=True)
 )
-numeric_associations.drop(columns="magnitude").round(3)"""
-        ),
-        _code(
-            """association_fig = go.Figure(go.Bar(
+
+question_card(
+    theme=theme,
+    title="Which numeric fields move with leaving before the model combines them?",
+    body="Right means a positive association. Left means a negative association. Distance from zero shows strength.",
+    kicker="03, numeric relationships, reading guide",
+)
+association_fig = go.Figure(go.Bar(
     x=numeric_associations["correlation with leaving"],
     y=numeric_associations["field"],
     orientation="h",
-    marker_color=[
-        theme.accent if value >= 0 else "#6B7B88"
-        for value in numeric_associations["correlation with leaving"]
-    ],
+    marker_color=[theme.accent if value >= 0 else "#6B7B88" for value in numeric_associations["correlation with leaving"]],
     text=[f"{value:+.2f}" for value in numeric_associations["correlation with leaving"]],
     textposition="outside",
     cliponaxis=False,
@@ -512,8 +567,8 @@ association_fig.update_yaxes(title=None)
 style_fig_wm(
     association_fig,
     theme=theme,
-    title="Recent absence has the clearest one-field relationship with leaving",
-    subtitle="Direction is descriptive, not causal; the model still has to survive later months",
+    title="Recent absence has the clearest one-field association.",
+    subtitle="Correlation is descriptive and one field at a time. It is not causation.",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -526,85 +581,88 @@ wm_render_figure_card(
         _code(
             """feature_ledger = pd.DataFrame([
     {
-        "field": "customer_id",
-        "observed evidence": "Unique on every row.",
-        "allowed role": "Review lookup only",
-        "candidate transformation": "None",
-        "validation test": "Confirm exclusion from model matrix.",
-        "boundary": "Direct identifier; do not learn customer identity.",
-        "decision": "EXCLUDE",
+        "field": "customer_id", "evidence": "Unique on every row", "transformation": "None",
+        "validation": "Confirm exclusion", "boundary": "Direct identifier", "decision": "EXCLUDE",
     },
     {
-        "field": "signup_date",
-        "observed evidence": "A customer signup date.",
-        "allowed role": "Time context",
-        "candidate transformation": "Signup month or tenure",
-        "validation test": "Fit derived rules on training rows only.",
-        "boundary": "Raw date can proxy product or campaign changes.",
-        "decision": "DERIVE",
+        "field": "signup_date", "evidence": "Customer signup date", "transformation": "Derive tenure",
+        "validation": "Fit derived rules on training only", "boundary": "Time proxy", "decision": "DERIVE",
     },
     {
-        "field": "region",
-        "observed evidence": "19 missing values; four named markets.",
-        "allowed role": "Candidate context",
-        "candidate transformation": "Training-only category encoding",
-        "validation test": "Compare PR and error slices with/without region.",
-        "boundary": "Review geographic proxy and fairness risk.",
-        "decision": "TEST",
+        "field": "region", "evidence": "19 missing values and four labels", "transformation": "Training-only encoding",
+        "validation": "Compare PR and error slices", "boundary": "Fairness and proxy review", "decision": "TEST",
     },
     {
-        "field": "comment",
-        "observed evidence": "Free text with 27 missing values.",
-        "allowed role": "Human review context",
-        "candidate transformation": "Separate text study",
-        "validation test": "No text enters this baseline model.",
-        "boundary": "May contain private or post-outcome information.",
-        "decision": "HOLD OUT",
+        "field": "comment", "evidence": "27 missing free-text values", "transformation": "Separate text study",
+        "validation": "No text in this baseline", "boundary": "Privacy and leakage review", "decision": "HOLD OUT",
     },
 ])
-feature_ledger"""
-        ),
-        _code(
-            """feature_receipt = feature_ledger[[
-    "field", "decision", "observed evidence", "validation test"
-]].rename(columns={
-    "observed evidence": "evidence",
-    "validation test": "next check",
-})
 wm_render_styler(
-    feature_receipt.style,
+    feature_ledger.style,
     theme=theme,
-    title="What enters the model, what changes form, and what stays out?",
-    subtitle="The full ledger remains in the dataframe; this is the decision-sized view.",
-    kicker="04, feature decision ledger",
-    wrap_columns={
-        "evidence": 230,
-        "next check": 260,
-    },
+    title="The feature decision ledger",
+    subtitle="Evidence, transformation, validation, risk boundary, and final decision stay together.",
+    kicker="04, feature decisions, audit trail",
 )"""
-        ),
-        new_markdown_cell(
-            """## Can the model learn without seeing the future?
-
-January through September teach the preprocessing and coefficients. October
-through December stay untouched until validation."""
         ),
         _code(
             """question_card(
     theme=theme,
-    title="Can the model learn without seeing the future?",
-    body=("A random row split would let later observation months influence earlier ones. "
-          "We keep the last three months intact and carry training decisions forward."),
-    kicker="04, time split, question",
+    title="Can we compare models without letting the future leak backward?",
+    body="Training learns. Validation chooses the model and threshold. Test is opened once at the end.",
+    kicker="04, chronological split, question",
+)
+
+validation_start = pd.Timestamp("2024-09-01")
+test_start = pd.Timestamp("2024-11-01")
+train = reviewed.loc[reviewed["snapshot_month"] < validation_start].copy()
+validation = reviewed.loc[
+    reviewed["snapshot_month"].between(validation_start, test_start, inclusive="left")
+].copy()
+test = reviewed.loc[reviewed["snapshot_month"] >= test_start].copy()
+assert train["snapshot_month"].max() < validation["snapshot_month"].min()
+assert validation["snapshot_month"].max() < test["snapshot_month"].min()
+
+split_rows = [
+    ("Training", pd.Timestamp("2024-01-01"), pd.Timestamp("2024-08-31"), len(train), "#222A31"),
+    ("Validation", validation_start, pd.Timestamp("2024-10-31"), len(validation), theme.accent),
+    ("Test", test_start, pd.Timestamp("2024-12-31"), len(test), "#B74C5F"),
+]
+split_fig = go.Figure()
+for label, start, end, count, color in split_rows:
+    split_fig.add_trace(go.Bar(
+        # Plotly date axes measure horizontal bar lengths in milliseconds.
+        # Passing day counts makes the blocks look like stray dots.
+        x=[(end - start).total_seconds() * 1_000],
+        y=[label],
+        base=[start],
+        orientation="h",
+        marker={"color": color, "line": {"width": 0}},
+        width=0.48,
+        text=[f"{start:%b}-{end:%b} | {count:,} rows"],
+        textposition="inside",
+        insidetextanchor="middle",
+        hovertemplate=f"{label}: %{{text}}<extra></extra>",
+        showlegend=False,
+    ))
+split_fig.update_xaxes(title="Observation month", tickformat="%b %Y", type="date")
+split_fig.update_yaxes(title=None, categoryorder="array", categoryarray=["Test", "Validation", "Training"])
+style_fig_wm(
+    split_fig,
+    theme=theme,
+    title="Eight months train. Two choose. Two test once.",
+    subtitle="No imputer, encoder, scaler, model, or threshold learns from the final two months",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    split_fig,
+    theme=theme,
+    file_stub="logistic_chronological_split",
+    kicker="04, train validation test, evidence",
 )"""
         ),
         _code(
-            """validation_start = pd.Timestamp("2024-10-01")
-train = reviewed.loc[reviewed["snapshot_month"] < validation_start].copy()
-validation = reviewed.loc[reviewed["snapshot_month"] >= validation_start].copy()
-assert train["snapshot_month"].max() < validation["snapshot_month"].min()
-
-train_median = float(train["monthly_spend"].median())
+            """train_median = float(train["monthly_spend"].median())
 prepared = reviewed.copy()
 prepared["monthly_spend_missing"] = prepared["monthly_spend"].isna()
 prepared["monthly_spend"] = prepared["monthly_spend"].fillna(train_median)
@@ -616,146 +674,80 @@ decision_log = wm_build_preprocessing_log(
         field="monthly_spend",
         action="impute",
         method=f"training median ({train_median:.2f})",
-        reason="Preserve rows and keep a missingness indicator.",
+        reason="Preserve rows and keep the missing event visible",
         fit_scope="train_only",
         keep_missing_indicator=True,
     )],
 )
-decision_log"""
-        ),
-        _code(
-            """wm_render_styler(
+wm_render_styler(
     decision_log.style,
     theme=theme,
-    title="What did training fill—and what stayed missing?",
-    subtitle="Only monthly spend is filled here; region and comment keep their original gaps.",
+    title="What training filled / what remains missing",
+    subtitle="Monthly spend is filled from training only. Region and comment keep their original gaps.",
     kicker="04, preprocessing, audit trail",
-    wrap_columns={"method": 220, "reason": 260},
 )"""
         ),
         _code(
-            """split_summary = pd.DataFrame([
-    {
-        "split": "Training",
-        "months": "Jan–Sep 2024",
-        "rows": len(train),
-        "purpose": "Learn preprocessing and model coefficients",
-    },
-    {
-        "split": "Validation",
-        "months": "Oct–Dec 2024",
-        "rows": len(validation),
-        "purpose": "Compare models and choose an outreach threshold",
-    },
-])
-split_summary"""
-        ),
-        _code(
-            """split_fig = go.Figure()
-split_fig.add_trace(go.Scatter(
-    x=[pd.Timestamp("2024-01-01"), pd.Timestamp("2024-09-30")],
-    y=["Training", "Training"],
-    mode="lines+markers+text",
-    line={"color": "#222A31", "width": 28},
-    marker={"color": "#222A31", "size": 18},
-    text=["", f"Jan–Sep · {len(train):,} rows"],
-    textposition="top left",
-    hovertemplate="Training: Jan–Sep 2024<extra></extra>",
-))
-split_fig.add_trace(go.Scatter(
-    x=[validation_start, pd.Timestamp("2024-12-31")],
-    y=["Validation", "Validation"],
-    mode="lines+markers+text",
-    line={"color": theme.accent, "width": 28},
-    marker={"color": theme.accent, "size": 18},
-    text=["", f"Oct–Dec · {len(validation):,} rows"],
-    textposition="top left",
-    hovertemplate="Validation: Oct–Dec 2024<extra></extra>",
-))
-split_fig.update_layout(showlegend=False)
-split_fig.update_xaxes(title="Observation month", tickformat="%b %Y")
-split_fig.update_yaxes(title=None, categoryorder="array", categoryarray=["Validation", "Training"])
-style_fig_wm(
-    split_fig,
-    theme=theme,
-    title="The model learns from nine months. The last three stay untouched.",
-    subtitle="Every preprocessing choice is fitted on Jan–Sep, then carried forward into Oct–Dec",
-    category_policy="preserve",
-)
-wm_render_figure_card(
-    split_fig,
-    theme=theme,
-    file_stub="logistic_chronological_split",
-    kicker="04, chronological split, evidence",
-)"""
-        ),
-        _code(
-            """target = "left_service"
+            r'''target = "left_service"
 numeric_features = [
     "monthly_spend", "tenure_months", "sessions_30d", "days_since_login",
     "support_tickets", "discount_rate", "monthly_spend_missing",
 ]
 categorical_features = ["plan", "channel", "region"]
-behavior_features = [
-    "tenure_months", "sessions_30d", "days_since_login", "support_tickets",
-]
+behavior_features = ["tenure_months", "sessions_30d", "days_since_login", "support_tickets"]
 model_specs = {
     "Activity only": (behavior_features, []),
-    "Activity + account context": (numeric_features, categorical_features),
+    "Activity plus account context": (numeric_features, categorical_features),
 }
+
+question_card(
+    theme=theme,
+    title="Does account context earn its place?",
+    body="The larger model must improve later-month ranking enough to justify more fields and more review.",
+    kicker="05, model comparison, question",
+)
 model_contract = pd.DataFrame([
     {
         "model": name,
         "numeric fields": len(numeric),
         "categorical fields": len(categorical),
-        "question": (
-            "Does recent behavior separate leavers?"
-            if name == "Activity only"
-            else "Does account context add useful separation?"
-        ),
+        "job": "Behavior baseline" if not categorical else "Test whether account context adds signal",
     }
     for name, (numeric, categorical) in model_specs.items()
 ])
-model_contract"""
-        ),
-        _code(
-            """wm_render_styler(
+wm_render_styler(
     model_contract.style,
     theme=theme,
-    title="What does each challenger get to know?",
-    subtitle="The second model must beat behavior alone to justify the added context.",
-    kicker="05, model contract, challengers",
-    wrap_columns={"question": 300},
-)"""
-        ),
-        _code(
-            r'''wm_formula_card(
-    title="Two preparation lanes meet at one logistic model",
+    title="What each model is allowed to learn",
+    subtitle="Both models learn on the same rows and face the same validation months.",
+    kicker="05, model contract, exact fields",
+)
+wm_formula_card(
+    title="Preparation happens inside each model pipeline",
     theme=theme,
     items=[
         {
             "label": "NUMERIC LANE",
-            "latex": r"x_{num} \\rightarrow \\operatorname{median}_{train} \\rightarrow \\operatorname{scale}",
+            "latex": r"x_{num} \rightarrow \operatorname{median}_{train} \rightarrow \operatorname{scale}",
             "fallback": "numeric -> training median -> standard scale",
         },
         {
             "label": "CATEGORY LANE",
-            "latex": r"x_{cat} \\rightarrow \\operatorname{mode}_{train} \\rightarrow \\operatorname{one\\!-\\!hot}",
+            "latex": r"x_{cat} \rightarrow \operatorname{mode}_{train} \rightarrow \operatorname{one\!-\!hot}",
             "fallback": "category -> training mode -> one-hot columns",
         },
         {
             "label": "MODEL",
-            "latex": r"P(y=1 \\mid x)=\\sigma(\\beta_0 + x^T\\beta)",
+            "latex": r"P(y=1 \mid x)=\sigma(\beta_0 + x^T\beta)",
             "fallback": "prepared fields -> probability of leaving next month",
         },
     ],
-    subtitle="Every learned value comes from Jan–Sep; Oct–Dec only receives the result.",
-    kicker="05, preprocessing, contract",
+    kicker="05, model pipeline, formula",
 )'''
         ),
         _code(
             """def _pipeline(numeric: list[str], categorical: list[str]) -> Pipeline:
-    \"\"\"Build one leakage-safe preprocessing and logistic-regression path.\"\"\"
+    \"\"\"Build one leakage-safe scikit-learn pipeline.\"\"\"
     transformers: list[tuple[str, Any, list[str]]] = []
     if numeric:
         transformers.append((
@@ -782,155 +774,155 @@ model_contract"""
             noise=True,
         ),
         _code(
-            """train = prepared.loc[prepared["snapshot_month"] < validation_start].copy()
-validation = prepared.loc[prepared["snapshot_month"] >= validation_start].copy()
-assert train["snapshot_month"].max() < validation["snapshot_month"].min()
+            """# Fit is intentionally separate from scoring so the learning boundary stays visible.
+train_prepared = prepared.loc[train.index]
+validation_prepared = prepared.loc[validation.index]
+test_prepared = prepared.loc[test.index]
 
 models: dict[str, Pipeline] = {}
-model_probabilities: dict[str, np.ndarray] = {}
+validation_probabilities: dict[str, np.ndarray] = {}
 for name, (numeric, categorical) in model_specs.items():
     features = numeric + categorical
     model = _pipeline(numeric, categorical)
-    model.fit(train[features], train[target])
-    probabilities = model.predict_proba(validation[features])[:, 1]
+    model.fit(train_prepared[features], train_prepared[target])
     models[name] = model
-    model_probabilities[name] = probabilities
-fit_receipt = pd.DataFrame({
-    "model": list(models),
-    "training rows": len(train),
-    "validation rows": len(validation),
-    "fit status": "fitted",
-})
-fit_receipt"""
+    validation_probabilities[name] = model.predict_proba(validation_prepared[features])[:, 1]"""
         ),
         _code(
-            """score_rows: list[dict[str, float | str]] = []
-for name, probabilities in model_probabilities.items():
+            """score_rows = []
+for name, probabilities in validation_probabilities.items():
     predictions = (probabilities >= 0.50).astype(int)
     score_rows.append({
         "model": name,
-        "accuracy": accuracy_score(validation[target], predictions),
-        "ROC AUC": roc_auc_score(validation[target], probabilities),
-        "PR AUC": average_precision_score(validation[target], probabilities),
-        "precision @ .50": precision_score(validation[target], predictions, zero_division=0),
-        "recall @ .50": recall_score(validation[target], predictions, zero_division=0),
+        "accuracy": accuracy_score(validation_prepared[target], predictions),
+        "ROC AUC": roc_auc_score(validation_prepared[target], probabilities),
+        "PR AUC": average_precision_score(validation_prepared[target], probabilities),
+        "precision @ .50": precision_score(validation_prepared[target], predictions, zero_division=0),
+        "recall @ .50": recall_score(validation_prepared[target], predictions, zero_division=0),
     })
-
 scores = pd.DataFrame(score_rows).sort_values("PR AUC", ascending=False).reset_index(drop=True)
-assert scores["PR AUC"].between(0, 1).all()
-scores.round(3)"""
-        ),
-        _code(
-            """validation_prevalence = float(validation[target].mean())
-prevalence_receipt = pd.DataFrame([{
-    "validation rows": len(validation),
-    "leavers": int(validation[target].sum()),
-    "stayers": int((validation[target] == 0).sum()),
-    "leave prevalence": validation_prevalence,
-    "outcome prevalence": validation_prevalence,
-}])
-prevalence_receipt"""
-        ),
-        _code(
-            """wm_render_styler(
-    prevalence_receipt.style.format({
-        "leave prevalence": "{:.1%}",
-        "outcome prevalence": "{:.1%}",
+winner_name = str(scores.iloc[0]["model"])
+winner = models[winner_name]
+winner_probability = validation_probabilities[winner_name]
+validation_prevalence = float(validation_prepared[target].mean())
+
+wm_render_styler(
+    scores.style.format({
+        "accuracy": "{:.3f}", "ROC AUC": "{:.3f}", "PR AUC": "{:.3f}",
+        "precision @ .50": "{:.1%}", "recall @ .50": "{:.1%}",
     }),
     theme=theme,
-    title="How hard is the less-common outcome before a model gets credit?",
-    subtitle="A random ranking starts at the share of validation customers who left.",
-    kicker="05, target prevalence, evidence",
-)"""
-        ),
-        _code(
-            """wm_render_styler(
-    scores.style.format({column: "{:.3f}" for column in scores.columns if column != "model"}),
-    theme=theme,
-    title="Which model survives validation?",
-    subtitle="PR AUC leads because leaving is the less common outcome.",
-    kicker="05, validation, evidence",
-)"""
-        ),
-        _code(
-            """pr_fig = go.Figure()
-for model_name, probabilities in model_probabilities.items():
-    precision_values, recall_values, _ = precision_recall_curve(
-        validation[target], probabilities
-    )
+    title="Which model ranks later-month leavers better?",
+    subtitle="PR AUC gets priority because leaving is the less common outcome.",
+    kicker="06, validation, exact scores",
+)
+
+pr_fig = go.Figure()
+for name, probabilities in validation_probabilities.items():
+    precision, recall, _ = precision_recall_curve(validation_prepared[target], probabilities)
     pr_fig.add_trace(go.Scatter(
-        x=recall_values,
-        y=precision_values,
+        x=recall,
+        y=precision,
         mode="lines",
-        name=model_name,
-        line={"width": 3},
+        name=name,
+        line={"width": 3, "color": theme.accent if name == winner_name else "#27384F"},
+        hovertemplate="Recall %{x:.1%}<br>Precision %{y:.1%}<extra></extra>",
     ))
 pr_fig.add_hline(
     y=validation_prevalence,
     line_dash="dash",
-    line_color="#38444D",
-    annotation_text=f"Outcome prevalence: {validation_prevalence:.1%}",
+    line_color="#6B7B88",
+    annotation_text=f"Random ranking baseline: {validation_prevalence:.1%}",
     annotation_position="bottom right",
 )
 pr_fig.update_xaxes(title="Recall", tickformat=".0%", range=[0, 1])
-pr_fig.update_yaxes(title="Precision", tickformat=".0%", range=[0, 1])
+pr_fig.update_yaxes(title="Precision", tickformat=".0%", range=[0, 1.02])
 style_fig_wm(
     pr_fig,
     theme=theme,
-    title="How much precision survives as we ask the model to find more leavers?",
-    subtitle=f"Validation only · {len(validation):,} customers · dashed line = random-ranking precision",
+    title=f"{winner_name} keeps more precision as recall grows.",
+    subtitle="A useful curve should stay above the random-ranking baseline across the operating range",
+    category_policy="preserve",
 )
 wm_render_figure_card(
     pr_fig,
     theme=theme,
     file_stub="logistic_precision_recall",
-    kicker="05, precision recall, validation",
+    kicker="06, validation, visual evidence",
 )"""
         ),
         _code(
-            """winner_name = str(scores.iloc[0]["model"])
-winner_numeric, winner_categorical = model_specs[winner_name]
-winner_features = winner_numeric + winner_categorical
-winner = models[winner_name]
-winner_probability = winner.predict_proba(validation[winner_features])[:, 1]
+            """question_card(
+    theme=theme,
+    title="Where should the outreach cutoff sit?",
+    body=(
+        "Lower cutoffs find more leavers and contact more stayers. "
+        "For this teaching example, validation F1 chooses the balance point. "
+        "A real team would replace that rule with capacity, cost, and goodwill."
+    ),
+    kicker="07, threshold, human decision",
+)
 
+precision_path, recall_path, threshold_path = precision_recall_curve(
+    validation_prepared[target], winner_probability
+)
+f1_path = np.divide(
+    2 * precision_path[:-1] * recall_path[:-1],
+    precision_path[:-1] + recall_path[:-1],
+    out=np.zeros_like(threshold_path),
+    where=(precision_path[:-1] + recall_path[:-1]) > 0,
+)
+selected_threshold = float(threshold_path[int(np.argmax(f1_path))])
+
+candidate_thresholds = sorted(set([0.30, 0.40, 0.50, 0.60, round(selected_threshold, 3)]))
 threshold_rows = []
-for threshold in [0.30, 0.40, 0.50, 0.60]:
-    prediction = (winner_probability >= threshold).astype(int)
-    tn, fp, fn, tp = confusion_matrix(validation[target], prediction).ravel()
+for cutoff in candidate_thresholds:
+    predicted = (winner_probability >= cutoff).astype(int)
+    tn, fp, fn, tp = confusion_matrix(validation_prepared[target], predicted, labels=[0, 1]).ravel()
     threshold_rows.append({
-        "threshold": threshold,
-        "precision": precision_score(validation[target], prediction, zero_division=0),
-        "recall": recall_score(validation[target], prediction, zero_division=0),
-        "false positives": int(fp),
-        "missed leavers": int(fn),
+        "threshold": cutoff,
+        "precision": precision_score(validation_prepared[target], predicted, zero_division=0),
+        "recall": recall_score(validation_prepared[target], predicted, zero_division=0),
+        "F1": f1_score(validation_prepared[target], predicted, zero_division=0),
+        "stayers contacted": int(fp),
+        "leavers missed": int(fn),
     })
 thresholds = pd.DataFrame(threshold_rows)
-thresholds.round(3)"""
-        ),
-        _code(
-            """threshold_fig = go.Figure()
+
+wm_render_styler(
+    thresholds.style.format({
+        "threshold": "{:.3f}", "precision": "{:.1%}", "recall": "{:.1%}", "F1": "{:.3f}",
+    }),
+    theme=theme,
+    title="Every cutoff changes who receives outreach.",
+    subtitle=f"Validation F1 selects {selected_threshold:.3f} for the demo. It is not a business policy.",
+    kicker="07, threshold, exact tradeoff",
+)
+
+threshold_fig = go.Figure()
 threshold_fig.add_trace(go.Scatter(
-    x=thresholds["threshold"],
-    y=thresholds["precision"],
-    mode="lines+markers",
-    name="Precision",
-    line={"width": 3, "color": theme.accent},
+    x=thresholds["threshold"], y=thresholds["precision"],
+    mode="lines+markers", name="Precision", line={"color": theme.accent, "width": 3},
 ))
 threshold_fig.add_trace(go.Scatter(
-    x=thresholds["threshold"],
-    y=thresholds["recall"],
-    mode="lines+markers",
-    name="Recall",
-    line={"width": 3, "color": "#B74C5F"},
+    x=thresholds["threshold"], y=thresholds["recall"],
+    mode="lines+markers", name="Recall", line={"color": "#B74C5F", "width": 3},
 ))
+threshold_fig.add_vline(
+    x=selected_threshold,
+    line_dash="dash",
+    line_color="#222A31",
+    annotation_text=f"F1 balance: {selected_threshold:.3f}",
+    annotation_position="top",
+)
 threshold_fig.update_xaxes(title="Outreach threshold", tickformat=".0%")
 threshold_fig.update_yaxes(title="Share", tickformat=".0%", range=[0, 1])
 style_fig_wm(
     threshold_fig,
     theme=theme,
-    title="Lowering the threshold finds more leavers—and contacts more stayers",
-    subtitle="Validation evidence · exact false-positive and missed-leaver counts remain in the table",
+    title="Lower cutoffs find more leavers and contact more stayers.",
+    subtitle="Read the selected line with the exact false-contact and missed-leaver counts above",
+    category_policy="preserve",
 )
 wm_render_figure_card(
     threshold_fig,
@@ -940,62 +932,47 @@ wm_render_figure_card(
 )"""
         ),
         _code(
-            """selected_threshold = 0.40
-selected_prediction = (winner_probability >= selected_threshold).astype(int)
-selected_tn, selected_fp, selected_fn, selected_tp = confusion_matrix(
-    validation[target], selected_prediction
+            """# The test set is opened once, after model and threshold selection are complete.
+winner_numeric, winner_categorical = model_specs[winner_name]
+winner_features = winner_numeric + winner_categorical
+test_probability = winner.predict_proba(test_prepared[winner_features])[:, 1]
+test_prediction = (test_probability >= selected_threshold).astype(int)
+test_tn, test_fp, test_fn, test_tp = confusion_matrix(
+    test_prepared[target], test_prediction, labels=[0, 1]
 ).ravel()
-confusion_receipt = pd.DataFrame([
-    {"actual": "Stayed", "predicted stayed": selected_tn, "predicted left": selected_fp},
-    {"actual": "Left", "predicted stayed": selected_fn, "predicted left": selected_tp},
-])
-assert int(confusion_receipt[["predicted stayed", "predicted left"]].to_numpy().sum()) == len(validation)
-confusion_receipt"""
-        ),
-        new_markdown_cell(
-            """## Accuracy can be misleading
 
-Because most customers stay, a model can achieve high accuracy while missing many
-customers who leave. Precision and recall have to stay in the conversation."""
-        ),
-        _code(
-            """wm_counterintuitive_card(
-    theme=theme,
-    title="A higher accuracy can still lose the customers we meant to find.",
-    why_misread=("The largest class is ‘stays.’ Predicting it often can make the headline "
-                 "number look reassuring."),
-    ordinary_process=("A 0.50 threshold favors certainty. It can leave uncertain—but useful—"
-                      "retention candidates below the line."),
-    conclusion_boundary=("Choose the threshold from the cost of a missed leaver and an "
-                         "unnecessary outreach—not from accuracy alone."),
-    kicker="06, threshold, conclusion boundary",
-)"""
-        ),
-        _code(
-            """wm_render_styler(
-    thresholds.style.format({
-        "threshold": "{:.2f}", "precision": "{:.1%}", "recall": "{:.1%}",
+test_scores = pd.DataFrame([{
+    "test rows": len(test_prepared),
+    "leavers": int(test_prepared[target].sum()),
+    "PR AUC": average_precision_score(test_prepared[target], test_probability),
+    "ROC AUC": roc_auc_score(test_prepared[target], test_probability),
+    "precision": precision_score(test_prepared[target], test_prediction, zero_division=0),
+    "recall": recall_score(test_prepared[target], test_prediction, zero_division=0),
+}])
+confusion_receipt = pd.DataFrame([
+    {"actual": "Stayed", "predicted stayed": int(test_tn), "predicted left": int(test_fp)},
+    {"actual": "Left", "predicted stayed": int(test_fn), "predicted left": int(test_tp)},
+])
+assert int(confusion_receipt[["predicted stayed", "predicted left"]].to_numpy().sum()) == len(test_prepared)
+
+wm_render_styler(
+    test_scores.style.format({
+        "PR AUC": "{:.3f}", "ROC AUC": "{:.3f}", "precision": "{:.1%}", "recall": "{:.1%}",
     }),
     theme=theme,
-    title="What changes when recall matters more?",
-    subtitle="Moving the threshold finds more leavers and also creates more outreach.",
-    kicker="07, threshold, tradeoff",
-)"""
-        ),
-        _code(
-            """wm_render_styler(
+    title="The final two months answer the last model question.",
+    subtitle=f"{winner_name} and threshold {selected_threshold:.3f} were fixed before this test.",
+    kicker="08, final test, scores",
+)
+wm_render_styler(
     confusion_receipt.style,
     theme=theme,
-    title="At 0.40, who receives outreach—and who gets missed?",
-    subtitle=f"Validation confusion counts · threshold {selected_threshold:.2f} · n={len(validation):,}",
-    kicker="07, confusion counts, selected threshold",
-)"""
-        ),
-        _code(
-            """confusion_values = np.array([
-    [selected_tn, selected_fp],
-    [selected_fn, selected_tp],
-])
+    title="Who did the final test classify correctly?",
+    subtitle="The heatmap below turns the same four counts into a faster read.",
+    kicker="08, final test, confusion counts",
+)
+
+confusion_values = np.array([[test_tn, test_fp], [test_fn, test_tp]])
 confusion_fig = go.Figure(go.Heatmap(
     z=confusion_values,
     x=["Predicted stayed", "Predicted left"],
@@ -1011,15 +988,25 @@ confusion_fig.update_xaxes(title=None)
 style_fig_wm(
     confusion_fig,
     theme=theme,
-    title="At 0.40, who receives outreach—and who gets missed?",
-    subtitle=f"Validation counts · threshold {selected_threshold:.2f} · n={len(validation):,}",
+    title="The final test makes both kinds of error visible.",
+    subtitle=f"False contacts: {test_fp:,} | missed leavers: {test_fn:,}",
     category_policy="preserve",
 )
 wm_render_figure_card(
     confusion_fig,
     theme=theme,
     file_stub="logistic_confusion_matrix",
-    kicker="07, confusion matrix, selected threshold",
+    kicker="08, final test, visual evidence",
+)"""
+        ),
+        _code(
+            """wm_counterintuitive_card(
+    theme=theme,
+    title="A correct score can still lead to the wrong action.",
+    why_misread="A probability above the cutoff can sound like proof that a customer will leave.",
+    ordinary_process="The model ranks patterns in this sample. It does not observe motive, consent, or future product changes.",
+    conclusion_boundary="Use the score to prioritize review. Keep outreach policy and customer goodwill with people.",
+    kicker="08, final test, boundary",
 )"""
         ),
         _code(
@@ -1030,28 +1017,26 @@ coefficients = pd.DataFrame({
 })
 coefficients["absolute weight"] = coefficients["coefficient"].abs()
 top_coefficients = coefficients.nlargest(10, "absolute weight").drop(columns="absolute weight")
-top_coefficients.round(3)"""
-        ),
-        _code(
-            """wm_render_styler(
+
+question_card(
+    theme=theme,
+    title="Which fitted signals push the score up or pull it down?",
+    body="Right increases the fitted log-odds of leaving. Left decreases them. Size is model weight after preprocessing, not business impact.",
+    kicker="09, coefficients, reading guide",
+)
+wm_render_styler(
     top_coefficients.style.format({"coefficient": "{:+.3f}"}),
     theme=theme,
-    title="Which signals move the probability most?",
-    subtitle="Positive weights push toward leaving; negative weights push toward staying.",
-    kicker="08, coefficients, evidence",
-    wrap_columns={"feature": 260},
-)"""
-        ),
-        _code(
-            """coefficient_plot = top_coefficients.sort_values("coefficient")
+    title="The ten largest fitted coefficients",
+    kicker="09, coefficients, exact values",
+)
+
+coefficient_plot = top_coefficients.sort_values("coefficient")
 coefficient_fig = go.Figure(go.Bar(
     x=coefficient_plot["coefficient"],
     y=coefficient_plot["feature"],
     orientation="h",
-    marker_color=[
-        theme.accent if value > 0 else "#6B7B88"
-        for value in coefficient_plot["coefficient"]
-    ],
+    marker_color=[theme.accent if value > 0 else "#6B7B88" for value in coefficient_plot["coefficient"]],
     text=[f"{value:+.2f}" for value in coefficient_plot["coefficient"]],
     textposition="outside",
     cliponaxis=False,
@@ -1063,40 +1048,36 @@ coefficient_fig.update_yaxes(title=None)
 style_fig_wm(
     coefficient_fig,
     theme=theme,
-    title="Which fitted signals push the score up—or pull it down?",
-    subtitle="Positive weights move toward leaving; negative weights move toward staying",
+    title="The fitted model moves in both directions.",
+    subtitle="Coefficient direction is an explanation of the model, not a causal claim",
     category_policy="preserve",
 )
 wm_render_figure_card(
     coefficient_fig,
     theme=theme,
     file_stub="logistic_coefficient_directions",
-    kicker="08, coefficients, visual evidence",
+    kicker="09, coefficients, visual evidence",
 )"""
-        ),
-        new_markdown_cell(
-            """## Conclusion
-
-The account-context model performed best on the validation rows. Its probability
-scores can rank a retention queue; they cannot make the outreach decision."""
         ),
         _code(
-            """best = scores.iloc[0]
+            """best_validation = scores.iloc[0]
 takeaway_card(
     theme=theme,
-    title="The model earns a retention queue—not the right to make the decision.",
-    metric=f"{winner_name} · validation PR AUC {best['PR AUC']:.3f}",
-    body=("Account context adds useful separation on this synthetic hold-out. The score "
-          "can rank outreach; it cannot tell us why a person left or whether contact is welcome."),
+    title="The model earns a review queue, not the right to contact anyone.",
+    metric=f"{winner_name} | validation PR AUC {best_validation['PR AUC']:.3f}",
+    body=(
+        "The workflow preserved time order, fitted preparation on training rows, selected on validation, "
+        "and opened the final test once. That earns a bounded experiment, not automatic outreach."
+    ),
     bullets=[
-        "Choose a threshold from outreach capacity and the cost of missed leavers.",
-        "Monitor PR AUC and recall on later months before trusting the ranking.",
-        "Keep the final action with the human team.",
+        "Choose operating policy from capacity, cost, consent, and customer goodwill.",
+        "Monitor later-month PR AUC, recall, calibration, and error slices.",
+        "Keep identifiers and optional text outside this baseline model.",
     ],
-    kicker="09, recommendation, your decision",
+    kicker="10, recommendation, human decision",
 )"""
         ),
-        new_markdown_cell(
+        _markdown(
             """---
 
 Jupyter gave me `df.describe()`.
@@ -1108,8 +1089,7 @@ The questions are predictable.
 **The notebook should be too.**"""
         ),
     ]
-    cells[0].metadata["tags"] = ["wm-essential"]
-    cells[-1].metadata["tags"] = ["wm-essential"]
+
     return new_notebook(
         cells=cells,
         metadata={

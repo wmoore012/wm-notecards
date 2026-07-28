@@ -142,7 +142,7 @@ def test_short_table_stretches_without_forced_vertical_scroll(monkeypatch) -> No
     html = rendered[-1]
     assert "class='wm-table-scroll'" in html
     assert "class='wm-table-scroll wm-table-scroll--bounded'" not in html
-    assert "width: max-content; min-width: 100%" in html
+    assert "width: 100%; min-width: 100%" in html
 
 
 def test_standard_tables_enforce_visible_zebra_rows() -> None:
@@ -162,7 +162,26 @@ def test_table_card_is_responsive_while_table_body_remains_scrollable() -> None:
 
     assert "width: 100% !important; min-width: 0 !important" in css
     assert "max-width: 100%; min-width: 0; box-sizing: border-box" in css
-    assert "overflow: auto" in css
+    assert "overflow-x: auto; overflow-y: hidden" in css
+    assert "border-radius: 0 0 14px 14px" in css
+
+
+def test_table_prose_wraps_by_default_and_rounds_the_visible_bottom_edge() -> None:
+    css = WMTableTheme().css(WMTheme.light())
+    frame = pd.DataFrame(
+        {
+            "evidence": ["A long sentence that must remain readable in a public notebook."],
+            "count": [19],
+        }
+    )
+    alignment = __import__("wm_notecards.tables", fromlist=["_align_css"])._align_css(
+        frame, "wm-table"
+    )
+
+    assert "overflow-wrap: anywhere" in css
+    assert "border-bottom-right-radius: 14px" in css
+    assert "max-width:280px" in alignment
+    assert "text-overflow:ellipsis" not in alignment
 
 
 def test_table_role_label_uses_neon_blue_in_light_and_dark_themes() -> None:

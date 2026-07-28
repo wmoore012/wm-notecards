@@ -62,17 +62,23 @@ The questions are predictable.
 
 The notebook should be too.
 
-## See the notebook—not a mockup
+## See the notebook, not a mockup
 
 - [Logistic regression thinking interface](examples/logistic_regression_thinking_interface.ipynb):
-  native Markdown, native Pandas, then the matching notecard response.
+  recognizable rows, source checks, missingness, target definition, three-way split,
+  model comparison, threshold choice, and one final test.
 - [40-column EDA scratchbook](examples/40_column_eda_scratchbook.ipynb): dtype
   suspicions, missingness, skew, candidate fixes, and the applied audit trail.
 - [Simple seasonal forecasting lab](examples/simple_seasonal_forecasting_lab.ipynb):
   questions, formulas, hold-out evidence, model comparison, and your decision.
 
 The examples are executable notebooks. Their HTML files are exports of the same cell
-order—not separately staged marketing pages.
+order. They are not separately staged marketing pages.
+
+Pandas is not the enemy. It is often the fastest way to inspect the actual rows and
+exact summaries. The problem starts when the notebook asks you to remember those
+outputs six cells later. Pandas keeps the audit trail; wm-notecards keeps the question,
+reading order, interpretation, and decision close to the evidence.
 
 ## Install
 
@@ -202,7 +208,7 @@ export_figure_wm(fig, "exports/chart.png")       # 3× share/slide default
 export_figure_wm(fig, "exports/chart.pdf")       # print
 ```
 
-Export only the artifact—not notebook paths, tokens, internal comments, proprietary
+Export only the artifact. Do not export notebook paths, tokens, internal comments, proprietary
 variable names, or private data.
 
 ## Colab builder
@@ -227,7 +233,9 @@ sharing; embedded source is still source.
 The distributable AI-authoring skill lives at
 [`skills/notecard-teacher-style`](skills/notecard-teacher-style). It preserves the
 lead-first teaching loop, careful anomaly language, visual QA requirement, and the
-human-in-the-loop decision boundary.
+human-in-the-loop decision boundary. Its EDA contract also requires a recognizable
+`df.head()`, complete missingness before selected profiles, a target contract before
+modeling, and table-plus-visual pairs that stay together in the reading order.
 
 ## Development gates
 
@@ -245,7 +253,7 @@ PR.
 
 ## Contributing
 
-Contributions are welcome—especially new card roles, accessibility improvements,
+Contributions are welcome, especially new card roles, accessibility improvements,
 better evidence checks, export workflows, and regression fixtures from real notebook
 failures. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
 

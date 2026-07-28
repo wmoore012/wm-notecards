@@ -7,19 +7,23 @@ EDA is a conversation about field decisions, not a prettier `df.describe()`.
 Use the smallest sequence that answers the source question:
 
 1. Ask the real analytical question. Never explain the interface to the reader.
-2. For a wide source, group the raw columns by dtype so the learner can scan one family
+2. Show recognizable source rows with `df.head()` and run the source contract before
+   asking the learner to interpret derived summaries.
+3. For a wide source, group the raw columns by dtype so the learner can scan one family
    at a time. If a date or number arrived as text, make that wrong-lane field glow.
-3. After any explicit conversion, show the raw and reviewed dtype groups side by side.
+4. After any explicit conversion, show the raw and reviewed dtype groups side by side.
    Highlight only fields that moved. Never imply the display helper converted them.
-4. Show stable data chips by analytical role: identifier, time, target, numeric,
+5. Show complete missingness evidence and a typed memory bridge before selected field
+   profiles. Sort incomplete fields within each type by missing count/share.
+6. Show stable data chips by analytical role: identifier, time, target, numeric,
    categorical, boolean/flag, then text/high-cardinality.
-5. Show micro-profiles for the fields that matter to the current question. Do not dump a
+7. Show micro-profiles for the fields that matter to the current question. Do not dump a
    profile for every field merely because the dataframe is wide.
-6. Show suggestions as suggestions. A decision log exists only after a human-approved
+8. Show suggestions as suggestions. A decision log exists only after a human-approved
    transformation has actually run.
-7. Add one targeted follow-up only when the evidence earns it: category shares,
+9. Add one targeted follow-up only when the evidence earns it: category shares,
    missingness, skew, correlation, time coverage, or split integrity.
-8. Close with the decision the human still owns.
+10. Close with the decision the human still owns.
 
 Do not emit every diagnostic for every dataset.
 
@@ -70,6 +74,10 @@ Do not emit every diagnostic for every dataset.
   as “Color names the role,” “This lab shows,” or “No automatic changes.”
 - Every canonical EDA recipe returns exact tabular evidence and a purpose-specific
   visual. This rule does not intercept arbitrary pandas DataFrames.
+- Keep ordinary Pandas audit surfaces where they help: source rows, numeric describe,
+  and categorical describe. Apply the local reading rhythm in
+  `pandas-notecard-rhythm.md` so the matching notecard follows immediately.
+- Follow `target-analysis-contract.md` before modeling a supervised outcome.
 - Learned imputers, encoders, scalers, and thresholds fit on training rows only.
 - Every AI-chosen parsing, skew, category, or correlation threshold is visible and
   challengeable.

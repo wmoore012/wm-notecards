@@ -25,6 +25,9 @@
 
 ## Later, opt-in layers
 
+- Analysis-to-lean notebook conversion: preserve executable code and selected Pandas
+  audit outputs while optionally removing presentation cards after the reasoning work
+  is complete. The source notebook remains canonical and the conversion is reversible.
 - Static Story Publisher with semantic HTML first and GSAP enhancement second.
 - Flip for focus/compare continuity and ScrollTrigger for chapter pacing, both behind
   reduced-motion and no-JavaScript fallbacks.

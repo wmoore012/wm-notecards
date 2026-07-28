@@ -165,17 +165,19 @@ div.{cc} .wm-shell-inner {{ min-width: 0; max-width: 100%; }}
 div.{cc} .wm-shell-eyebrow {{ color: {theme.accent} !important; }}
 div.{cc}:hover {{ transform: {lift}; box-shadow: {shadow_hover}; }}
 div.{cc} .wm-table-scroll {{
-  overflow: auto;
+  overflow-x: auto; overflow-y: hidden;
   width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: {theme.table_header_bg} transparent;
-  border-radius: 14px;
+  border-radius: 0 0 14px 14px;
+  isolation: isolate;
 }}
+div.{cc} .wm-table-scroll--bounded {{ overflow-y: auto; }}
 div.{cc} .wm-table-scroll--bounded thead th {{
   position: sticky; top: 0; z-index: 2;
 }}
 table.{tc} {{
-  width: max-content; min-width: 100%;
+  width: 100%; min-width: 100%;
   font-family: {theme.font_mono}; font-size: 13px;
   border-collapse: separate; border-spacing: 0;
 }}
@@ -193,7 +195,7 @@ table.{tc} tbody td {{
   border-bottom: 1px solid {theme.grid};
   border-right: 1px solid {theme.grid};
   color: {theme.text_main}; font-variant-numeric: tabular-nums;
-  white-space: normal; word-break: break-word; line-height: 1.5;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.5;
   vertical-align: top;
   transition: background-color 0.14s ease, color 0.14s ease;
 }}
@@ -203,6 +205,8 @@ table.{tc} tbody tr:nth-child(even) td {{
   background: {theme.table_stripe_bg};
 }}
 table.{tc} tbody tr:last-child td {{ border-bottom: none; }}
+table.{tc} tbody tr:last-child td:first-child {{ border-bottom-left-radius: 14px; }}
+table.{tc} tbody tr:last-child td:last-child {{ border-bottom-right-radius: 14px; }}
 """
 
     def _hover_css(self, theme: ThemeLike) -> str:
@@ -368,9 +372,9 @@ def _align_css(
         else:
             rules.append(
                 f"table.{table_class} tbody td.col{idx} {{"
-                f" text-align:left; white-space:normal; max-width:360px;"
+                f" text-align:left; white-space:normal; width:auto; max-width:280px;"
                 f" line-height:1.5; overflow-wrap:anywhere;"
-                f" word-break:break-word; }}"
+                f" word-break:normal; }}"
             )
     return f"<style>{''.join(rules)}</style>"
 

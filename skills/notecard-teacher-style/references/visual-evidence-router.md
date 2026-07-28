@@ -90,17 +90,19 @@ A public teaching notebook should make the analytical order visible. Use this sp
 a coverage check, not as permission to dump every possible chart:
 
 1. State the outcome, observation grain, prediction window, and data provenance.
-2. Check shape, duplicates, identifiers, target values, types, and dates.
+2. Show source rows, then check shape, duplicates, identifiers, target values, types,
+   and dates.
 3. Show complete missingness evidence before selected field profiles; propose actions
    before changing values.
-4. Establish target prevalence with counts and shares.
+4. Establish the full target contract and make prevalence visible with counts and shares.
 5. Inspect numeric shape, categorical composition, and a small set of target
    relationships chosen from the question.
 6. Record feature decisions and leakage, privacy, and fairness boundaries.
 7. Show the split visually; preserve time order when later observations are meant to
    represent the future.
 8. Fit preprocessing on training rows only and display the resulting receipt.
-9. Define challengers, fit them in a separate cell, and evaluate them on untouched rows.
+9. Define the comparison models, fit them in a separate cell, and evaluate them on
+   untouched rows.
 10. Pair ranking metrics with curves, threshold tables with tradeoff visuals, confusion
     counts with a confusion matrix, and coefficient tables with signed direction plots.
 11. End with a bounded recommendation and the human decision that remains open.

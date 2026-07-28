@@ -26,6 +26,34 @@ def test_notecard_skill_routes_visual_evidence_without_adding_card_roles() -> No
     assert "Do not invent a business target" in router
 
 
+def test_skill_requires_local_pandas_rhythm_and_target_contract() -> None:
+    skill = (ROOT / "skills" / "notecard-teacher-style" / "SKILL.md").read_text()
+    rhythm = (
+        ROOT
+        / "skills"
+        / "notecard-teacher-style"
+        / "references"
+        / "pandas-notecard-rhythm.md"
+    ).read_text()
+    target = (
+        ROOT
+        / "skills"
+        / "notecard-teacher-style"
+        / "references"
+        / "target-analysis-contract.md"
+    ).read_text()
+
+    assert "pandas-notecard-rhythm.md" in skill
+    assert "target-analysis-contract.md" in skill
+    assert "Pandas is the audit trail" in rhythm
+    normalized_rhythm = " ".join(rhythm.split())
+    assert "same cell or in immediately adjacent cells" in normalized_rhythm
+    assert "complete missingness evidence" in rhythm.lower()
+    assert "customer goodwill" in target
+    assert "binary target does not have box-plot outliers" in target.lower()
+    assert "test is opened once" in target
+
+
 def test_release_checklist_protects_reference_and_rare_event_comparisons() -> None:
     checklist = (ROOT / "docs" / "OPEN_SOURCE_GRAPH_CHECKLIST.md").read_text()
 

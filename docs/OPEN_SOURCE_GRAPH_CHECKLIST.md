@@ -1,7 +1,7 @@
 # Open-source graph and notecard release checklist
 
 Every changed graph must pass every applicable item. Record `N/A` with a reason; do
-not silently skip a section. A notebook is not ready because it runs—the rendered
+not silently skip a section. A notebook is not ready because it runs. The rendered
 reader journey must be observed.
 
 ## 1. Question and claim
@@ -18,6 +18,13 @@ reader journey must be observed.
 
 ## 2. Source and data quality
 
+- [ ] Recognizable source rows (`head()` or an equivalent sample) establish the row
+      grain before derived summaries.
+- [ ] Source-contract checks cover row count, duplicates, identifiers, target domain,
+      and parseable dates before modeling.
+- [ ] Complete missingness evidence appears before selected numeric/categorical
+      profiles. A memory bridge names incomplete fields by semantic type and orders
+      them by missing count/share.
 - [ ] Source, extraction date, unit of observation, and population are documented.
 - [ ] Filters, exclusions, joins, deduplication, and missing-data treatment are stated.
 - [ ] Before action, missingness evidence offers bounded candidate methods and keeps the
@@ -33,7 +40,7 @@ reader journey must be observed.
 
 ## 3. Math and model validity
 
-- [ ] Values are recomputed from the displayed source—not copied from prose.
+- [ ] Values are recomputed from the displayed source, not copied from prose.
 - [ ] Denominators, signs, units, and aggregation levels are verified.
 - [ ] Percentages reconcile to counts; rounding does not change the conclusion.
 - [ ] Train/validation/test windows are non-overlapping and chronologically correct.
@@ -57,6 +64,13 @@ reader journey must be observed.
       baseline,
       threshold-specific confusion counts, and calibration when probabilities guide
       action; accuracy or ROC is not used alone.
+- [ ] The target contract defines the outcome, row grain, prediction window, domain,
+      missingness, prevalence, business decision, error costs, goodwill, and leakage
+      boundary before target relationships or model scores appear.
+- [ ] Model and threshold selection use validation only; the final test is opened once
+      after those choices are fixed.
+- [ ] Common classification metrics and confusion counts come from a named, tested
+      library implementation unless the lesson explicitly derives and cross-checks them.
 - [ ] PCA projections are preceded by explained variance and loadings and are labeled
       as lossy; SHAP and feature importance are not described as causal evidence.
 
@@ -93,6 +107,8 @@ reader journey must be observed.
 - [ ] Neutral multi-row tables have visible alternating row shades; semantic fills
       override zebra banding only when the fill carries defined meaning.
 - [ ] Tables stretch to content and expose both scroll directions when needed.
+- [ ] Table prose wraps by default, the visible scroll viewport preserves both lower
+      corner radii, and no cell truncates with an unexplained ellipsis.
 - [ ] Long tables have a bounded viewport and sticky header; short tables do not gain
       an unnecessary vertical scrollbar.
 - [ ] Font roles are consistent: display for headings, mono for metadata/numbers.
@@ -100,7 +116,7 @@ reader journey must be observed.
 - [ ] Notecards keep their paper border and rest flat; elevation appears only on hover.
 - [ ] Data/status chips are borderless with crisp text; semantic halos do not blur the
       label itself.
-- [ ] Empty, loading, error, and no-data states occupy intentional space—never a blank
+- [ ] Empty, loading, error, and no-data states occupy intentional space, never a blank
       white card.
 
 ## 6. Accessibility and interaction
@@ -116,6 +132,14 @@ reader journey must be observed.
 
 ## 7. Notebook and browser proof
 
+- [ ] Each evidence family follows a local human rhythm: question, ordinary audit when
+      useful, notecard evidence, reading boundary, and decision/takeaway.
+- [ ] Tables and charts that answer the same question are in the same output cell or
+      immediately adjacent, with no unrelated output between them.
+- [ ] Raw Pandas remains available for source/audit evidence, while feature decisions,
+      preprocessing receipts, model scores, thresholds, and confusion counts use the
+      canonical wm table renderer.
+- [ ] Visible public copy contains no unexplained interface narration or em dashes.
 - [ ] Restart-kernel/run-all completes from the declared environment.
 - [ ] The correct kernel and rendering proof are documented.
 - [ ] Desktop output was observed, not inferred from a successful test.

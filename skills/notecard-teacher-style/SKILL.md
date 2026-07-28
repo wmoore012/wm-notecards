@@ -9,10 +9,12 @@ Build a guided conversation with the learner, not a decorated analysis dump.
 
 ## Required references
 
-Read all three before creating or revising a notebook:
+Read all five before creating or revising a notebook:
 
 - `references/story-grammar.md`
 - `references/eda-and-text-contract.md`
+- `references/pandas-notecard-rhythm.md`
+- `references/target-analysis-contract.md`
 - `references/release-contract.md`
 
 Read `references/scratch-and-share-contract.md` when a repo has scratch, takeover,
@@ -58,9 +60,10 @@ Write the question and tentative answer before choosing a visual. Choose the sma
 card sequence that teaches the result. Do not use every card type merely because it
 exists.
 
-Use a table for exact values and a chart for shape/order. Pair them only when those jobs
-differ. Use a formula card before evidence when the learner needs the math to interpret
-the result. Use a counterintuitive card when a smart beginner could overread the result.
+Use a table for exact values and a chart for shape/order. When both answer the same
+question, keep them in the same output cell or in immediately adjacent cells. Use a
+formula card before evidence when the learner needs the math to interpret the result.
+Use a counterintuitive card when a smart beginner could overread the result.
 
 ### 3. Build evidence safely
 
@@ -113,7 +116,11 @@ not infer collapse behavior from prose or function names.
 
 ## Prohibited shortcuts
 
-- Do not replace the teaching flow with raw `df.describe()` output.
+- Do not replace the teaching flow with raw `df.describe()` output. Keep useful Pandas
+  audit surfaces such as `head()`, numeric `describe()`, and categorical `describe()`;
+  follow them immediately with the notecard that reduces memory or supports a decision.
+- Do not emit raw public DataFrames for model comparisons, feature decisions,
+  thresholds, or confusion counts. Render those through the canonical table helper.
 - Do not silently impute, coerce, parse, drop, or transform inside an EDA display helper.
 - Do not make every optional visual recipe into a canonical card type.
 - Do not write a conclusion before checking the computed evidence.
