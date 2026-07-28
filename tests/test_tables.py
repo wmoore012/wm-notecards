@@ -182,6 +182,8 @@ def test_table_prose_wraps_by_default_and_rounds_the_visible_bottom_edge() -> No
     assert "border-bottom-right-radius: 14px" in css
     assert "max-width:280px" in alignment
     assert "text-overflow:ellipsis" not in alignment
+    assert "table.wm-table { table-layout:fixed; width:100%; }" in alignment
+    assert "white-space:normal; overflow-wrap:anywhere" in alignment
 
 
 def test_table_role_label_uses_neon_blue_in_light_and_dark_themes() -> None:

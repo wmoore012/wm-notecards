@@ -376,7 +376,15 @@ def _align_css(
                 f" line-height:1.5; overflow-wrap:anywhere;"
                 f" word-break:normal; }}"
             )
-    return f"<style>{''.join(rules)}</style>"
+    # Long prose is the default in teaching tables.  Keep numeric cells tight,
+    # but never allow a sentence to escape its cell or flatten the card border.
+    base = (
+        f"table.{table_class} {{ table-layout:fixed; width:100%; }}"
+        f"table.{table_class} th, table.{table_class} td {{"
+        " white-space:normal; overflow-wrap:anywhere; word-break:normal;"
+        " vertical-align:top; }}"
+    )
+    return f"<style>{base}{''.join(rules)}</style>"
 
 
 # ── Semantic table colour helpers ───────────────────────────────────
@@ -722,6 +730,15 @@ def _dtype_groups_markup(
     change_variant: str = "",
 ) -> str:
     palette = list(theme.category_palette)
+    role_colors = {
+        "numeric": theme.role_numeric,
+        "text": theme.role_text,
+        "categorical": theme.role_categorical,
+        "boolean": theme.role_boolean,
+        "time": theme.role_time,
+        "identifier": theme.role_identifier,
+        "target": theme.role_target,
+    }
 
     def color(name: str) -> str:
         stable_fallback = sum(name.encode("utf-8")) % len(palette)
@@ -748,7 +765,9 @@ def _dtype_groups_markup(
             elif change_label:
                 classes.append(f"wm-chip-item--change-{escape(change_variant or 'after')}")
                 badge = f"<small>→ {escape(str(change_label).upper())}</small>"
-            fill = color(name)
+            # A reviewed destination is the meaningful visual cue; raw dtype
+            # families retain a stable fallback palette for ordinary scans.
+            fill = role_colors.get(_expected_family(str(expected)), color(name)) if expected else color(name)
             chips.append(
                 f"<span class='{' '.join(classes)}' style='background:{fill};"
                 f" color:{_fg_for_fill(fill)};'>"

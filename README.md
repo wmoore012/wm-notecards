@@ -122,6 +122,23 @@ These guarantees target the failures that are hardest to catch from code alone:
 stacked category labels, clipped evidence, drifting fonts, callouts covering prose,
 and notebook output that looks correct only at one width.
 
+### Canonical EDA contracts
+
+The shipped examples use the same source helpers for notebook output and HTML export:
+
+- analytical-role and dtype chips use the theme's semantic role tokens; missingness is
+  the only reason a complete chip shows a percentage, and incomplete fields receive a
+  single high-contrast attention treatment;
+- every long table wraps prose inside its cells and preserves the rounded card edge;
+- source checks, `df.head()`, missingness, target definition, and the chronological
+  train/validation/test split appear before modeling;
+- threshold charts show the selected operating point and pair precision/recall with F1
+  and exact confusion counts. A chart never relies on hover or color alone.
+
+Pandas output remains part of the audit trail. wm-notecards adds the reading order and
+the question, evidence, takeaway, and decision around it. The two are companions, not
+competing pipelines.
+
 ## Develop from source
 
 ```bash

@@ -115,7 +115,8 @@ def test_split_visual_has_rectangular_train_validation_and_test_blocks() -> None
     assert '("Test",' in source
     assert "go.Bar(" in source
     assert "lines+markers+text" not in source
-    assert "Eight months train. Two choose. Two test once." in source
+    assert "split_shares = {label: count / split_total" in source
+    assert "train. {split_shares['Validation']:.0%} choose." in source
 
 
 def test_pipeline_build_fit_score_and_test_are_separate_cells() -> None:

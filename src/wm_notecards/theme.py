@@ -211,6 +211,15 @@ class WMTheme:
     chip_identifier: str = "#A48DFF"
     chip_time: str = "#2F6BFF"
     chip_target: str = "#FF4D8D"
+    # Stable semantic role tokens.  These are intentionally quieter than the
+    # playful chip accents so charts and audit surfaces remain professional.
+    role_numeric: str = "#2A9DB0"
+    role_text: str = "#756A9A"
+    role_categorical: str = "#5576B8"
+    role_boolean: str = "#B07932"
+    role_time: str = "#3569C8"
+    role_identifier: str = "#7764B5"
+    role_target: str = "#C24B73"
 
     # -- colours: table chrome ----------------------------------------------
     table_header_bg: str = "#ECECE7"
@@ -254,6 +263,13 @@ class WMTheme:
             color_missing_bg="#FFF5C4",
             color_missing_txt="#6B4C00",
             color_missing_accent="#F7C948",
+            role_numeric="#2A9DB0",
+            role_text="#756A9A",
+            role_categorical="#5576B8",
+            role_boolean="#B07932",
+            role_time="#3569C8",
+            role_identifier="#7764B5",
+            role_target="#C24B73",
             table_header_bg=table_header_bg,
             table_hover_bg=hover_bg,
             table_hover_text=hover_text,
@@ -298,6 +314,13 @@ class WMTheme:
             color_missing_bg="rgba(247, 201, 72, 0.20)",
             color_missing_txt="#FFE28A",
             color_missing_accent="#F7C948",
+            role_numeric="#55C9D8",
+            role_text="#B5A8D8",
+            role_categorical="#8DA9E8",
+            role_boolean="#F4B556",
+            role_time="#70A4FF",
+            role_identifier="#B7A5FF",
+            role_target="#E18AA8",
             chip_candidate_secondary="#10212B",
             chip_candidate_secondary_text="#EAFBFE",
             table_header_bg="#0E141E",

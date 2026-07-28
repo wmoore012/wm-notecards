@@ -251,7 +251,11 @@ question_card(
         _code(
             """missing_summary = missing_roles.copy()
 missing_summary["complete"] = len(reviewed) - missing_summary["missing"]
-role_colors = {"numeric": theme.accent, "text": "#8B74D6", "categorical": "#3F79E8"}
+role_colors = {
+    "numeric": theme.role_numeric,
+    "text": theme.role_text,
+    "categorical": theme.role_categorical,
+}
 
 missing_fig = go.Figure()
 missing_fig.add_trace(go.Bar(
@@ -508,7 +512,7 @@ style_fig_wm(
     plan_fig,
     theme=theme,
     title="Starter customers left more often in this sample.",
-    subtitle="This is an association in synthetic data, not a reason to contact a customer",
+    subtitle="Descriptive rates only. Validation still decides whether this signal earns a model feature.",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -628,6 +632,8 @@ split_rows = [
     ("Validation", validation_start, pd.Timestamp("2024-10-31"), len(validation), theme.accent),
     ("Test", test_start, pd.Timestamp("2024-12-31"), len(test), "#B74C5F"),
 ]
+split_total = sum(count for _, _, _, count, _ in split_rows)
+split_shares = {label: count / split_total for label, _, _, count, _ in split_rows}
 split_fig = go.Figure()
 for label, start, end, count, color in split_rows:
     split_fig.add_trace(go.Bar(
@@ -650,8 +656,11 @@ split_fig.update_yaxes(title=None, categoryorder="array", categoryarray=["Test",
 style_fig_wm(
     split_fig,
     theme=theme,
-    title="Eight months train. Two choose. Two test once.",
-    subtitle="No imputer, encoder, scaler, model, or threshold learns from the final two months",
+    title=(
+        f"{split_shares['Training']:.0%} train. {split_shares['Validation']:.0%} choose. "
+        f"{split_shares['Test']:.0%} test once."
+    ),
+    subtitle="No imputer, encoder, scaler, model, or threshold learns from the final test window",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -905,6 +914,10 @@ threshold_fig.add_trace(go.Scatter(
     mode="lines+markers", name="Precision", line={"color": theme.accent, "width": 3},
 ))
 threshold_fig.add_trace(go.Scatter(
+    x=thresholds["threshold"], y=thresholds["F1"],
+    mode="lines+markers", name="F1 balance", line={"color": "#756A9A", "width": 3, "dash": "dot"},
+))
+threshold_fig.add_trace(go.Scatter(
     x=thresholds["threshold"], y=thresholds["recall"],
     mode="lines+markers", name="Recall", line={"color": "#B74C5F", "width": 3},
 ))
@@ -912,7 +925,7 @@ threshold_fig.add_vline(
     x=selected_threshold,
     line_dash="dash",
     line_color="#222A31",
-    annotation_text=f"F1 balance: {selected_threshold:.3f}",
+    annotation_text=f"Selected by validation F1: {selected_threshold:.3f}",
     annotation_position="top",
 )
 threshold_fig.update_xaxes(title="Outreach threshold", tickformat=".0%")
@@ -921,7 +934,7 @@ style_fig_wm(
     threshold_fig,
     theme=theme,
     title="Lower cutoffs find more leavers and contact more stayers.",
-    subtitle="Read the selected line with the exact false-contact and missed-leaver counts above",
+    subtitle="F1 shows the balance; the table above gives exact false-contact and missed-leaver counts",
     category_policy="preserve",
 )
 wm_render_figure_card(
