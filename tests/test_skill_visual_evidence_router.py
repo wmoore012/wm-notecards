@@ -25,6 +25,18 @@ def test_notecard_skill_routes_visual_evidence_without_adding_card_roles() -> No
     assert "Do not draw one equal-length bar per unique decision" in router
     assert "Do not invent a business target" in router
 
+    vocabulary = (
+        ROOT
+        / "skills"
+        / "notecard-teacher-style"
+        / "references"
+        / "visual-vocabulary-contract.md"
+    ).read_text()
+    assert "inventory" in vocabulary.lower() and "evidence job" in vocabulary.lower()
+    assert "histogram" in vocabulary and "violin" in vocabulary
+    assert "confusion matrix" in vocabulary and "threshold tradeoff" in vocabulary
+    assert "plain-language reason" in vocabulary and "planning cell" in vocabulary
+
 
 def test_skill_requires_local_pandas_rhythm_and_target_contract() -> None:
     skill = (ROOT / "skills" / "notecard-teacher-style" / "SKILL.md").read_text()

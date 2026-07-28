@@ -27,6 +27,10 @@ Read `references/visual-evidence-router.md` before choosing charts, comparison
 encodings, classification evidence, PCA/SHAP visuals, or geography. It preserves the
 notebook/slide specialization while borrowing sound hierarchy from dashboards.
 
+Read `references/visual-vocabulary-contract.md` before deciding that a chart is
+unnecessary. It keeps the mature notebook examples in view and requires an explicit
+reason when a relevant visual family is omitted.
+
 ## Core sequence
 
 Structure each analytical section as:
@@ -56,9 +60,13 @@ labels.
 
 ### 2. Build the narrative skeleton
 
-Write the question and tentative answer before choosing a visual. Choose the smallest
-card sequence that teaches the result. Do not use every card type merely because it
-exists.
+Write the question and tentative answer before choosing a visual. Then make a visual
+inventory: identify the evidence families that could answer the question and show the
+ones that earn a distinct teaching job. Do not silently omit a relevant chart family
+because a table already exists. A table gives exact values; a chart gives shape,
+ordering, distribution, relationship, time, or tradeoff. If a relevant family is not
+used, record the reason in the planning cell. This is deliberate coverage, not a blind
+chart zoo.
 
 Use a table for exact values and a chart for shape/order. When both answer the same
 question, keep them in the same output cell or in immediately adjacent cells. Use a

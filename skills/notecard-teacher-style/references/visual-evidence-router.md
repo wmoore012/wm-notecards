@@ -64,8 +64,10 @@ non-color channel, fallback, export footprint, and final QA surface.
   A profile rail is a focused view, not proof that every incomplete field was reviewed.
 - When a table makes a visual claim about rank, shape, comparison, or tradeoff, pair it
   with a chart. The table keeps exact values; the chart carries the pattern.
-- Do not duplicate a tiny receipt with a decorative chart. Pair evidence only when the
-  visual reduces decoding work.
+- Do not duplicate a tiny receipt with a decorative chart. Pair evidence when the visual
+  carries a distinct job; if a relevant family is omitted, record why in the planning
+  cell. A chart may be compact, but it must not be dismissed merely because a table is
+  present.
 - Keep the full audit dataframe available in code, but render a decision-sized public
   view. Prefer three or four concise columns to a horizontally scrolling ledger.
 - Put the evidence first, then record the decision. Never show an imputation receipt
