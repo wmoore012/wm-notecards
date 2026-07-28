@@ -20,6 +20,10 @@ def test_notecard_skill_routes_visual_evidence_without_adding_card_roles() -> No
     assert "PR curve plus prevalence baseline" in router
     assert "PCA scatter is not the setup" in router
     assert "Color reinforces" in router
+    assert "Supervised-classification story spine" in router
+    assert "Do not hard-code a winning model assertion" in router
+    assert "Do not draw one equal-length bar per unique decision" in router
+    assert "Do not invent a business target" in router
 
 
 def test_release_checklist_protects_reference_and_rare_event_comparisons() -> None:

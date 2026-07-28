@@ -17,9 +17,10 @@ def test_logistic_story_uses_real_notebook_cells_without_changing_evidence() -> 
 
     assert "assert customers.shape == (rows, 40)" in source
     assert "LogisticRegression(" in source
-    assert "scores.iloc[0][\"model\"] == 'Activity + account context'" in source
-    assert "train = prepared.iloc[:split_at]" in source
-    assert "validation = prepared.iloc[split_at:]" in source
+    assert 'validation_start = pd.Timestamp("2024-10-01")' in source
+    assert 'reviewed["snapshot_month"] < validation_start' in source
+    assert 'reviewed["snapshot_month"] >= validation_start' in source
+    assert 'train["snapshot_month"].max() < validation["snapshot_month"].min()' in source
     assert "SimpleImputer(strategy=\"median\"" in source
     assert "wm_build_preprocessing_log(" in source
     assert "display_data_chips(" in source
@@ -39,11 +40,17 @@ def test_logistic_story_uses_real_notebook_cells_without_changing_evidence() -> 
     assert "feature_ledger" in source
     assert "feature_receipt" in source
     assert "logistic_missingness_first_pass" in source
-    assert "logistic_feature_decisions" in source
+    assert "logistic_target_balance" in source
+    assert "logistic_days_since_login_by_outcome" in source
+    assert "logistic_plan_leave_rate" in source
+    assert "logistic_numeric_target_associations" in source
+    assert "logistic_chronological_split" in source
     assert "logistic_threshold_tradeoff" in source
     assert "logistic_confusion_matrix" in source
-    assert "actual vs prior vs target" in source
-    assert "rose vs previous month" in source
+    assert "logistic_coefficient_directions" in source
+    assert "cohort_rate" not in source
+    assert "Review line: 25%" not in source
+    assert "logistic_feature_decisions" not in source
     assert "_plain_panel" not in source
     assert "_captured_html" not in source
     assert "_pair(" not in source
@@ -57,9 +64,13 @@ def test_each_ordinary_output_precedes_its_notecard_response() -> None:
 
     expected_pairs = [
         ("raw_preview", "display_cols_by_dtype("),
-        ("describe().round(2).T", "wm_render_micro_profile_cards("),
         ('rename("missing").to_frame()', "logistic_missingness_first_pass"),
+        ("target_counts", "logistic_target_balance"),
+        ("reviewed[describe_columns].describe().round(2).T", "wm_render_micro_profile_cards("),
+        ("plan_rates", "logistic_plan_leave_rate"),
         ("\ndecision_log", "wm_render_styler(\n    decision_log.style"),
+        ("split_summary", "logistic_chronological_split"),
+        ("model_contract", "Two preparation lanes meet at one logistic model"),
         ("scores.round(3)", "Which model survives validation?"),
         ("prevalence_receipt", "How hard is the less-common outcome"),
         ("thresholds.round(3)", "What changes when recall matters more?"),
@@ -93,20 +104,28 @@ def test_logistic_story_keeps_production_language_out_of_visuals() -> None:
     )
 
 
-def test_reference_comparison_keeps_semantics_out_of_color_alone() -> None:
+def test_notebook_rejects_invented_reference_lines_and_one_count_charts() -> None:
     notebook = _build_notebook()
     source = "\n".join(str(cell.get("source", "")) for cell in notebook.cells)
 
-    assert 'bar_colors = ["#D8DEE3"]' in source
-    assert "bar_colors[focus_index] = theme.accent" in source
-    assert 'marker={"symbol": "triangle-up"' in source
-    assert 'line_dash="dash"' in source
-    assert 'annotation_text="Review line: 25%"' in source
-    assert "higher than the prior month" in source
-    assert 'y=[0.012] * len(rose)' in source
-    assert "cohort in cyan" not in source
-    assert 'category_policy="preserve"' in source
-    assert source.count("showlegend=False") >= 2
+    assert "feature_decision_counts" not in source
+    assert "cohort_rate" not in source
+    assert "review_target" not in source
+    assert "Review line: 25%" not in source
+    assert "rose vs previous month" not in source
+    assert "synthetic" in source.lower()
+
+
+def test_pipeline_build_fit_and_evaluation_are_separate_cells() -> None:
+    notebook = _build_notebook()
+    sources = [str(cell.get("source", "")) for cell in notebook.cells]
+
+    helper_index = next(i for i, source in enumerate(sources) if "def _pipeline(" in source)
+    fit_index = next(i for i, source in enumerate(sources) if "model.fit(" in source)
+    score_index = next(i for i, source in enumerate(sources) if "score_rows:" in source)
+    assert helper_index < fit_index < score_index
+    assert "model.fit(" not in sources[helper_index]
+    assert "score_rows:" not in sources[fit_index]
 
 
 def test_confusion_receipt_is_reconciled_to_validation_rows() -> None:
@@ -131,6 +150,18 @@ def test_missingness_precedes_selected_profile_cards() -> None:
         i for i, source in enumerate(sources) if "wm_render_micro_profile_cards(" in source
     )
     assert missing_index < profile_index
+
+
+def test_eda_precedes_preprocessing_and_modeling() -> None:
+    notebook = _build_notebook()
+    sources = [str(cell.get("source", "")) for cell in notebook.cells]
+
+    eda_index = next(i for i, source in enumerate(sources) if "eda_takeaway" in source)
+    preprocessing_index = next(
+        i for i, source in enumerate(sources) if "wm_build_preprocessing_log(" in source
+    )
+    modeling_index = next(i for i, source in enumerate(sources) if "model.fit(" in source)
+    assert eda_index < preprocessing_index < modeling_index
 
 
 def test_public_audit_tables_are_decision_sized() -> None:

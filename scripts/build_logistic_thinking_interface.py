@@ -27,7 +27,7 @@ def build_notebook() -> nbformat.NotebookNode:
     """Return a deterministic, screenshot-ready logistic-regression notebook."""
     cells = [
         new_markdown_cell(
-            """# Will this customer leave next month?
+            """# Can a logistic model find customers who may leave next month?
 
 > I’m new here. Thank you for having me—I mean that. I’m learning in public,
 > and this is the tool I needed while I was learning.
@@ -35,6 +35,10 @@ def build_notebook() -> nbformat.NotebookNode:
 We are data scientists. We make visualizations for a living.
 
 **Why are we still doing machine learning in MS-DOS?**
+
+This public lab uses one deterministic synthetic customer file. Every rerun keeps
+the same rows, the same missing values, and the same outcome-generating process,
+so the story changes only when the analysis changes.
 
 """
         ),
@@ -68,10 +72,10 @@ from wm_notecards import (
     wm_build_preprocessing_log,
 )
 from wm_notecards.cards import (
-    preview_card,
     question_card,
     takeaway_card,
     wm_counterintuitive_card,
+    wm_formula_card,
 )
 from wm_notecards.charts import style_fig_wm, wm_render_figure_card
 from wm_notecards.eda import display_data_chips
@@ -89,12 +93,9 @@ RNG_SEED = 20260724""",
         _code(
             """rng = np.random.default_rng(RNG_SEED)
 rows = 1_200
-signup_date = pd.Timestamp("2022-01-01") + pd.to_timedelta(
-    rng.integers(0, 900, rows), unit="D"
-)
-tenure_months = np.maximum(
-    1, ((pd.Timestamp("2025-01-01") - signup_date).days / 30.4).astype(int)
-)
+snapshot_month = np.repeat(pd.date_range("2024-01-01", periods=12, freq="MS"), 100)
+signup_date = snapshot_month - pd.to_timedelta(rng.integers(45, 900, rows), unit="D")
+tenure_months = np.maximum(1, ((snapshot_month - signup_date).days / 30.4).astype(int))
 plan = rng.choice(["Starter", "Plus", "Pro"], rows, p=[0.48, 0.36, 0.16])
 channel = rng.choice(["Direct", "Partner", "Community"], rows, p=[0.52, 0.29, 0.19])
 region = rng.choice(["North", "South", "West", "East"], rows, p=[0.38, 0.27, 0.21, 0.14])
@@ -162,8 +163,8 @@ customers = pd.DataFrame({
     "admin_role": rng.choice([True, False], rows, p=[0.36, 0.64]),
     "comment": [f"synthetic account note {i}" for i in range(rows)],
     "source_note": [f"generated customer {i}" for i in range(rows)],
-    "analyst_note": [f"review cohort {i % 8}" for i in range(rows)],
-    "snapshot_month": "2025-01",
+    "analyst_note": [f"review batch {i % 8}" for i in range(rows)],
+    "snapshot_month": snapshot_month.strftime("%Y-%m-%d"),
 })
 customers.loc[rng.choice(rows, 34, replace=False), "monthly_spend"] = None
 customers.loc[rng.choice(rows, 19, replace=False), "region"] = None
@@ -173,15 +174,15 @@ assert customers.shape == (rows, 40)
 assert 0.10 < customers["left_service"].mean() < 0.45"""
         ),
         new_markdown_cell(
-            """## Will this customer leave next month?
+            """## Can recent behavior separate customers who leave from customers who stay?
 
-We will use account activity, subscription context, and support behavior to
-predict whether a customer leaves in the next month."""
+Account activity, subscription context, and support behavior are measured at one
+monthly snapshot. The target records whether the customer leaves in the next month."""
         ),
         _code(
             """question_card(
     theme=theme,
-    title="Will this customer leave next month?",
+    title="Can recent behavior separate customers who leave from customers who stay?",
     body=("Before we model anything: is leaving measured clearly, and did time, money, "
           "and category fields arrive in forms we can trust?"),
     kicker="01, source question",
@@ -208,6 +209,7 @@ raw_preview"""
         _code(
             """reviewed = customers.copy()
 reviewed["signup_date"] = pd.to_datetime(reviewed["signup_date"], errors="raise")
+reviewed["snapshot_month"] = pd.to_datetime(reviewed["snapshot_month"], errors="raise")
 reviewed["monthly_spend"] = pd.to_numeric(reviewed["monthly_spend"], errors="coerce")
 reviewed["renewal_month"] = pd.to_numeric(reviewed["renewal_month"], errors="raise")
 
@@ -218,27 +220,63 @@ describe_columns = [
 reviewed[describe_columns].describe().round(2).T"""
         ),
         _code(
+            """source_checks = pd.DataFrame([
+    {"check": "Rows loaded", "result": f"{len(reviewed):,}", "status": "PASS"},
+    {"check": "Duplicate rows", "result": int(reviewed.duplicated().sum()), "status": "PASS"},
+    {"check": "Duplicate customer IDs", "result": int(reviewed["customer_id"].duplicated().sum()), "status": "PASS"},
+    {"check": "Target outside 0/1", "result": int((~reviewed["left_service"].isin([0, 1])).sum()), "status": "PASS"},
+    {"check": "Unparsed observation months", "result": int(reviewed["snapshot_month"].isna().sum()), "status": "PASS"},
+])
+wm_render_styler(
+    source_checks.style,
+    theme=theme,
+    title="Did the file arrive intact?",
+    subtitle="Identity, target, and time checks pass before missingness gets its own decision.",
+    kicker="02, source contract, checks",
+)"""
+        ),
+        _code(
             """missing_counts = reviewed.isna().sum().loc[lambda values: values.gt(0)].sort_values(ascending=False)
 missing_counts.rename("missing").to_frame()"""
         ),
         _code(
-            """missing_fig = go.Figure(go.Bar(
-    x=missing_counts.values,
-    y=missing_counts.index,
+            """missing_summary = missing_counts.rename("missing").to_frame()
+missing_summary["complete"] = len(reviewed) - missing_summary["missing"]
+missing_summary["missing share"] = missing_summary["missing"] / len(reviewed)
+
+missing_fig = go.Figure()
+missing_fig.add_trace(go.Bar(
+    x=missing_summary["complete"],
+    y=missing_summary.index,
     orientation="h",
-    marker_color=[theme.color_missing_accent] * len(missing_counts),
-    text=[f"{count:,}" for count in missing_counts.values],
+    marker_color="#D8DEE3",
+    name="Complete",
+    hovertemplate="%{y}: %{x:,} complete<extra></extra>",
+))
+missing_fig.add_trace(go.Bar(
+    x=missing_summary["missing"],
+    y=missing_summary.index,
+    orientation="h",
+    marker_color=theme.color_missing_accent,
+    text=[
+        f"{count:,} missing · {share:.1%}"
+        for count, share in zip(
+            missing_summary["missing"], missing_summary["missing share"], strict=True
+        )
+    ],
     textposition="outside",
     cliponaxis=False,
+    name="Missing",
     hovertemplate="%{y}: %{x:,} missing<extra></extra>",
 ))
-missing_fig.update_xaxes(title="Missing rows", rangemode="tozero")
+missing_fig.update_layout(barmode="stack", showlegend=False)
+missing_fig.update_xaxes(title="Rows", range=[0, len(reviewed) * 1.16], tickformat=",")
 missing_fig.update_yaxes(autorange="reversed", title=None)
 style_fig_wm(
     missing_fig,
     theme=theme,
-    title="Three fields need a missing-value decision before modeling",
-    subtitle=f"{int(missing_counts.sum()):,} empty cells across {len(missing_counts)} fields · no values filled yet",
+    title="Most fields are complete. Three are not.",
+    subtitle="Gold marks the exact gaps the preprocessing decision must account for",
     category_policy="preserve",
 )
 wm_render_figure_card(
@@ -246,15 +284,6 @@ wm_render_figure_card(
     theme=theme,
     file_stub="logistic_missingness_first_pass",
     kicker="02, missingness, evidence",
-)"""
-        ),
-        _code(
-            """wm_render_micro_profile_cards(
-    reviewed,
-    theme=theme,
-    columns=describe_columns,
-    visible_cards=2,
-    skew_threshold=1.0,
 )"""
         ),
         _code(
@@ -288,66 +317,210 @@ wm_render_styler(
 )"""
         ),
         _code(
-            """split_at = int(len(reviewed) * 0.80)
-train = reviewed.iloc[:split_at].copy()
-validation = reviewed.iloc[split_at:].copy()
-train_median = float(train["monthly_spend"].median())
-prepared = reviewed.copy()
-prepared["monthly_spend_missing"] = prepared["monthly_spend"].isna()
-prepared["monthly_spend"] = prepared["monthly_spend"].fillna(train_median)
-
-decision_log = wm_build_preprocessing_log(
-    reviewed,
-    prepared,
-    [PreprocessingDecision(
-        field="monthly_spend",
-        action="impute",
-        method=f"training median ({train_median:.2f})",
-        reason="Preserve rows and keep a missingness indicator.",
-        fit_scope="train_only",
-        keep_missing_indicator=True,
-    )],
-)
-decision_log"""
-        ),
-        _code(
-            """wm_render_styler(
-    decision_log.style,
-    theme=theme,
-    title="What did the training split decide to fill?",
-    kicker="03, preprocessing, audit trail",
-    wrap_columns={"method": 220, "reason": 260},
-)"""
-        ),
-        new_markdown_cell(
-            """## Model preparation
-
-Exclude the customer ID. Use the first 80% of rows for training. Impute numerical
-fields with the training median, scale numerical fields, and one-hot encode
-categorical fields."""
-        ),
-        _code(
-            """preview_card(
-    theme=theme,
-    title="The model gets behavior. The ID stays with the human.",
-    body=("Training learns medians, scales, and categories. Validation only receives "
-          "those decisions; it does not get to rewrite them."),
-    bullets=[
-        "Exclude customer_id: it identifies a row but does not describe behavior.",
-        "Fit preprocessing on training rows only.",
-        "Keep monthly_spend_missing beside the filled value.",
-    ],
-    kicker="04, model boundary",
-)"""
-        ),
-        _code(
             """display_data_chips(
-    prepared,
+    reviewed,
     theme=theme,
     target="left_service",
     identifier_columns=["customer_id"],
     datetime_columns=["signup_date"],
     categorical_columns=["plan", "channel", "region", "device", "market"],
+)"""
+        ),
+        _code(
+            """target_counts = (
+    reviewed["left_service"]
+    .map({0: "Stayed", 1: "Left next month"})
+    .value_counts()
+    .rename_axis("outcome")
+    .reset_index(name="customers")
+)
+target_counts["share"] = target_counts["customers"] / len(reviewed)
+target_counts"""
+        ),
+        _code(
+            """target_fig = go.Figure(go.Bar(
+    x=target_counts["outcome"],
+    y=target_counts["customers"],
+    marker_color=["#D8DEE3", theme.accent],
+    text=[f"{count:,} · {share:.1%}" for count, share in zip(
+        target_counts["customers"], target_counts["share"], strict=True
+    )],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{x}: %{y:,} customers<extra></extra>",
+))
+target_fig.update_xaxes(title=None)
+target_fig.update_yaxes(title="Customers", rangemode="tozero")
+style_fig_wm(
+    target_fig,
+    theme=theme,
+    title="Leaving is the smaller outcome—but not a tiny one",
+    subtitle="The validation metrics must reward finding leavers, not merely predicting the majority",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    target_fig,
+    theme=theme,
+    file_stub="logistic_target_balance",
+    kicker="03, target balance, evidence",
+)"""
+        ),
+        _code(
+            """wm_render_micro_profile_cards(
+    reviewed,
+    theme=theme,
+    columns=[
+        "monthly_spend", "tenure_months", "sessions_30d",
+        "days_since_login", "support_tickets",
+    ],
+    visible_cards=3,
+    skew_threshold=1.0,
+)"""
+        ),
+        _code(
+            """numeric_by_outcome = reviewed.assign(
+    outcome=reviewed["left_service"].map({0: "Stayed", 1: "Left next month"})
+)
+relationship_fig = go.Figure()
+for outcome, color in [("Stayed", "#AAB5BD"), ("Left next month", theme.accent)]:
+    values = numeric_by_outcome.loc[
+        numeric_by_outcome["outcome"].eq(outcome), "days_since_login"
+    ]
+    relationship_fig.add_trace(go.Box(
+        y=values,
+        name=outcome,
+        marker_color=color,
+        boxpoints="outliers",
+        hovertemplate=f"{outcome}<br>Days since login: %{{y:.1f}}<extra></extra>",
+    ))
+relationship_fig.update_yaxes(title="Days since last login")
+relationship_fig.update_xaxes(title=None)
+style_fig_wm(
+    relationship_fig,
+    theme=theme,
+    title="Customers who leave have usually been away longer",
+    subtitle="The box shows the middle half; points beyond the whiskers remain visible",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    relationship_fig,
+    theme=theme,
+    file_stub="logistic_days_since_login_by_outcome",
+    kicker="03, numeric relationship, evidence",
+)"""
+        ),
+        _code(
+            """wm_render_micro_profile_cards(
+    reviewed,
+    theme=theme,
+    columns=["plan", "channel", "region"],
+    visible_cards=3,
+)"""
+        ),
+        _code(
+            """plan_rates = (
+    reviewed.groupby("plan", dropna=False)["left_service"]
+    .agg(customers="size", leavers="sum", leave_rate="mean")
+    .sort_values("leave_rate", ascending=True)
+    .reset_index()
+)
+plan_rates"""
+        ),
+        _code(
+            """plan_fig = go.Figure(go.Bar(
+    x=plan_rates["leave_rate"],
+    y=plan_rates["plan"],
+    orientation="h",
+    marker_color=["#B9C4CB", "#82DCE8", theme.accent],
+    text=[
+        f"{rate:.1%} · {leavers}/{customers}"
+        for rate, leavers, customers in zip(
+            plan_rates["leave_rate"], plan_rates["leavers"],
+            plan_rates["customers"], strict=True
+        )
+    ],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{y}: %{x:.1%}<extra></extra>",
+))
+plan_fig.update_xaxes(title="Leave rate", tickformat=".0%", rangemode="tozero")
+plan_fig.update_yaxes(title=None)
+style_fig_wm(
+    plan_fig,
+    theme=theme,
+    title="Starter-plan customers leave more often in this sample",
+    subtitle="Rates include both numerator and denominator so a small group cannot look louder than it is",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    plan_fig,
+    theme=theme,
+    file_stub="logistic_plan_leave_rate",
+    kicker="03, categorical relationship, evidence",
+)"""
+        ),
+        _code(
+            """eda_takeaway = takeaway_card(
+    theme=theme,
+    title="Three clues earn the modeling test: absence, support friction, and plan context.",
+    metric=f"Leave rate: {reviewed['left_service'].mean():.1%}",
+    body=("Customers who left had usually been away longer, while plan groups did not "
+          "share one common leave rate. These are associations in synthetic data—not causes."),
+    bullets=[
+        "Missing monthly spend stays visible through a missingness indicator.",
+        "Days since login and support tickets are candidate behavior signals.",
+        "Plan is context worth testing, not a reason to contact someone by itself.",
+    ],
+    kicker="03, EDA, takeaway",
+)"""
+        ),
+        _code(
+            """association_rows = []
+for field in [
+    "monthly_spend", "tenure_months", "sessions_30d",
+    "days_since_login", "support_tickets", "discount_rate",
+]:
+    complete = reviewed[[field, "left_service"]].dropna()
+    association_rows.append({
+        "field": field,
+        "correlation with leaving": complete[field].corr(complete["left_service"]),
+    })
+numeric_associations = (
+    pd.DataFrame(association_rows)
+    .assign(magnitude=lambda frame: frame["correlation with leaving"].abs())
+    .sort_values("magnitude", ascending=True)
+)
+numeric_associations.drop(columns="magnitude").round(3)"""
+        ),
+        _code(
+            """association_fig = go.Figure(go.Bar(
+    x=numeric_associations["correlation with leaving"],
+    y=numeric_associations["field"],
+    orientation="h",
+    marker_color=[
+        theme.accent if value >= 0 else "#6B7B88"
+        for value in numeric_associations["correlation with leaving"]
+    ],
+    text=[f"{value:+.2f}" for value in numeric_associations["correlation with leaving"]],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{y}: %{x:+.3f}<extra></extra>",
+))
+association_fig.add_vline(x=0, line_color="#38444D", line_width=1)
+association_fig.update_xaxes(title="Pearson correlation with leaving", range=[-0.35, 0.45])
+association_fig.update_yaxes(title=None)
+style_fig_wm(
+    association_fig,
+    theme=theme,
+    title="Recent absence has the clearest one-field relationship with leaving",
+    subtitle="Direction is descriptive, not causal; the model still has to survive later months",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    association_fig,
+    theme=theme,
+    file_stub="logistic_numeric_target_associations",
+    kicker="03, numeric relationships, evidence",
 )"""
         ),
         _code(
@@ -392,36 +565,6 @@ categorical fields."""
 feature_ledger"""
         ),
         _code(
-            """feature_decision_counts = (
-    feature_ledger["decision"].value_counts().rename_axis("decision").reset_index(name="fields")
-)
-decision_fig = go.Figure(go.Bar(
-    x=feature_decision_counts["fields"],
-    y=feature_decision_counts["decision"],
-    orientation="h",
-    marker_color=theme.accent,
-    text=feature_decision_counts["fields"],
-    textposition="outside",
-    cliponaxis=False,
-    hovertemplate="%{y}: %{x} field(s)<extra></extra>",
-))
-decision_fig.update_xaxes(title="Fields", dtick=1, rangemode="tozero")
-decision_fig.update_yaxes(title=None, autorange="reversed")
-style_fig_wm(
-    decision_fig,
-    theme=theme,
-    title="Four fields, four different modeling decisions",
-    subtitle="Identity, time, geography, and free text do not belong in one default pipeline",
-    category_policy="preserve",
-)
-wm_render_figure_card(
-    decision_fig,
-    theme=theme,
-    file_stub="logistic_feature_decisions",
-    kicker="04, feature decisions, overview",
-)"""
-        ),
-        _code(
             """feature_receipt = feature_ledger[[
     "field", "decision", "observed evidence", "validation test"
 ]].rename(columns={
@@ -440,68 +583,110 @@ wm_render_styler(
     },
 )"""
         ),
-        _code(
-            """cohort_rate = (
-    prepared.assign(cohort_month=prepared["signup_date"].dt.to_period("M").dt.to_timestamp())
-    .groupby("cohort_month", as_index=False)
-    .agg(leavers=("left_service", "sum"), customers=("left_service", "size"))
-)
-cohort_rate["leave rate"] = cohort_rate["leavers"] / cohort_rate["customers"]
-cohort_rate = cohort_rate.tail(12).reset_index(drop=True)
-cohort_rate["previous month rate"] = cohort_rate["leave rate"].shift(1)
-cohort_rate["rose vs previous month"] = (
-    cohort_rate["leave rate"] > cohort_rate["previous month rate"]
-)
-review_target = 0.25
-cohort_rate[["cohort_month", "customers", "leavers", "leave rate",
-             "previous month rate", "rose vs previous month"]]"""
+        new_markdown_cell(
+            """## Can the model learn without seeing the future?
+
+January through September teach the preprocessing and coefficients. October
+through December stay untouched until validation."""
         ),
         _code(
-            """focus_index = len(cohort_rate) - 1
-bar_colors = ["#D8DEE3"] * len(cohort_rate)
-bar_colors[focus_index] = theme.accent
-
-reference_fig = go.Figure()
-reference_fig.add_trace(go.Bar(
-    x=cohort_rate["cohort_month"],
-    y=cohort_rate["leave rate"],
-    marker_color=bar_colors,
-    text=[f"{value:.1%}" for value in cohort_rate["leave rate"]],
-    textposition="outside",
-    name="Observed leave rate",
-    showlegend=False,
-    hovertemplate="%{x|%b %Y}<br>%{y:.1%}<extra></extra>",
-))
-rose = cohort_rate[cohort_rate["rose vs previous month"]]
-reference_fig.add_trace(go.Scatter(
-    x=rose["cohort_month"],
-    y=[0.012] * len(rose),
-    mode="markers",
-    marker={"symbol": "triangle-up", "size": 9, "color": "#B74C5F"},
-    name="Higher than previous month",
-    showlegend=False,
-    hovertemplate="Higher than previous month<extra></extra>",
-))
-reference_fig.add_hline(
-    y=review_target,
-    line_dash="dash",
-    line_color="#38444D",
-    annotation_text="Review line: 25%",
-    annotation_position="top right",
-)
-reference_fig.update_yaxes(tickformat=".0%", range=[0, max(0.40, cohort_rate["leave rate"].max() + 0.06)])
-style_fig_wm(
-    reference_fig,
+            """question_card(
     theme=theme,
-    title="Which signup months crossed the 25% review line?",
-    subtitle="Monthly leave rate · ▲ higher than the prior month",
+    title="Can the model learn without seeing the future?",
+    body=("A random row split would let later observation months influence earlier ones. "
+          "We keep the last three months intact and carry training decisions forward."),
+    kicker="04, time split, question",
+)"""
+        ),
+        _code(
+            """validation_start = pd.Timestamp("2024-10-01")
+train = reviewed.loc[reviewed["snapshot_month"] < validation_start].copy()
+validation = reviewed.loc[reviewed["snapshot_month"] >= validation_start].copy()
+assert train["snapshot_month"].max() < validation["snapshot_month"].min()
+
+train_median = float(train["monthly_spend"].median())
+prepared = reviewed.copy()
+prepared["monthly_spend_missing"] = prepared["monthly_spend"].isna()
+prepared["monthly_spend"] = prepared["monthly_spend"].fillna(train_median)
+
+decision_log = wm_build_preprocessing_log(
+    reviewed,
+    prepared,
+    [PreprocessingDecision(
+        field="monthly_spend",
+        action="impute",
+        method=f"training median ({train_median:.2f})",
+        reason="Preserve rows and keep a missingness indicator.",
+        fit_scope="train_only",
+        keep_missing_indicator=True,
+    )],
+)
+decision_log"""
+        ),
+        _code(
+            """wm_render_styler(
+    decision_log.style,
+    theme=theme,
+    title="What did training fill—and what stayed missing?",
+    subtitle="Only monthly spend is filled here; region and comment keep their original gaps.",
+    kicker="04, preprocessing, audit trail",
+    wrap_columns={"method": 220, "reason": 260},
+)"""
+        ),
+        _code(
+            """split_summary = pd.DataFrame([
+    {
+        "split": "Training",
+        "months": "Jan–Sep 2024",
+        "rows": len(train),
+        "purpose": "Learn preprocessing and model coefficients",
+    },
+    {
+        "split": "Validation",
+        "months": "Oct–Dec 2024",
+        "rows": len(validation),
+        "purpose": "Compare models and choose an outreach threshold",
+    },
+])
+split_summary"""
+        ),
+        _code(
+            """split_fig = go.Figure()
+split_fig.add_trace(go.Scatter(
+    x=[pd.Timestamp("2024-01-01"), pd.Timestamp("2024-09-30")],
+    y=["Training", "Training"],
+    mode="lines+markers+text",
+    line={"color": "#222A31", "width": 28},
+    marker={"color": "#222A31", "size": 18},
+    text=["", f"Jan–Sep · {len(train):,} rows"],
+    textposition="top left",
+    hovertemplate="Training: Jan–Sep 2024<extra></extra>",
+))
+split_fig.add_trace(go.Scatter(
+    x=[validation_start, pd.Timestamp("2024-12-31")],
+    y=["Validation", "Validation"],
+    mode="lines+markers+text",
+    line={"color": theme.accent, "width": 28},
+    marker={"color": theme.accent, "size": 18},
+    text=["", f"Oct–Dec · {len(validation):,} rows"],
+    textposition="top left",
+    hovertemplate="Validation: Oct–Dec 2024<extra></extra>",
+))
+split_fig.update_layout(showlegend=False)
+split_fig.update_xaxes(title="Observation month", tickformat="%b %Y")
+split_fig.update_yaxes(title=None, categoryorder="array", categoryarray=["Validation", "Training"])
+style_fig_wm(
+    split_fig,
+    theme=theme,
+    title="The model learns from nine months. The last three stay untouched.",
+    subtitle="Every preprocessing choice is fitted on Jan–Sep, then carried forward into Oct–Dec",
     category_policy="preserve",
 )
 wm_render_figure_card(
-    reference_fig,
+    split_fig,
     theme=theme,
-    file_stub="logistic_cohort_reference_comparison",
-    kicker="04, actual vs prior vs target",
+    file_stub="logistic_chronological_split",
+    kicker="04, chronological split, evidence",
 )"""
         ),
         _code(
@@ -514,9 +699,63 @@ categorical_features = ["plan", "channel", "region"]
 behavior_features = [
     "tenure_months", "sessions_30d", "days_since_login", "support_tickets",
 ]
-
-
-def _pipeline(numeric: list[str], categorical: list[str]) -> Pipeline:
+model_specs = {
+    "Activity only": (behavior_features, []),
+    "Activity + account context": (numeric_features, categorical_features),
+}
+model_contract = pd.DataFrame([
+    {
+        "model": name,
+        "numeric fields": len(numeric),
+        "categorical fields": len(categorical),
+        "question": (
+            "Does recent behavior separate leavers?"
+            if name == "Activity only"
+            else "Does account context add useful separation?"
+        ),
+    }
+    for name, (numeric, categorical) in model_specs.items()
+])
+model_contract"""
+        ),
+        _code(
+            """wm_render_styler(
+    model_contract.style,
+    theme=theme,
+    title="What does each challenger get to know?",
+    subtitle="The second model must beat behavior alone to justify the added context.",
+    kicker="05, model contract, challengers",
+    wrap_columns={"question": 300},
+)"""
+        ),
+        _code(
+            r'''wm_formula_card(
+    title="Two preparation lanes meet at one logistic model",
+    theme=theme,
+    items=[
+        {
+            "label": "NUMERIC LANE",
+            "latex": r"x_{num} \\rightarrow \\operatorname{median}_{train} \\rightarrow \\operatorname{scale}",
+            "fallback": "numeric -> training median -> standard scale",
+        },
+        {
+            "label": "CATEGORY LANE",
+            "latex": r"x_{cat} \\rightarrow \\operatorname{mode}_{train} \\rightarrow \\operatorname{one\\!-\\!hot}",
+            "fallback": "category -> training mode -> one-hot columns",
+        },
+        {
+            "label": "MODEL",
+            "latex": r"P(y=1 \\mid x)=\\sigma(\\beta_0 + x^T\\beta)",
+            "fallback": "prepared fields -> probability of leaving next month",
+        },
+    ],
+    subtitle="Every learned value comes from Jan–Sep; Oct–Dec only receives the result.",
+    kicker="05, preprocessing, contract",
+)'''
+        ),
+        _code(
+            """def _pipeline(numeric: list[str], categorical: list[str]) -> Pipeline:
+    \"\"\"Build one leakage-safe preprocessing and logistic-regression path.\"\"\"
     transformers: list[tuple[str, Any, list[str]]] = []
     if numeric:
         transformers.append((
@@ -539,26 +778,35 @@ def _pipeline(numeric: list[str], categorical: list[str]) -> Pipeline:
     return Pipeline([
         ("prepare", ColumnTransformer(transformers)),
         ("model", LogisticRegression(max_iter=1_500, random_state=RNG_SEED)),
-    ])
+    ])""",
+            noise=True,
+        ),
+        _code(
+            """train = prepared.loc[prepared["snapshot_month"] < validation_start].copy()
+validation = prepared.loc[prepared["snapshot_month"] >= validation_start].copy()
+assert train["snapshot_month"].max() < validation["snapshot_month"].min()
 
-
-train = prepared.iloc[:split_at].copy()
-validation = prepared.iloc[split_at:].copy()
-model_specs = {
-    "Activity only": (behavior_features, []),
-    "Activity + account context": (numeric_features, categorical_features),
-}
 models: dict[str, Pipeline] = {}
 model_probabilities: dict[str, np.ndarray] = {}
-score_rows: list[dict[str, float | str]] = []
 for name, (numeric, categorical) in model_specs.items():
     features = numeric + categorical
     model = _pipeline(numeric, categorical)
     model.fit(train[features], train[target])
     probabilities = model.predict_proba(validation[features])[:, 1]
-    predictions = (probabilities >= 0.50).astype(int)
     models[name] = model
     model_probabilities[name] = probabilities
+fit_receipt = pd.DataFrame({
+    "model": list(models),
+    "training rows": len(train),
+    "validation rows": len(validation),
+    "fit status": "fitted",
+})
+fit_receipt"""
+        ),
+        _code(
+            """score_rows: list[dict[str, float | str]] = []
+for name, probabilities in model_probabilities.items():
+    predictions = (probabilities >= 0.50).astype(int)
     score_rows.append({
         "model": name,
         "accuracy": accuracy_score(validation[target], predictions),
@@ -570,7 +818,7 @@ for name, (numeric, categorical) in model_specs.items():
 
 scores = pd.DataFrame(score_rows).sort_values("PR AUC", ascending=False).reset_index(drop=True)
 assert scores["PR AUC"].between(0, 1).all()
-assert scores.iloc[0]["model"] == 'Activity + account context'"""
+scores.round(3)"""
         ),
         _code(
             """validation_prevalence = float(validation[target].mean())
@@ -594,9 +842,6 @@ prevalence_receipt"""
     subtitle="A random ranking starts at the share of validation customers who left.",
     kicker="05, target prevalence, evidence",
 )"""
-        ),
-        _code(
-            """scores.round(3)"""
         ),
         _code(
             """wm_render_styler(
@@ -795,6 +1040,38 @@ top_coefficients.round(3)"""
     subtitle="Positive weights push toward leaving; negative weights push toward staying.",
     kicker="08, coefficients, evidence",
     wrap_columns={"feature": 260},
+)"""
+        ),
+        _code(
+            """coefficient_plot = top_coefficients.sort_values("coefficient")
+coefficient_fig = go.Figure(go.Bar(
+    x=coefficient_plot["coefficient"],
+    y=coefficient_plot["feature"],
+    orientation="h",
+    marker_color=[
+        theme.accent if value > 0 else "#6B7B88"
+        for value in coefficient_plot["coefficient"]
+    ],
+    text=[f"{value:+.2f}" for value in coefficient_plot["coefficient"]],
+    textposition="outside",
+    cliponaxis=False,
+    hovertemplate="%{y}<br>coefficient %{x:+.3f}<extra></extra>",
+))
+coefficient_fig.add_vline(x=0, line_color="#38444D", line_width=1)
+coefficient_fig.update_xaxes(title="Logistic coefficient after preprocessing")
+coefficient_fig.update_yaxes(title=None)
+style_fig_wm(
+    coefficient_fig,
+    theme=theme,
+    title="Which fitted signals push the score up—or pull it down?",
+    subtitle="Positive weights move toward leaving; negative weights move toward staying",
+    category_policy="preserve",
+)
+wm_render_figure_card(
+    coefficient_fig,
+    theme=theme,
+    file_stub="logistic_coefficient_directions",
+    kicker="08, coefficients, visual evidence",
 )"""
         ),
         new_markdown_cell(
