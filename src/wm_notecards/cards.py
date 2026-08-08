@@ -546,6 +546,35 @@ def wm_markdown_card(
     )
 
 
+def mermaid_card(
+    *,
+    title: str,
+    diagram: str,
+    theme: ThemeLike,
+    kicker: str | None = None,
+    chip_text: str | None = None,
+) -> None:
+    """Render a Mermaid diagram in the WM card shell.
+
+    The diagram stays in its own block, outside Plotly's title and plot area.
+    Mermaid is intentionally left as a native ``.mermaid`` element so a host
+    page can load the Mermaid runtime once and render every card consistently.
+    """
+    if not title.strip() or not diagram.strip():
+        raise ValueError("title and diagram must be non-empty strings.")
+    meta, header = _card_header(
+        title=title, theme=theme, role="chart", kicker=kicker, chip_text=chip_text
+    )
+    content = (
+        header
+        + "<div class='wm-mermaid-card__diagram mermaid' "
+        "style='overflow-x:auto;padding:18px 8px;'>"
+        + escape(diagram)
+        + "</div>"
+    )
+    display(HTML(card_shell_html(content, theme, card_class="wm-mermaid-card", role_idle=meta.idle_marker, role_hover=meta.hover_marker)))
+
+
 # ── Question cards ──────────────────────────────────────────────────
 
 

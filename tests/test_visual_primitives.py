@@ -11,6 +11,7 @@ from wm_notecards._colors import WMGradient, generate_discrete_gradient_wm, gene
 from wm_notecards._html import card_shell_css, chip_html, plot_shell_html, shell_header_html
 from wm_notecards.icons import get_icon, list_icons
 from wm_notecards.kicker import WMKicker, kicker_html
+from wm_notecards.cards import mermaid_card
 
 
 def test_gradients_are_clamped_and_plotly_ready() -> None:
@@ -35,6 +36,20 @@ def test_every_registered_icon_builds_svg() -> None:
         assert "<" in icon.svg_builder("#16C7E8", 0.8)
     with pytest.raises(KeyError):
         get_icon("not-an-icon")
+
+
+def test_mermaid_card_keeps_diagram_in_dedicated_shell(monkeypatch) -> None:
+    shown = []
+    monkeypatch.setattr("wm_notecards.cards.display", shown.append)
+    mermaid_card(
+        title="Weekly handoff",
+        diagram="flowchart LR\nA[Forecast] --> B[Review]",
+        theme=WMTheme.light(),
+    )
+    html = str(shown[0].data)
+    assert "wm-mermaid-card__diagram" in html
+    assert "flowchart LR" in html
+    assert "Forecast" in html and "Review" in html
 
 
 def test_kicker_and_html_shell_wrap_long_metadata() -> None:
