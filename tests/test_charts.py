@@ -52,6 +52,18 @@ def test_subtitle_shares_title_text_flow_to_prevent_overlap() -> None:
     assert fig.layout.title.subtitle.text is None
 
 
+def test_long_chart_copy_stays_in_header_flow() -> None:
+    fig = _styled_line_chart(n_traces=2)
+    style_fig_wm(
+        fig,
+        title="A long recruiter-facing chart title that must remain above the plot",
+        subtitle="The subtitle belongs to the card header, never on top of the bars.",
+        theme=WMTheme.light(),
+    )
+    assert fig.layout.margin.t >= 126
+    assert "never on top of the bars" in fig.layout.title.text
+
+
 def test_title_and_hover_label_use_safe_export_and_color_tokens() -> None:
     fig = _styled_line_chart(n_traces=2)
 
