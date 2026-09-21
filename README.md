@@ -1,5 +1,6 @@
-# wm-notecards 
-### A living northstar
+# wm-notecards
+
+### A living north star
 
 ![Before-and-after demonstration of a raw notebook becoming a notecard thinking interface](assets/wm-notecards-demo.gif)
 
@@ -23,43 +24,61 @@ NaN   61500    28.7   8       1       1142.01  NaN     2988.41  Red     NC      
 
 The goal is insights.
 
-### what do you want to know everytime you look at a NUMERICAL variable?
+### What do you want to know every time you look at a NUMERICAL variable?
 
-Answer that. 
+Answer that.
 
-### what do you want to know everytime you look at a CATERGORICAL variable?
+### What do you want to know every time you look at a CATEGORICAL variable?
 
-Answer just that. 
+Answer just that.
 
 
 ### You have count but no missingness?
 
-Add it. 
+Add it.
 
 
-### What data types are likely incorrect? 
+### What data types are likely incorrect?
 
-Flag it and fix it and notify me.
+Flag it. Show me the evidence. Ask before changing the data.
 
 
 ## What should change?
 
 ### The quartiles are written for computers.
 
-Add the box plot on each of them. 
+Add the box plot on each of them.
 
 
 ### SPLASH water on your face 1x
 
-YOUR CURIOUSITY from simply reading the COLUMN names is incredible.
+YOUR CURIOSITY from simply reading the COLUMN names is incredible.
 
 ```text
 customer_id  age  income  balance  tenure  visits  claims  premium  score  state  segment  bmi  smoker  policy_type  plan  deductible  risk_score  churn
 ```
 
 The questions are predictable.
- 
+
 The notebook should be too.
+
+## See the notebook, not a mockup
+
+- [Logistic regression thinking interface](examples/logistic_regression_thinking_interface.ipynb):
+  recognizable rows, source checks, missingness, target definition, three-way split,
+  model comparison, threshold choice, and one final test.
+- [40-column EDA scratchbook](examples/40_column_eda_scratchbook.ipynb): dtype
+  suspicions, missingness, skew, candidate fixes, and the applied audit trail.
+- [Simple seasonal forecasting lab](examples/simple_seasonal_forecasting_lab.ipynb):
+  questions, formulas, hold-out evidence, model comparison, and your decision.
+
+The examples are executable notebooks. Their HTML files are exports of the same cell
+order. They are not separately staged marketing pages.
+
+Pandas is not the enemy. It is often the fastest way to inspect the actual rows and
+exact summaries. The problem starts when the notebook asks you to remember those
+outputs six cells later. Pandas keeps the audit trail; wm-notecards keeps the question,
+reading order, interpretation, and decision close to the evidence.
 
 ## Install
 
@@ -102,6 +121,23 @@ init_notebook()
 These guarantees target the failures that are hardest to catch from code alone:
 stacked category labels, clipped evidence, drifting fonts, callouts covering prose,
 and notebook output that looks correct only at one width.
+
+### Canonical EDA contracts
+
+The shipped examples use the same source helpers for notebook output and HTML export:
+
+- analytical-role and dtype chips use the theme's semantic role tokens; missingness is
+  the only reason a complete chip shows a percentage, and incomplete fields receive a
+  single high-contrast attention treatment;
+- every long table wraps prose inside its cells and preserves the rounded card edge;
+- source checks, `df.head()`, missingness, target definition, and the chronological
+  train/validation/test split appear before modeling;
+- threshold charts show the selected operating point and pair precision/recall with F1
+  and exact confusion counts. A chart never relies on hover or color alone.
+
+Pandas output remains part of the audit trail. wm-notecards adds the reading order and
+the question, evidence, takeaway, and decision around it. The two are companions, not
+competing pipelines.
 
 ## Develop from source
 
@@ -189,7 +225,7 @@ export_figure_wm(fig, "exports/chart.png")       # 3× share/slide default
 export_figure_wm(fig, "exports/chart.pdf")       # print
 ```
 
-Export only the artifact—not notebook paths, tokens, internal comments, proprietary
+Export only the artifact. Do not export notebook paths, tokens, internal comments, proprietary
 variable names, or private data.
 
 ## Colab builder
@@ -209,12 +245,14 @@ uv run python scripts/build_colab_bootstrap.py \
 Use `--skip-scratch` for a release notebook. Inspect the generated notebook before
 sharing; embedded source is still source.
 
-## Notecard Teacher Style skill
+## The AI skills are part of the product
 
 The distributable AI-authoring skill lives at
 [`skills/notecard-teacher-style`](skills/notecard-teacher-style). It preserves the
 lead-first teaching loop, careful anomaly language, visual QA requirement, and the
-human-in-the-loop decision boundary.
+human-in-the-loop decision boundary. Its EDA contract also requires a recognizable
+`df.head()`, complete missingness before selected profiles, a target contract before
+modeling, and table-plus-visual pairs that stay together in the reading order.
 
 ## Development gates
 
@@ -232,10 +270,35 @@ PR.
 
 ## Contributing
 
-Contributions are welcome—especially new card roles, accessibility improvements,
+Contributions are welcome, especially new card roles, accessibility improvements,
 better evidence checks, export workflows, and regression fixtures from real notebook
 failures. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+
+## Opt-in responsive notebook layout
+
+New notebooks can replace hand-written centering, profile-grid, and narrow-table CSS:
+
+```python
+from wm_notecards import init_notebook
+
+init_notebook(layout="responsive")
+```
+
+Existing `init_notebook()` calls keep their current behavior. This does not update
+other repositories, their vendored wheels, or their manual overrides. Opt in only
+when migrating a notebook; remove its duplicate layout CSS at the same time.
+The preset centers VS Code rich figure/card outputs, wraps profile cards into two
+columns (one below 720px), and scrolls wide WM tables rather than squeezing numbers.
+An odd final profile card spans the row; an even final card retains its column.
+Table widths are based on actual data-cell counts, independent of pandas class names.
+
+Call at startup before rendering cards. To undo a preset in an already-rendered
+notebook, clear saved outputs and reload the frontend; `layout=None` does not remove
+previously emitted CSS. Modern CSS `:has()` is required. Renderer-isolated iframes
+may not inherit parent CSS; use a WM HTML figure card in that case. The preset does
+not change plain text output layout or wrap long numeric values.

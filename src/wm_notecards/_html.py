@@ -14,6 +14,7 @@ Every card shell ``<div>`` receives the fixed class ``wm-card`` for
 downstream CSS targeting, in addition to whatever ``card_class`` the
 caller specifies.
 """
+
 from __future__ import annotations
 
 from html import escape
@@ -40,6 +41,7 @@ _WM_CARD_CLASS: str = "wm-card"
 
 # ── Private helpers ─────────────────────────────────────────────────
 
+
 def _dim(theme: ThemeLike, attr: str, default: int) -> int:
     """Read an optional integer dimension from *theme*, with fallback."""
     return int(getattr(theme, attr, default) or default)
@@ -52,7 +54,26 @@ def _classes(card_class: str) -> str:
     return f"{_WM_CARD_CLASS} {card_class}"
 
 
+def _theme_css_custom_properties(theme: ThemeLike) -> str:
+    """Return the host-isolation tokens every rendered card must expose.
+
+    Notebook front-ends can inject light/dark rules after card HTML has already
+    rendered. These variables give the shared boot CSS a stable, theme-aware
+    source of truth without hard-coding every card to a white surface.
+    """
+    return (
+        f"--wm-card-bg:{theme.card_bg};"
+        f"--wm-plot-bg:{theme.plot_bg};"
+        f"--wm-text-main:{theme.text_main};"
+        f"--wm-text-muted:{theme.text_muted};"
+        f"--wm-border:{theme.border};"
+        f"--wm-accent:{theme.accent};"
+        f"--wm-color-scheme:{theme.mode};"
+    )
+
+
 # ── Colour helper ───────────────────────────────────────────────────
+
 
 def rgba_css(color: str, alpha: float) -> str:
     """Convert any matplotlib-parseable colour to an ``rgba(…)`` CSS value.
@@ -74,13 +95,11 @@ def rgba_css(color: str, alpha: float) -> str:
     from matplotlib import colors as mcolors  # deferred so the module stays light
 
     red, green, blue, _ = mcolors.to_rgba(color)
-    return (
-        f"rgba({round(red * 255)}, {round(green * 255)}, "
-        f"{round(blue * 255)}, {alpha:.3f})"
-    )
+    return f"rgba({round(red * 255)}, {round(green * 255)}, {round(blue * 255)}, {alpha:.3f})"
 
 
 # ── Card-shell CSS & open/close ─────────────────────────────────────
+
 
 def card_shell_css(
     theme: ThemeLike,
@@ -115,13 +134,13 @@ def card_shell_css(
     rule_width = _dim(theme, "shell_rule_width", _SHELL_RULE_WIDTH)
 
     is_light = theme.mode == "light"
-    shadow = "0 12px 22px -14px rgba(0,0,0,0.20)" if is_light else "none"
-    hover_shadow = "0 20px 34px -20px rgba(0,0,0,0.28)" if is_light else shadow
-    marker_glow = (
-        "0 0 0 4px rgba(17,17,17,0.04)"
-        if is_light
-        else "0 0 0 4px rgba(255,255,255,0.05)"
+    # The paper edge carries the resting card. Elevation is an interaction cue,
+    # not permanent decoration.
+    shadow = "none"
+    hover_shadow = (
+        "0 20px 34px -20px rgba(0,0,0,0.28)" if is_light else "0 20px 34px -18px rgba(0,0,0,0.62)"
     )
+    marker_glow = "0 0 0 4px rgba(22,199,232,0.18),0 0 16px -3px rgba(22,199,232,0.72)"
     hover_transform = "translateY(-2px)" if hover_lift else "none"
 
     return (
@@ -131,12 +150,19 @@ def card_shell_css(
         "to{opacity:1;transform:translateY(0)}}"
         # ── card wrapper ──
         f".{card_class}{{"
+        f"{_theme_css_custom_properties(theme)}"
+        "display:block!important;"
+        "width:100%!important;"
+        "min-width:0!important;"
         f"max-width:{theme.width}px !important;"
+        "box-sizing:border-box!important;"
         "margin:16px auto !important;"
         f"background:{theme.card_bg} !important;"
         f"color:{theme.text_main} !important;"
         f"border:1px solid {theme.border} !important;"
         f"border-radius:{radius}px;"
+        f"color-scheme:{theme.mode};"
+        "isolation:isolate;"
         f"box-shadow:{shadow};"
         "transition:transform 0.18s ease,box-shadow 0.18s ease,"
         "border-color 0.18s ease;"
@@ -149,6 +175,7 @@ def card_shell_css(
         "}"
         # ── inner padding ──
         f".{card_class} .wm-shell-inner{{"
+        "width:100%;max-width:100%;min-width:0;box-sizing:border-box;"
         f"padding:{pad_top}px {pad_x}px {pad_bottom}px {pad_x}px;"
         "}"
         # ── eyebrow row ──
@@ -193,6 +220,7 @@ def card_shell_css(
         f".{card_class} .wm-shell-title{{"
         f"font-family:{theme.font_display};font-size:{title_size}px;"
         "font-weight:900;line-height:1.04;letter-spacing:-0.8px;"
+        "max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;"
         f"color:{theme.text_main} !important;"
         f"margin-bottom:{title_gap}px;"
         "}"
@@ -215,7 +243,7 @@ def card_shell_css(
         "margin:0 0 14px 0;"
         "}"
         "@media (max-width:640px){"
-        f".{card_class} .wm-shell-inner{{padding:18px 16px 16px 16px;}}"
+        f".{card_class} .wm-shell-inner{{padding:24px 22px 24px 22px;}}"
         f".{card_class} .wm-shell-title{{font-size:clamp(25px,8vw,{title_size}px);}}"
         f".{card_class} .wm-shell-toprow{{align-items:stretch;}}"
         "}"
@@ -265,7 +293,7 @@ def card_shell_open(
     css = card_shell_css(theme, card_class=card_class, hover_lift=hover_lift)
     width = max_width or theme.width
 
-    custom_props = ""
+    custom_props = _theme_css_custom_properties(theme)
     if role_idle is not None:
         custom_props += f"--wm-role-idle:{role_idle};"
     if role_hover is not None:
@@ -336,7 +364,7 @@ def card_shell_html(
     css = card_shell_css(theme, card_class=card_class, hover_lift=hover_lift)
     effective_width = width or theme.width
 
-    custom_props = ""
+    custom_props = _theme_css_custom_properties(theme)
     if role_idle is not None:
         custom_props += f"--wm-role-idle:{role_idle};"
     if role_hover is not None:
@@ -353,6 +381,7 @@ def card_shell_html(
 
 
 # ── Atomic HTML fragments ──────────────────────────────────────────
+
 
 def eyebrow_html(text: str, theme: ThemeLike) -> str:
     """Small uppercase role label with a role-marker dot.
@@ -410,12 +439,13 @@ def chip_html(
     return (
         "<span class='wm-shell-chip' style='display:inline-flex;align-items:center;"
         "justify-content:center;padding:5px 10px;border-radius:999px;"
-        f"border:1px solid {rgba_css(chip_color, 0.28)} !important;"
+        "border:0 !important;box-shadow:none;text-shadow:none;"
         f"background:{rgba_css(chip_color, 0.10)} !important;"
         f"color:{chip_color} !important;"
         f"font-family:{theme.font_mono};font-size:11px;font-weight:800;"
         "letter-spacing:0.08em;text-transform:uppercase;"
-        "white-space:normal;overflow-wrap:anywhere;text-align:center;"
+        "white-space:normal;overflow-wrap:normal;word-break:keep-all;hyphens:none;"
+        "text-align:center;line-height:1.25;flex:0 1 auto;"
         f"max-width:min(100%,24ch);box-sizing:border-box;'>{escape(text)}</span>"
     )
 
@@ -438,9 +468,7 @@ def kicker_html(text: str, theme: ThemeLike) -> str:
     """
     if not text:
         return ""
-    return (
-        f"<div class='wm-shell-kicker'>{escape(text)}</div>"
-    )
+    return f"<div class='wm-shell-kicker'>{escape(text)}</div>"
 
 
 def rule_html(theme: ThemeLike) -> str:
@@ -504,6 +532,7 @@ def note_html(text: str, theme: ThemeLike) -> str:
 
 # ── Composed header ────────────────────────────────────────────────
 
+
 def shell_header_html(
     *,
     title: str,
@@ -553,16 +582,11 @@ def shell_header_html(
         eyebrow_block = f"<div class='wm-shell-toprow'>{eb}{ch}</div>" if ch else eb
     elif chip_text:
         ch = chip_html(chip_text, theme, color=chip_color)
-        eyebrow_block = (
-            f"<div class='wm-shell-toprow'>"
-            f"<div></div>{ch}</div>"
-        )
+        eyebrow_block = f"<div class='wm-shell-toprow'><div></div>{ch}</div>"
 
     kicker_block = kicker_html(kicker or "", theme)
 
-    title_style = (
-        f" style='font-size:{title_size}px;'" if title_size is not None else ""
-    )
+    title_style = f" style='font-size:{title_size}px;'" if title_size is not None else ""
     subtitle_block = ""
     if subtitle:
         safe = escape(subtitle).replace("\n", "<br>")
@@ -580,11 +604,13 @@ def shell_header_html(
 
 # ── Plot / figure shell ────────────────────────────────────────────
 
+
 def plot_shell_html(
     figure_html: str,
     theme: ThemeLike,
     *,
     figure_width: int,
+    chip_text: str | None = None,
 ) -> str:
     """Centered card shell that wraps rendered Plotly figure HTML.
 
@@ -600,6 +626,8 @@ def plot_shell_html(
         Active visual theme.
     figure_width : int
         Pixel width of the Plotly figure layout.
+    chip_text : str, optional
+        Status label rendered in a dedicated shell row above the figure.
 
     Returns
     -------
@@ -608,11 +636,20 @@ def plot_shell_html(
         ``IPython.display.HTML()``.
     """
     is_light = theme.mode == "light"
-    shadow = "0 10px 20px -16px rgba(0,0,0,0.16)" if is_light else "none"
+    hover_shadow = (
+        "0 20px 34px -20px rgba(0,0,0,0.28)" if is_light else "0 20px 34px -18px rgba(0,0,0,0.62)"
+    )
     shell_width = min(int(theme.width) + 48, int(figure_width) + 48)
     radius = _dim(theme, "shell_radius", _SHELL_RADIUS)
     radius = max(radius, 12)
     inner_radius = max(radius - 6, 10)
+    chip_block = (
+        "<div class='wm-plot-chip-row' style='display:flex;justify-content:flex-end;"
+        "width:100%;margin:0 0 8px 0;'>"
+        f"{chip_html(chip_text, theme)}</div>"
+        if chip_text
+        else ""
+    )
 
     return (
         "<style>"
@@ -620,7 +657,9 @@ def plot_shell_html(
         "from{opacity:0;transform:translateY(6px)}"
         "to{opacity:1;transform:translateY(0)}}"
         ".wm-plot-shell{animation:wm-card-arrive 0.28s "
-        "cubic-bezier(0.22,1,0.36,1);}"
+        "cubic-bezier(0.22,1,0.36,1);box-shadow:none;"
+        "transition:transform .18s ease,box-shadow .18s ease;}"
+        f".wm-plot-shell:hover{{transform:translateY(-2px);box-shadow:{hover_shadow} !important;}}"
         ".wm-plot-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;"
         "overscroll-behavior-x:contain;scrollbar-width:thin;box-sizing:border-box;}"
         ".wm-plot-stage{display:block;margin:0 auto;box-sizing:border-box;}"
@@ -628,6 +667,7 @@ def plot_shell_html(
         "transition:none !important;animation:none !important;}}"
         "</style>"
         "<div class='wm-card wm-plot-shell-wrap' style='"
+        f"{_theme_css_custom_properties(theme)}"
         "display:flex;justify-content:center;align-items:flex-start;"
         "width:100%;margin:16px auto;padding:10px 0 6px 0;"
         "box-sizing:border-box;text-align:center;'>"
@@ -636,9 +676,12 @@ def plot_shell_html(
         f"max-width:{shell_width}px !important;"
         f"margin:0 auto;padding:32px 24px 22px 24px;"
         f"background:{theme.card_bg} !important;"
+        f"color:{theme.text_main} !important;color-scheme:{theme.mode};"
+        "isolation:isolate;"
         f"border:1px solid {theme.border} !important;"
         f"border-radius:{radius}px;"
-        f"box-shadow:{shadow};overflow:hidden;box-sizing:border-box;'>"
+        "box-shadow:none;overflow:hidden;box-sizing:border-box;'>"
+        f"{chip_block}"
         "<div class='wm-plot-scroll' tabindex='0' role='region' "
         "aria-label='Chart; scroll horizontally when needed'>"
         f"<div class='wm-plot-stage' style='width:{figure_width}px;"

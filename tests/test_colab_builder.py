@@ -4,6 +4,13 @@ import json
 from pathlib import Path
 
 from build_zerve_notebook import (
+    WM_COLLAPSE_OUTPUT_TAG,
+    WM_ESSENTIAL_TAG,
+    WM_HIDE_SOURCE_TAG,
+    WM_NOISE_TAG,
+    apply_portable_cell_policy,
+    build_embed_cell,
+    build_embed_cell_source,
     build_notebook,
     clear_cell_state,
     collect_wm_package_files,
@@ -55,7 +62,7 @@ def test_embed_sanitizer_removes_editor_notes_and_keeps_runnable_source() -> Non
 # Internal prose that must not ship in an embedded runtime.
 
 VALUE = 3
-WM_NOTEBOOK_LANGUAGE_GUIDE = \"\"\"
+WM_NOTEBOOK_LANGUAGE_GUIDE: str = \"\"\"
 private authoring guide
 \"\"\"
 
@@ -92,3 +99,85 @@ def test_clear_cell_state_does_not_mutate_the_input_cell() -> None:
 
     assert original.execution_count == 9
     assert cleared.execution_count is None
+
+
+def test_colab_bootstrap_always_prioritizes_embedded_runtime(tmp_path: Path) -> None:
+    package_file = tmp_path / "theme.py"
+    package_file.write_text("VALUE = 'embedded'\n", encoding="utf-8")
+
+    source = build_embed_cell_source(
+        title="Embed",
+        cell_tag="embedded",
+        file_entries=[(package_file, "_vendor/wm_notecards_pkg/src/wm_notecards/theme.py")],
+        install_wm_editable=True,
+    )
+
+    assert "_sys.path.insert(0, _r)" in source
+    assert "del _sys.modules[_name]" in source
+    assert "importlib.invalidate_caches()" in source
+    assert "Activated embedded wm-notecards" in source
+
+
+def test_portable_visibility_policy_is_explicit_and_essential_wins() -> None:
+    noise = new_code_cell("print('setup')", metadata={"tags": [WM_NOISE_TAG]})
+    hidden = new_code_cell("x = 1", metadata={"tags": [WM_HIDE_SOURCE_TAG]})
+    raw = new_code_cell("model.summary()", metadata={"tags": [WM_COLLAPSE_OUTPUT_TAG]})
+    essential = new_code_cell(
+        "takeaway_card(...)",
+        metadata={"tags": [WM_COLLAPSE_OUTPUT_TAG, WM_ESSENTIAL_TAG]},
+    )
+
+    noise_out = apply_portable_cell_policy(noise)
+    hidden_out = apply_portable_cell_policy(hidden)
+    raw_out = apply_portable_cell_policy(raw)
+    essential_out = apply_portable_cell_policy(essential)
+
+    assert noise_out.metadata["cellView"] == "form"
+    assert noise_out.metadata["jupyter"]["source_hidden"] is True
+    assert noise_out.metadata["jupyter"]["outputs_hidden"] is True
+    assert noise_out.metadata["collapsed"] is True
+    assert hidden_out.metadata["jupyter"]["source_hidden"] is True
+    assert "outputs_hidden" not in hidden_out.metadata["jupyter"]
+    assert raw_out.metadata["collapsed"] is True
+    assert essential_out.metadata["jupyter"]["outputs_hidden"] is False
+    assert essential_out.metadata["collapsed"] is False
+
+
+def test_embedded_helper_is_tagged_as_collapsed_noise(tmp_path: Path) -> None:
+    source_file = tmp_path / "helper.py"
+    source_file.write_text("VALUE = 1\n", encoding="utf-8")
+
+    cell = build_embed_cell(
+        title="Embed",
+        cell_tag="embedded",
+        file_entries=[(source_file, "helper.py")],
+    )
+
+    assert cell is not None
+    assert WM_NOISE_TAG in cell.metadata["tags"]
+    assert cell.metadata["collapsed"] is True
+    assert cell.metadata["jupyter"]["source_hidden"] is True
+    assert cell.metadata["jupyter"]["outputs_hidden"] is True
+
+
+def test_shipped_colab_runtimes_match_distributable_source():
+    import ast
+    import base64
+    import gzip
+
+    root = Path(__file__).resolve().parents[1]
+    expected = {
+        key: sanitize_embedded_python_source(path.read_text()) if path.suffix == '.py'
+        else path.read_text()
+        for path, key in collect_wm_package_files(root)
+    }
+    for path in sorted((root / 'examples').glob('*_COLAB.ipynb')):
+        notebook = json.loads(path.read_text())
+        source = next(''.join(cell['source']) for cell in notebook['cells']
+                      if 'EMBEDDED_FILES_B64 = (' in ''.join(cell['source']))
+        assignment = next(node for node in ast.parse(source).body
+                          if isinstance(node, ast.Assign)
+                          and any(isinstance(target, ast.Name) and target.id == 'EMBEDDED_FILES_B64'
+                                  for target in node.targets))
+        embedded = json.loads(gzip.decompress(base64.b64decode(ast.literal_eval(assignment.value))))
+        assert embedded == expected, f'{path.name} needs its embedded runtime regenerated'

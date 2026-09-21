@@ -18,6 +18,15 @@ from __future__ import annotations
 
 # ── Core (always available) ──────────────────────────────────────────
 from wm_notecards.boot import enable_cow_warn, init_notebook
+from wm_notecards.eda import (
+    EDAComparisonResult,
+    EDADisplayPolicy,
+    FeatureDecision,
+    PreprocessingDecision,
+    wm_build_preprocessing_log,
+    wm_compare_fields,
+    wm_validate_feature_manifest,
+)
 from wm_notecards.kicker import WMKicker
 from wm_notecards.theme import WMTheme
 
@@ -29,4 +38,11 @@ __all__ = [
     "WMTheme",
     # kicker
     "WMKicker",
+    "EDADisplayPolicy",
+    "PreprocessingDecision",
+    "FeatureDecision",
+    "EDAComparisonResult",
+    "wm_compare_fields",
+    "wm_build_preprocessing_log",
+    "wm_validate_feature_manifest",
 ]

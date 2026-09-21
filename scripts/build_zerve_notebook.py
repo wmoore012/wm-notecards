@@ -41,6 +41,13 @@ CELL_ID_RE = re.compile(
 # ``pip install -e``. Vendor path avoids shadowing; see ``build_embed_cell_source``.
 WM_COLAB_VENDOR_DIR = "_vendor/wm_notecards_pkg"
 
+# Portable-cell presentation tags. The builder must not guess whether an
+# analytical result is "noise" from its text; notebook authors declare intent.
+WM_HIDE_SOURCE_TAG = "wm-hide-source"
+WM_COLLAPSE_OUTPUT_TAG = "wm-collapse-output"
+WM_NOISE_TAG = "wm-noise"
+WM_ESSENTIAL_TAG = "wm-essential"
+
 
 def resolve_wm_notecards_root(script_path: Path) -> Path:
     """Locate wm-notecards repo root (script in scripts/ or project-local copy)."""
@@ -116,6 +123,41 @@ def clear_cell_state(cell: NotebookNode) -> NotebookNode:
     return clone
 
 
+def apply_portable_cell_policy(cell: NotebookNode) -> NotebookNode:
+    """Apply deterministic source/output visibility from explicit cell tags.
+
+    ``wm-noise`` hides source and collapses output. The two lower-level tags
+    can be used independently. ``wm-essential`` wins over output-collapse
+    tags so evidence and decision cards cannot disappear accidentally.
+    Untagged cells are preserved exactly.
+    """
+    clone = deepcopy(cell)
+    tags = {str(tag) for tag in clone.metadata.get("tags", [])}
+    hide_source = WM_NOISE_TAG in tags or WM_HIDE_SOURCE_TAG in tags
+    collapse_output = WM_NOISE_TAG in tags or WM_COLLAPSE_OUTPUT_TAG in tags
+    if WM_ESSENTIAL_TAG in tags:
+        collapse_output = False
+
+    if hide_source:
+        jupyter = dict(clone.metadata.get("jupyter", {}))
+        jupyter["source_hidden"] = True
+        clone.metadata["jupyter"] = jupyter
+        clone.metadata["cellView"] = "form"
+
+    if collapse_output:
+        jupyter = dict(clone.metadata.get("jupyter", {}))
+        jupyter["outputs_hidden"] = True
+        clone.metadata["jupyter"] = jupyter
+        clone.metadata["collapsed"] = True
+    elif WM_ESSENTIAL_TAG in tags:
+        jupyter = dict(clone.metadata.get("jupyter", {}))
+        jupyter["outputs_hidden"] = False
+        clone.metadata["jupyter"] = jupyter
+        clone.metadata["collapsed"] = False
+
+    return clone
+
+
 def cell_identity(cell: NotebookNode) -> str:
     match = CELL_ID_RE.search(cell.source)
     if match:
@@ -176,9 +218,13 @@ def sanitize_embedded_python_source(text: str) -> str:
                 idx += 1
             continue
 
-        if line.strip() == 'WM_NOTEBOOK_LANGUAGE_GUIDE = """':
+        if re.fullmatch(
+            r"\s*WM_NOTEBOOK_LANGUAGE_GUIDE(?:\s*:\s*[^=]+)?\s*=\s*\"\"\"",
+            line,
+        ):
+            assignment_prefix = line.split("=", maxsplit=1)[0].rstrip()
             kept.append(
-                'WM_NOTEBOOK_LANGUAGE_GUIDE = "Source-only guide omitted from embedded runtime files."'
+                f'{assignment_prefix} = "Source-only guide omitted from embedded runtime files."'
             )
             idx += 1
             found_guide_end = False
@@ -288,29 +334,28 @@ def build_embed_cell_source(
         lines.extend(
             [
                 "",
-                f"# Editable install from {vendor}/ only when wm_notecards is not already importable.",
-                "# Local .venv: skip pip (avoids CalledProcessError when pip disagrees with uv).",
-                "# Ephemeral Colab: find_spec is None until after install.",
+                f"# The notebook's embedded {vendor}/ runtime always wins over stale installs.",
                 "import subprocess as _sp",
                 "import sys as _sys",
                 f"_wm_repo = Path({vendor!r})",
                 "if _wm_repo.is_dir():",
-                "    if importlib.util.find_spec('wm_notecards') is None:",
+                "    _wm_existing = importlib.util.find_spec('wm_notecards')",
+                "    if _wm_existing is None:",
                 "        _sp.run(",
                 "            [_sys.executable, '-m', 'pip', 'install', '-e', str(_wm_repo), '--quiet'],",
                 "            check=True,",
                 "        )",
                 "        print(f'Installed wm-notecards from {_wm_repo.resolve()}')",
-                "        _wm_src = _wm_repo / 'src'",
-                "        if _wm_src.is_dir():",
-                "            _r = str(_wm_src.resolve())",
-                "            if _r not in _sys.path:",
-                "                _sys.path.insert(0, _r)",
-                "    else:",
-                "        print(",
-                "            'wm_notecards already importable — skipping pip install -e '",
-                "            '(use local venv / setup_project.sh; Colab skips after first run).'",
-                "        )",
+                "    _wm_src = _wm_repo / 'src'",
+                "    if _wm_src.is_dir():",
+                "        _r = str(_wm_src.resolve())",
+                "        _sys.path[:] = [entry for entry in _sys.path if entry != _r]",
+                "        _sys.path.insert(0, _r)",
+                "        for _name in list(_sys.modules):",
+                "            if _name == 'wm_notecards' or _name.startswith('wm_notecards.'):",
+                "                del _sys.modules[_name]",
+                "        importlib.invalidate_caches()",
+                "        print(f'Activated embedded wm-notecards from {_wm_src.resolve()}')",
             ]
         )
 
@@ -333,9 +378,8 @@ def build_embed_cell(
         install_wm_editable=install_wm_editable,
     )
     cell = new_code_cell(source=source)
-    cell.metadata["collapsed"] = True
-    cell.metadata["jupyter"] = {"source_hidden": True}
-    return cell
+    cell.metadata["tags"] = [WM_NOISE_TAG]
+    return apply_portable_cell_policy(cell)
 
 
 def build_scratch_appendix_cell(_: str) -> NotebookNode:
@@ -363,7 +407,10 @@ def build_notebook(
     takeover_nb = read_notebook(takeover_path)
     scratch_nb = read_notebook(scratch_path)
 
-    cleaned_takeover = [clear_cell_state(cell) for cell in takeover_nb.cells]
+    cleaned_takeover = [
+        apply_portable_cell_policy(clear_cell_state(cell))
+        for cell in takeover_nb.cells
+    ]
     generated_cells: list[NotebookNode] = []
 
     helper_cell = build_embed_cell(
@@ -380,7 +427,7 @@ def build_notebook(
     if include_scratch:
         takeover_ids = {cell_identity(cell) for cell in takeover_nb.cells}
         scratch_unique = [
-            clear_cell_state(cell)
+            apply_portable_cell_policy(clear_cell_state(cell))
             for cell in scratch_nb.cells
             if cell_identity(cell) not in takeover_ids
         ]
