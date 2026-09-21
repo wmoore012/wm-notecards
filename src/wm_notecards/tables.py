@@ -362,7 +362,7 @@ def _align_css(
             rules.append(
                 f"table.{table_class} tbody td.col{idx} {{"
                 f" text-align:left; white-space:normal;"
-                f" width:{w}px; max-width:{w}px;"
+                f" width:{w}px; min-width:{min(w, 180)}px; max-width:{w}px;"
                 f" line-height:1.5; overflow-wrap:anywhere;"
                 f" word-break:break-word; }}"
             )
@@ -373,7 +373,7 @@ def _align_css(
         else:
             rules.append(
                 f"table.{table_class} tbody td.col{idx} {{"
-                f" text-align:left; white-space:normal; width:auto; max-width:280px;"
+                f" text-align:left; white-space:normal; width:auto; min-width:140px; max-width:280px;"
                 f" line-height:1.5; overflow-wrap:anywhere;"
                 f" word-break:normal; }}"
             )
@@ -385,7 +385,11 @@ def _align_css(
         " white-space:normal; overflow-wrap:anywhere; word-break:normal;"
         " vertical-align:top; }"
     )
-    return f"<style>{base}{''.join(rules)}</style>"
+    headers = (
+        f"table.{table_class} thead th {{"
+        " white-space:normal; overflow-wrap:normal; word-break:normal; hyphens:none; }"
+    )
+    return f"<style>{base}{headers}{''.join(rules)}</style>"
 
 
 # ── Semantic table colour helpers ───────────────────────────────────

@@ -421,3 +421,12 @@ def test_alignment_css_has_balanced_braces_so_first_column_rule_is_parsed():
     assert css.count('{') == css.count('}')
     assert '}}' not in css
     assert 'td.col0 { text-align:right; white-space:nowrap; }' in css
+
+
+def test_table_headers_and_model_names_do_not_collapse_into_vertical_text():
+    from wm_notecards.tables import _align_css
+
+    css = _align_css(pd.DataFrame({'model': ['Activity plus account context'], 'test rows': [200]}), 'proof')
+    assert 'thead th { white-space:normal; overflow-wrap:normal; word-break:normal; hyphens:none; }' in css
+    assert 'min-width:140px' in css
+    assert 'td.col1 { text-align:right; white-space:nowrap; }' in css
