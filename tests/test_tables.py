@@ -182,7 +182,7 @@ def test_table_prose_wraps_by_default_and_rounds_the_visible_bottom_edge() -> No
     assert "border-bottom-right-radius: 14px" in css
     assert "max-width:280px" in alignment
     assert "text-overflow:ellipsis" not in alignment
-    assert "table.wm-table { table-layout:fixed; width:100%; }" in alignment
+    assert "table.wm-table { table-layout:auto; width:100%; }" in alignment
     assert "white-space:normal; overflow-wrap:anywhere" in alignment
 
 
@@ -395,3 +395,29 @@ def test_feature_engineering_table_validates_rows(monkeypatch) -> None:
             theme=WMTheme.light(),
             title="Bad",
         )
+
+
+def test_each_table_keeps_its_own_column_wrapping_rules(monkeypatch):
+    import re
+
+    from wm_notecards import tables
+
+    outputs = []
+    monkeypatch.setattr(tables, 'display', lambda obj: outputs.append(obj.data))
+    tables.wm_render_styler(pd.DataFrame({'value': [123456789.123]}).style, theme=WMTheme.light())
+    tables.wm_render_styler(pd.DataFrame({'value': ['Long teaching prose']}).style, theme=WMTheme.light())
+    classes = [re.search(r'wm-align-[a-f0-9]+', html).group() for html in outputs]
+    assert classes[0] != classes[1]
+    assert f'table.{classes[0]} tbody td.col0' in outputs[0]
+    assert 'white-space:nowrap' in outputs[0]
+    assert classes[0] not in outputs[1]
+    assert 'table.wm-table tbody td.col0' not in ''.join(outputs)
+
+
+def test_alignment_css_has_balanced_braces_so_first_column_rule_is_parsed():
+    from wm_notecards.tables import _align_css
+
+    css = _align_css(pd.DataFrame({'value': [12345678.123]}), 'wm-table')
+    assert css.count('{') == css.count('}')
+    assert '}}' not in css
+    assert 'td.col0 { text-align:right; white-space:nowrap; }' in css

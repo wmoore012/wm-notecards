@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>seasonal.launch.executed</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>simple_seasonal_forecasting_lab</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7806,7 +7806,338 @@ a.anchor-link {
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-noise" id="cell-id=81729fb9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards</span><span class="w"> </span><span class="kn">import</span> <span class="n">WMTheme</span><span class="p">,</span> <span class="n">init_notebook</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards.cards</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">big_number_card</span><span class="p">,</span>
+    <span class="n">glossary_card</span><span class="p">,</span>
+    <span class="n">next_think_card</span><span class="p">,</span>
+    <span class="n">preview_card</span><span class="p">,</span>
+    <span class="n">question_card</span><span class="p">,</span>
+    <span class="n">question_pair</span><span class="p">,</span>
+    <span class="n">takeaway_card</span><span class="p">,</span>
+    <span class="n">verdict_card</span><span class="p">,</span>
+    <span class="n">wm_check_card</span><span class="p">,</span>
+    <span class="n">wm_counterintuitive_card</span><span class="p">,</span>
+    <span class="n">wm_formula_card</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards.charts</span><span class="w"> </span><span class="kn">import</span> <span class="n">style_fig_wm</span><span class="p">,</span> <span class="n">wm_render_figure_card</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards.eda</span><span class="w"> </span><span class="kn">import</span> <span class="n">wm_build_category_share_table</span><span class="p">,</span> <span class="n">wm_eda_overview</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards.pictogram</span><span class="w"> </span><span class="kn">import</span> <span class="n">pictogram_card</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wm_notecards.tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">wm_render_styler</span>
+
+<span class="n">theme</span> <span class="o">=</span> <span class="n">WMTheme</span><span class="o">.</span><span class="n">light</span><span class="p">()</span>
+<span class="n">init_notebook</span><span class="p">()</span>
+<span class="n">RNG_SEED</span> <span class="o">=</span> <span class="mi">20260718</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<style id="wm-notebook-css">
+.jp-OutputArea-output,
+.jp-OutputArea-child,
+.jp-RenderedPlotly,
+.jp-RenderedHTMLCommon,
+.cell-output-display,
+.output_subarea.output_html.rendered_html,
+.output,
+.output_area {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.jp-RenderedPlotly,
+.jp-RenderedHTMLCommon,
+.cell-output-display,
+.output_subarea.output_html.rendered_html {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+.jp-RenderedPlotly,
+.cell-output-display .plotly-graph-div,
+.cell-output-display .js-plotly-plot,
+.jp-RenderedHTMLCommon .plotly-graph-div,
+.jp-RenderedHTMLCommon .js-plotly-plot,
+.output_subarea.output_html.rendered_html .plotly-graph-div,
+.output_subarea.output_html.rendered_html .js-plotly-plot {
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+.js-plotly-plot,
+.plotly-graph-div,
+.plot-container.plotly,
+.svg-container {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.svg-container {
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+.jp-OutputArea-output .plotly-graph-div,
+.jp-OutputArea-output .js-plotly-plot,
+.jp-OutputArea-child .plotly-graph-div,
+.jp-OutputArea-child .js-plotly-plot,
+.jp-RenderedPlotly .plotly-graph-div,
+.jp-RenderedPlotly .js-plotly-plot,
+.cell-output-display .plotly-graph-div,
+.cell-output-display .js-plotly-plot,
+.output_subarea.output_html.rendered_html .plotly-graph-div,
+.output_subarea.output_html.rendered_html .js-plotly-plot {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-width: 100% !important;
+}
+
+.wm-plot-shell,
+.wm-plot-shell-wrap,
+.wm-plot-shell .js-plotly-plot,
+.wm-plot-shell .plotly-graph-div,
+.wm-plot-shell .svg-container {
+  display: block !important;
+  max-width: 100% !important;
+}
+
+.wm-plot-shell-wrap {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding-top: 8px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.wm-plot-shell {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+.wm-markdown-card,
+.wm-table-card,
+.wm-fe-decision-card,
+.wm-check-card-shell,
+.wm-formula-card,
+.wm-glossary-card,
+.wm-counterintuitive-card,
+.wm-figure-card,
+.wm-inline-svg-card,
+.wm-pictogram-card,
+.wm-question-card-shell {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.wm-inline-svg-card svg,
+.wm-formula-card svg,
+.wm-counterintuitive-card svg {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+</style>
+<style id="wm-dark-mode-defense">
+.wm-card {
+  color-scheme: var(--wm-color-scheme, light) !important;
+  isolation: isolate !important;
+  forced-color-adjust: none;
+}
+.wm-card p,
+.wm-card li,
+.wm-card dt,
+.wm-card dd,
+.wm-card code,
+.wm-card pre {
+  color: inherit !important;
+}
+.wm-card .wm-shell-eyebrow,
+.wm-card .wm-shell-kicker,
+.wm-card .wm-shell-subtitle,
+.wm-card .wm-question-subtitle {
+  color: var(--wm-text-muted, rgba(17,17,17,0.60)) !important;
+}
+.wm-card a {
+  color: var(--wm-accent, #087B91) !important;
+}
+.wm-card .wm-semantic--before,
+.wm-card .wm-semantic--fail {
+  background-color: rgba(180, 35, 60, 0.10) !important;
+  color: #9F1D35 !important;
+  border-color: rgba(180, 35, 60, 0.24) !important;
+}
+.wm-card .wm-semantic--after,
+.wm-card .wm-semantic--pass,
+.wm-card .wm-semantic--cleaned {
+  background-color: rgba(32, 181, 123, 0.12) !important;
+  color: #146C43 !important;
+  border-color: rgba(32, 181, 123, 0.26) !important;
+}
+.wm-card .wm-semantic--warn,
+.wm-card .wm-semantic--missing {
+  background-color: rgba(216, 140, 46, 0.16) !important;
+  color: #8A5700 !important;
+  border-color: rgba(216, 140, 46, 0.28) !important;
+}
+.wm-card .wm-semantic--cached {
+  background-color: rgba(22, 199, 232, 0.12) !important;
+  color: #087B91 !important;
+  border-color: rgba(22, 199, 232, 0.26) !important;
+}
+.wm-card .wm-semantic--raw {
+  background-color: rgba(76, 100, 117, 0.10) !important;
+  color: #3D5362 !important;
+  border-color: rgba(76, 100, 117, 0.22) !important;
+}
+</style>
+<script>
+(function () {
+  if (!window.wmTypesetMath) {
+    window.wmTypesetMath = function (target) {
+      const node = typeof target === "string" ? document.getElementById(target) : target;
+      if (!node) {
+        return;
+      }
+
+      const tryTypeset = function () {
+        if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+          window.MathJax.typesetPromise([node]).catch(function () {});
+          return true;
+        }
+        if (window.MathJax && window.MathJax.Hub && typeof window.MathJax.Hub.Queue === "function") {
+          window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, node]);
+          return true;
+        }
+        return false;
+      };
+
+      if (tryTypeset()) {
+        return;
+      }
+
+      let attempts = 0;
+      const retry = function () {
+        if (tryTypeset()) {
+          return;
+        }
+        attempts += 1;
+        if (attempts < 40) {
+          window.setTimeout(retry, 250);
+        }
+      };
+      retry();
+    };
+  }
+
+  const existingMathJaxScript = document.querySelector('script[src*="mathjax" i]');
+  const loadedMathJax = window.MathJax && (
+    typeof window.MathJax.typesetPromise === "function" ||
+    (window.MathJax.Hub && typeof window.MathJax.Hub.Queue === "function")
+  );
+
+  if (!window.wmMathJaxConfigured && !loadedMathJax && !existingMathJaxScript) {
+    window.MathJax = window.MathJax || {};
+    window.MathJax.tex = Object.assign(
+      {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]],
+        processEscapes: true
+      },
+      window.MathJax.tex || {}
+    );
+    window.MathJax.options = Object.assign(
+      {
+        skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+      },
+      window.MathJax.options || {}
+    );
+    window.MathJax.startup = Object.assign(
+      { typeset: false },
+      window.MathJax.startup || {}
+    );
+    window.wmMathJaxConfigured = true;
+  }
+
+  if (!loadedMathJax && !existingMathJaxScript && !document.getElementById("wm-mathjax-script")) {
+    const script = document.createElement("script");
+    script.id = "wm-mathjax-script";
+    script.async = true;
+    script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+    document.head.appendChild(script);
+  }
+})();
+</script>
+</div>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=f9b854b6">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">question_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Can a simple model recover a rhythm we created on purpose?"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">"We know the answer because we own the data-generating equation. "</span>
+        <span class="s2">"The notebook's job is to make the evidence legible before asking you to decide."</span>
+    <span class="p">),</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"01, synthetic data, question"</span><span class="p">,</span>
+    <span class="n">chip_text</span><span class="o">=</span><span class="s2">"SAFE TO SHARE"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">glossary_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Three terms before the evidence"</span><span class="p">,</span>
+    <span class="n">terms</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"Trend"</span><span class="p">:</span> <span class="s2">"A long-run change in level across time."</span><span class="p">,</span>
+        <span class="s2">"Seasonality"</span><span class="p">:</span> <span class="s2">"A pattern that repeats at a known calendar interval."</span><span class="p">,</span>
+        <span class="s2">"Hold-out"</span><span class="p">:</span> <span class="s2">"The final observations kept unseen while the model is fitted."</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"01, glossary"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -7826,6 +8157,41 @@ a.anchor-link {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=5b98fa45">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">RNG_SEED</span><span class="p">)</span>
+<span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="s2">"2018-01-01"</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">84</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">"MS"</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">))</span>
+<span class="n">season</span> <span class="o">=</span> <span class="mi">18</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">values</span> <span class="o">=</span> <span class="mi">72</span> <span class="o">+</span> <span class="mf">0.55</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">season</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+<span class="n">demo</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">"record_id"</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"SYN-</span><span class="si">{</span><span class="n">index</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">))],</span>
+    <span class="s2">"month"</span><span class="p">:</span> <span class="n">dates</span><span class="p">,</span>
+    <span class="s2">"value"</span><span class="p">:</span> <span class="n">values</span><span class="p">,</span>
+    <span class="s2">"channel"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">([</span><span class="s2">"Direct"</span><span class="p">,</span> <span class="s2">"Partner"</span><span class="p">,</span> <span class="s2">"Community"</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)),</span>
+    <span class="s2">"exposure"</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dates</span><span class="p">)),</span>
+    <span class="s2">"is_peak_window"</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">dates</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+<span class="p">})</span>
+<span class="n">demo</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">38</span><span class="p">],</span> <span class="s2">"exposure"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="n">demo</span><span class="p">[</span><span class="s2">"split"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">demo</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="mi">72</span><span class="p">,</span> <span class="s2">"Train"</span><span class="p">,</span> <span class="s2">"Hold-out"</span><span class="p">)</span>
+
+<span class="n">question_pair</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"02, reading order"</span><span class="p">,</span>
+    <span class="n">chip_text</span><span class="o">=</span><span class="s2">"EDA"</span><span class="p">,</span>
+    <span class="n">left</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Is there drift?"</span><span class="p">,</span> <span class="s2">"body"</span><span class="p">:</span> <span class="s2">"Compare the beginning and end of the line."</span><span class="p">},</span>
+    <span class="n">right</span><span class="o">=</span><span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Is there rhythm?"</span><span class="p">,</span> <span class="s2">"body"</span><span class="p">:</span> <span class="s2">"Look for peaks roughly twelve months apart."</span><span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -7839,6 +8205,60 @@ a.anchor-link {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=36253869">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">eda_contract</span> <span class="o">=</span> <span class="n">wm_eda_overview</span><span class="p">(</span>
+    <span class="n">demo</span><span class="p">,</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="s2">"value"</span><span class="p">,</span>
+    <span class="n">identifier_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"record_id"</span><span class="p">],</span>
+    <span class="n">datetime_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"month"</span><span class="p">],</span>
+    <span class="n">categorical_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">],</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"value"</span><span class="p">,</span> <span class="s2">"exposure"</span><span class="p">,</span> <span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="s2">"is_peak_window"</span><span class="p">],</span>
+    <span class="n">skew_threshold</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">visible_cards</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">category_share</span> <span class="o">=</span> <span class="n">wm_build_category_share_table</span><span class="p">(</span>
+    <span class="n">demo</span><span class="p">,</span>
+    <span class="p">[</span><span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"channel"</span><span class="p">:</span> <span class="s2">"Acquisition channel"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">:</span> <span class="s2">"Evidence role"</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">wm_render_styler</span><span class="p">(</span>
+    <span class="n">category_share</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">format</span><span class="p">({</span><span class="s2">"share of all rows"</span><span class="p">:</span> <span class="s2">"</span><span class="si">{:.1%}</span><span class="s2">"</span><span class="p">})</span><span class="o">.</span><span class="n">hide</span><span class="p">(),</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Process fields stay grouped, ordered, and reconciled to all rows"</span><span class="p">,</span>
+    <span class="n">subtitle</span><span class="o">=</span><span class="s2">"Each field group is sorted from most common to least common"</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"02, EDA, categorical shares"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">wm_formula_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"The math and the processing order stay visible"</span><span class="p">,</span>
+    <span class="n">items</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Data-generating equation"</span><span class="p">,</span>
+            <span class="s2">"latex"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"\[y_t = 72 + 0.55t + 18\sin(2\pi t/12 - \pi/3) + \epsilon_t\]"</span><span class="p">,</span>
+            <span class="s2">"fallback"</span><span class="p">:</span> <span class="s2">"level + trend + annual rhythm + seeded Gaussian noise"</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Pipeline rule"</span><span class="p">,</span>
+            <span class="s2">"latex"</span><span class="p">:</span> <span class="sa">r</span><span class="s2">"\[x \rightarrow \mathrm</span><span class="si">{inspect}</span><span class="s2"> \rightarrow \mathrm{split\;in\;time} \rightarrow \hat</span><span class="si">{y}</span><span class="s2">\]"</span><span class="p">,</span>
+            <span class="s2">"fallback"</span><span class="p">:</span> <span class="s2">"inspect first -&gt; preserve time order -&gt; fit -&gt; forecast"</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">],</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"02, formula, preprocessing contract"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -8038,11 +8458,11 @@ a.anchor-link {
 <rdf:rdf xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <cc:work>
 <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
-<dc:date>2026-07-27T23:42:55.105492</dc:date>
+<dc:date>2026-09-21T16:03:25.457529</dc:date>
 <dc:format>image/svg+xml</dc:format>
 <dc:creator>
 <cc:agent>
-<dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+<dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
 </cc:agent>
 </dc:creator>
 </cc:work>
@@ -8053,264 +8473,264 @@ a.anchor-link {
 </defs>
 <g id="figure_1">
 <g id="patch_1">
-<path d="M 0 46.1232 
-L 170.28 46.1232 
-L 170.28 0 
-L 0 0 
-L 0 46.1232 
+<path d="M 0 46.1232
+L 170.28 46.1232
+L 170.28 0
+L 0 0
+L 0 46.1232
 z
 " style="fill: none; opacity: 0"></path>
 </g>
 <g id="axes_1">
 <g id="FillBetweenPolyCollection_1">
 <defs>
-<path d="M 9.049091 -24.678347 
-L 9.049091 -21.444853 
-L 10.586281 -21.26509 
-L 12.123471 -21.069947 
-L 13.660661 -20.85807 
-L 15.197851 -20.628197 
-L 16.735041 -20.379273 
-L 18.272231 -20.110575 
-L 19.809421 -19.821824 
-L 21.346612 -19.513286 
-L 22.883802 -19.185837 
-L 24.420992 -18.840997 
-L 25.958182 -18.480916 
-L 27.495372 -18.108317 
-L 29.032562 -17.726391 
-L 30.569752 -17.338658 
-L 32.106942 -16.948803 
-L 33.644132 -16.560485 
-L 35.181322 -16.177167 
-L 36.718512 -15.801936 
-L 38.255702 -15.437371 
-L 39.792893 -15.085439 
-L 41.330083 -14.747436 
-L 42.867273 -14.423984 
-L 44.404463 -14.115065 
-L 45.941653 -13.820109 
-L 47.478843 -13.538103 
-L 49.016033 -13.26773 
-L 50.553223 -13.00752 
-L 52.090413 -12.755992 
-L 53.627603 -12.511792 
-L 55.164793 -12.273803 
-L 56.701983 -12.041239 
-L 58.239174 -11.813694 
-L 59.776364 -11.591173 
-L 61.313554 -11.374087 
-L 62.850744 -11.163227 
-L 64.387934 -10.959713 
-L 65.925124 -10.764937 
-L 67.462314 -10.580487 
-L 68.999504 -10.408076 
-L 70.536694 -10.249468 
-L 72.073884 -10.106412 
-L 73.611074 -9.980573 
-L 75.148264 -9.873485 
-L 76.685455 -9.786499 
-L 78.222645 -9.720747 
-L 79.759835 -9.677112 
-L 81.297025 -9.656208 
-L 82.834215 -9.658361 
-L 84.371405 -9.683604 
-L 85.908595 -9.731677 
-L 87.445785 -9.802031 
-L 88.982975 -9.893837 
-L 90.520165 -10.006004 
-L 92.057355 -10.137199 
-L 93.594545 -10.285872 
-L 95.131736 -10.450287 
-L 96.668926 -10.628559 
-L 98.206116 -10.818696 
-L 99.743306 -11.018648 
-L 101.280496 -11.226373 
-L 102.817686 -11.439901 
-L 104.354876 -11.657413 
-L 105.892066 -11.877325 
-L 107.429256 -12.098373 
-L 108.966446 -12.31969 
-L 110.503636 -12.540877 
-L 112.040826 -12.762045 
-L 113.578017 -12.983832 
-L 115.115207 -13.20739 
-L 116.652397 -13.434316 
-L 118.189587 -13.666564 
-L 119.726777 -13.906301 
-L 121.263967 -14.15575 
-L 122.801157 -14.417005 
-L 124.338347 -14.691851 
-L 125.875537 -14.981593 
-L 127.412727 -15.286917 
-L 128.949917 -15.607788 
-L 130.487107 -15.943399 
-L 132.024298 -16.29218 
-L 133.561488 -16.651856 
-L 135.098678 -17.019551 
-L 136.635868 -17.391942 
-L 138.173058 -17.765426 
-L 139.710248 -18.136305 
-L 141.247438 -18.500966 
-L 142.784628 -18.856043 
-L 144.321818 -19.198557 
-L 145.859008 -19.526012 
-L 147.396198 -19.836465 
-L 148.933388 -20.128546 
-L 150.470579 -20.401451 
-L 152.007769 -20.654902 
-L 153.544959 -20.889082 
-L 155.082149 -21.104554 
-L 156.619339 -21.302177 
-L 158.156529 -21.483014 
-L 159.693719 -21.648248 
-L 161.230909 -21.799104 
-L 161.230909 -24.324096 
-L 161.230909 -24.324096 
-L 159.693719 -24.474952 
-L 158.156529 -24.640186 
-L 156.619339 -24.821023 
-L 155.082149 -25.018646 
-L 153.544959 -25.234118 
-L 152.007769 -25.468298 
-L 150.470579 -25.721749 
-L 148.933388 -25.994654 
-L 147.396198 -26.286735 
-L 145.859008 -26.597188 
-L 144.321818 -26.924643 
-L 142.784628 -27.267157 
-L 141.247438 -27.622234 
-L 139.710248 -27.986895 
-L 138.173058 -28.357774 
-L 136.635868 -28.731258 
-L 135.098678 -29.103649 
-L 133.561488 -29.471344 
-L 132.024298 -29.83102 
-L 130.487107 -30.179801 
-L 128.949917 -30.515412 
-L 127.412727 -30.836283 
-L 125.875537 -31.141607 
-L 124.338347 -31.431349 
-L 122.801157 -31.706195 
-L 121.263967 -31.96745 
-L 119.726777 -32.216899 
-L 118.189587 -32.456636 
-L 116.652397 -32.688884 
-L 115.115207 -32.91581 
-L 113.578017 -33.139368 
-L 112.040826 -33.361155 
-L 110.503636 -33.582323 
-L 108.966446 -33.80351 
-L 107.429256 -34.024827 
-L 105.892066 -34.245875 
-L 104.354876 -34.465787 
-L 102.817686 -34.683299 
-L 101.280496 -34.896827 
-L 99.743306 -35.104552 
-L 98.206116 -35.304504 
-L 96.668926 -35.494641 
-L 95.131736 -35.672913 
-L 93.594545 -35.837328 
-L 92.057355 -35.986001 
-L 90.520165 -36.117196 
-L 88.982975 -36.229363 
-L 87.445785 -36.321169 
-L 85.908595 -36.391523 
-L 84.371405 -36.439596 
-L 82.834215 -36.464839 
-L 81.297025 -36.466992 
-L 79.759835 -36.446088 
-L 78.222645 -36.402453 
-L 76.685455 -36.336701 
-L 75.148264 -36.249715 
-L 73.611074 -36.142627 
-L 72.073884 -36.016788 
-L 70.536694 -35.873732 
-L 68.999504 -35.715124 
-L 67.462314 -35.542713 
-L 65.925124 -35.358263 
-L 64.387934 -35.163487 
-L 62.850744 -34.959973 
-L 61.313554 -34.749113 
-L 59.776364 -34.532027 
-L 58.239174 -34.309506 
-L 56.701983 -34.081961 
-L 55.164793 -33.849397 
-L 53.627603 -33.611408 
-L 52.090413 -33.367208 
-L 50.553223 -33.11568 
-L 49.016033 -32.85547 
-L 47.478843 -32.585097 
-L 45.941653 -32.303091 
-L 44.404463 -32.008135 
-L 42.867273 -31.699216 
-L 41.330083 -31.375764 
-L 39.792893 -31.037761 
-L 38.255702 -30.685829 
-L 36.718512 -30.321264 
-L 35.181322 -29.946033 
-L 33.644132 -29.562715 
-L 32.106942 -29.174397 
-L 30.569752 -28.784542 
-L 29.032562 -28.396809 
-L 27.495372 -28.014883 
-L 25.958182 -27.642284 
-L 24.420992 -27.282203 
-L 22.883802 -26.937363 
-L 21.346612 -26.609914 
-L 19.809421 -26.301376 
-L 18.272231 -26.012625 
-L 16.735041 -25.743927 
-L 15.197851 -25.495003 
-L 13.660661 -25.26513 
-L 12.123471 -25.053253 
-L 10.586281 -24.85811 
-L 9.049091 -24.678347 
+<path d="M 9.049091 -24.678347
+L 9.049091 -21.444853
+L 10.586281 -21.26509
+L 12.123471 -21.069947
+L 13.660661 -20.85807
+L 15.197851 -20.628197
+L 16.735041 -20.379273
+L 18.272231 -20.110575
+L 19.809421 -19.821824
+L 21.346612 -19.513286
+L 22.883802 -19.185837
+L 24.420992 -18.840997
+L 25.958182 -18.480916
+L 27.495372 -18.108317
+L 29.032562 -17.726391
+L 30.569752 -17.338658
+L 32.106942 -16.948803
+L 33.644132 -16.560485
+L 35.181322 -16.177167
+L 36.718512 -15.801936
+L 38.255702 -15.437371
+L 39.792893 -15.085439
+L 41.330083 -14.747436
+L 42.867273 -14.423984
+L 44.404463 -14.115065
+L 45.941653 -13.820109
+L 47.478843 -13.538103
+L 49.016033 -13.26773
+L 50.553223 -13.00752
+L 52.090413 -12.755992
+L 53.627603 -12.511792
+L 55.164793 -12.273803
+L 56.701983 -12.041239
+L 58.239174 -11.813694
+L 59.776364 -11.591173
+L 61.313554 -11.374087
+L 62.850744 -11.163227
+L 64.387934 -10.959713
+L 65.925124 -10.764937
+L 67.462314 -10.580487
+L 68.999504 -10.408076
+L 70.536694 -10.249468
+L 72.073884 -10.106412
+L 73.611074 -9.980573
+L 75.148264 -9.873485
+L 76.685455 -9.786499
+L 78.222645 -9.720747
+L 79.759835 -9.677112
+L 81.297025 -9.656208
+L 82.834215 -9.658361
+L 84.371405 -9.683604
+L 85.908595 -9.731677
+L 87.445785 -9.802031
+L 88.982975 -9.893837
+L 90.520165 -10.006004
+L 92.057355 -10.137199
+L 93.594545 -10.285872
+L 95.131736 -10.450287
+L 96.668926 -10.628559
+L 98.206116 -10.818696
+L 99.743306 -11.018648
+L 101.280496 -11.226373
+L 102.817686 -11.439901
+L 104.354876 -11.657413
+L 105.892066 -11.877325
+L 107.429256 -12.098373
+L 108.966446 -12.31969
+L 110.503636 -12.540877
+L 112.040826 -12.762045
+L 113.578017 -12.983832
+L 115.115207 -13.20739
+L 116.652397 -13.434316
+L 118.189587 -13.666564
+L 119.726777 -13.906301
+L 121.263967 -14.15575
+L 122.801157 -14.417005
+L 124.338347 -14.691851
+L 125.875537 -14.981593
+L 127.412727 -15.286917
+L 128.949917 -15.607788
+L 130.487107 -15.943399
+L 132.024298 -16.29218
+L 133.561488 -16.651856
+L 135.098678 -17.019551
+L 136.635868 -17.391942
+L 138.173058 -17.765426
+L 139.710248 -18.136305
+L 141.247438 -18.500966
+L 142.784628 -18.856043
+L 144.321818 -19.198557
+L 145.859008 -19.526012
+L 147.396198 -19.836465
+L 148.933388 -20.128546
+L 150.470579 -20.401451
+L 152.007769 -20.654902
+L 153.544959 -20.889082
+L 155.082149 -21.104554
+L 156.619339 -21.302177
+L 158.156529 -21.483014
+L 159.693719 -21.648248
+L 161.230909 -21.799104
+L 161.230909 -24.324096
+L 161.230909 -24.324096
+L 159.693719 -24.474952
+L 158.156529 -24.640186
+L 156.619339 -24.821023
+L 155.082149 -25.018646
+L 153.544959 -25.234118
+L 152.007769 -25.468298
+L 150.470579 -25.721749
+L 148.933388 -25.994654
+L 147.396198 -26.286735
+L 145.859008 -26.597188
+L 144.321818 -26.924643
+L 142.784628 -27.267157
+L 141.247438 -27.622234
+L 139.710248 -27.986895
+L 138.173058 -28.357774
+L 136.635868 -28.731258
+L 135.098678 -29.103649
+L 133.561488 -29.471344
+L 132.024298 -29.83102
+L 130.487107 -30.179801
+L 128.949917 -30.515412
+L 127.412727 -30.836283
+L 125.875537 -31.141607
+L 124.338347 -31.431349
+L 122.801157 -31.706195
+L 121.263967 -31.96745
+L 119.726777 -32.216899
+L 118.189587 -32.456636
+L 116.652397 -32.688884
+L 115.115207 -32.91581
+L 113.578017 -33.139368
+L 112.040826 -33.361155
+L 110.503636 -33.582323
+L 108.966446 -33.80351
+L 107.429256 -34.024827
+L 105.892066 -34.245875
+L 104.354876 -34.465787
+L 102.817686 -34.683299
+L 101.280496 -34.896827
+L 99.743306 -35.104552
+L 98.206116 -35.304504
+L 96.668926 -35.494641
+L 95.131736 -35.672913
+L 93.594545 -35.837328
+L 92.057355 -35.986001
+L 90.520165 -36.117196
+L 88.982975 -36.229363
+L 87.445785 -36.321169
+L 85.908595 -36.391523
+L 84.371405 -36.439596
+L 82.834215 -36.464839
+L 81.297025 -36.466992
+L 79.759835 -36.446088
+L 78.222645 -36.402453
+L 76.685455 -36.336701
+L 75.148264 -36.249715
+L 73.611074 -36.142627
+L 72.073884 -36.016788
+L 70.536694 -35.873732
+L 68.999504 -35.715124
+L 67.462314 -35.542713
+L 65.925124 -35.358263
+L 64.387934 -35.163487
+L 62.850744 -34.959973
+L 61.313554 -34.749113
+L 59.776364 -34.532027
+L 58.239174 -34.309506
+L 56.701983 -34.081961
+L 55.164793 -33.849397
+L 53.627603 -33.611408
+L 52.090413 -33.367208
+L 50.553223 -33.11568
+L 49.016033 -32.85547
+L 47.478843 -32.585097
+L 45.941653 -32.303091
+L 44.404463 -32.008135
+L 42.867273 -31.699216
+L 41.330083 -31.375764
+L 39.792893 -31.037761
+L 38.255702 -30.685829
+L 36.718512 -30.321264
+L 35.181322 -29.946033
+L 33.644132 -29.562715
+L 32.106942 -29.174397
+L 30.569752 -28.784542
+L 29.032562 -28.396809
+L 27.495372 -28.014883
+L 25.958182 -27.642284
+L 24.420992 -27.282203
+L 22.883802 -26.937363
+L 21.346612 -26.609914
+L 19.809421 -26.301376
+L 18.272231 -26.012625
+L 16.735041 -25.743927
+L 15.197851 -25.495003
+L 13.660661 -25.26513
+L 12.123471 -25.053253
+L 10.586281 -24.85811
+L 9.049091 -24.678347
 z
-" id="m496a743ff9" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
+" id="m206a0b9d3e" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
 </defs>
-<g clip-path="url(#p0caebbb927)">
-<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#m496a743ff9" y="46.1232"></use>
+<g clip-path="url(#pb2bab575a3)">
+<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#m206a0b9d3e" y="46.1232"></use>
 </g>
 </g>
 <g id="patch_2">
-<path clip-path="url(#p0caebbb927)" d="M 58.243451 26.953488 
-L 58.243451 19.169712 
-L 106.462451 19.169712 
-L 106.462451 26.953488 
-L 58.243451 26.953488 
+<path clip-path="url(#pb2bab575a3)" d="M 58.243451 26.953488
+L 58.243451 19.169712
+L 106.462451 19.169712
+L 106.462451 26.953488
+L 58.243451 26.953488
 z
 " style="fill: #ffffff; stroke: #111111; stroke-width: 1.15; stroke-linejoin: miter"></path>
 </g>
 <g id="line2d_1">
-<path clip-path="url(#p0caebbb927)" d="M 58.243451 23.0616 
-L 9.049091 23.0616 
+<path clip-path="url(#pb2bab575a3)" d="M 58.243451 23.0616
+L 9.049091 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_2">
-<path clip-path="url(#p0caebbb927)" d="M 106.462451 23.0616 
-L 161.230909 23.0616 
+<path clip-path="url(#pb2bab575a3)" d="M 106.462451 23.0616
+L 161.230909 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_3">
-<path clip-path="url(#p0caebbb927)" d="M 9.049091 25.007544 
-L 9.049091 21.115656 
+<path clip-path="url(#pb2bab575a3)" d="M 9.049091 25.007544
+L 9.049091 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_4">
-<path clip-path="url(#p0caebbb927)" d="M 161.230909 25.007544 
-L 161.230909 21.115656 
+<path clip-path="url(#pb2bab575a3)" d="M 161.230909 25.007544
+L 161.230909 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_5">
-<path clip-path="url(#p0caebbb927)" d="M 83.648907 26.953488 
-L 83.648907 19.169712 
+<path clip-path="url(#pb2bab575a3)" d="M 83.648907 26.953488
+L 83.648907 19.169712
 " style="fill: none; stroke: #b74c5f; stroke-width: 1.4"></path>
 </g>
 </g>
 </g>
 <defs>
-<clippath id="p0caebbb927">
+<clippath id="pb2bab575a3">
 <rect height="43.2432" width="167.4" x="1.44" y="1.44"></rect>
 </clippath>
 </defs>
@@ -8319,11 +8739,11 @@ L 83.648907 19.169712
 <rdf:rdf xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <cc:work>
 <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
-<dc:date>2026-07-27T23:42:55.141514</dc:date>
+<dc:date>2026-09-21T16:03:25.467247</dc:date>
 <dc:format>image/svg+xml</dc:format>
 <dc:creator>
 <cc:agent>
-<dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+<dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
 </cc:agent>
 </dc:creator>
 </cc:work>
@@ -8334,264 +8754,264 @@ L 83.648907 19.169712
 </defs>
 <g id="figure_1">
 <g id="patch_1">
-<path d="M 0 46.1232 
-L 170.28 46.1232 
-L 170.28 0 
-L 0 0 
-L 0 46.1232 
+<path d="M 0 46.1232
+L 170.28 46.1232
+L 170.28 0
+L 0 0
+L 0 46.1232
 z
 " style="fill: none; opacity: 0"></path>
 </g>
 <g id="axes_1">
 <g id="FillBetweenPolyCollection_1">
 <defs>
-<path d="M 9.049091 -31.550801 
-L 9.049091 -14.572399 
-L 10.586281 -13.697605 
-L 12.123471 -12.861812 
-L 13.660661 -12.087184 
-L 15.197851 -11.394392 
-L 16.735041 -10.801524 
-L 18.272231 -10.323162 
-L 19.809421 -9.96971 
-L 21.346612 -9.746998 
-L 22.883802 -9.656208 
-L 24.420992 -9.694081 
-L 25.958182 -9.853388 
-L 27.495372 -10.123589 
-L 29.032562 -10.491612 
-L 30.569752 -10.942679 
-L 32.106942 -11.46111 
-L 33.644132 -12.031057 
-L 35.181322 -12.63712 
-L 36.718512 -13.264838 
-L 38.255702 -13.901052 
-L 39.792893 -14.534136 
-L 41.330083 -15.15414 
-L 42.867273 -15.75284 
-L 44.404463 -16.323735 
-L 45.941653 -16.861994 
-L 47.478843 -17.364367 
-L 49.016033 -17.829073 
-L 50.553223 -18.255657 
-L 52.090413 -18.644816 
-L 53.627603 -18.998208 
-L 55.164793 -19.318231 
-L 56.701983 -19.607785 
-L 58.239174 -19.870038 
-L 59.776364 -20.108189 
-L 61.313554 -20.325265 
-L 62.850744 -20.523954 
-L 64.387934 -20.706484 
-L 65.925124 -20.874564 
-L 67.462314 -21.029384 
-L 68.999504 -21.171665 
-L 70.536694 -21.301753 
-L 72.073884 -21.419736 
-L 73.611074 -21.525585 
-L 75.148264 -21.619277 
-L 76.685455 -21.700913 
-L 78.222645 -21.770807 
-L 79.759835 -21.82954 
-L 81.297025 -21.877983 
-L 82.834215 -21.917296 
-L 84.371405 -21.948886 
-L 85.908595 -21.974356 
-L 87.445785 -21.995426 
-L 88.982975 -22.013857 
-L 90.520165 -22.031354 
-L 92.057355 -22.04948 
-L 93.594545 -22.069567 
-L 95.131736 -22.092645 
-L 96.668926 -22.11938 
-L 98.206116 -22.150031 
-L 99.743306 -22.184439 
-L 101.280496 -22.222036 
-L 102.817686 -22.261891 
-L 104.354876 -22.302781 
-L 105.892066 -22.343287 
-L 107.429256 -22.38191 
-L 108.966446 -22.417202 
-L 110.503636 -22.447892 
-L 112.040826 -22.473003 
-L 113.578017 -22.491947 
-L 115.115207 -22.504593 
-L 116.652397 -22.511288 
-L 118.189587 -22.512838 
-L 119.726777 -22.510453 
-L 121.263967 -22.505642 
-L 122.801157 -22.500087 
-L 124.338347 -22.495498 
-L 125.875537 -22.493463 
-L 127.412727 -22.495307 
-L 128.949917 -22.501985 
-L 130.487107 -22.513998 
-L 132.024298 -22.531365 
-L 133.561488 -22.55363 
-L 135.098678 -22.579922 
-L 136.635868 -22.609039 
-L 138.173058 -22.639572 
-L 139.710248 -22.670033 
-L 141.247438 -22.698987 
-L 142.784628 -22.725172 
-L 144.321818 -22.747599 
-L 145.859008 -22.765624 
-L 147.396198 -22.778978 
-L 148.933388 -22.787775 
-L 150.470579 -22.79248 
-L 152.007769 -22.793852 
-L 153.544959 -22.792863 
-L 155.082149 -22.79061 
-L 156.619339 -22.788216 
-L 158.156529 -22.78674 
-L 159.693719 -22.787098 
-L 161.230909 -22.789996 
-L 161.230909 -23.333204 
-L 161.230909 -23.333204 
-L 159.693719 -23.336102 
-L 158.156529 -23.33646 
-L 156.619339 -23.334984 
-L 155.082149 -23.33259 
-L 153.544959 -23.330337 
-L 152.007769 -23.329348 
-L 150.470579 -23.33072 
-L 148.933388 -23.335425 
-L 147.396198 -23.344222 
-L 145.859008 -23.357576 
-L 144.321818 -23.375601 
-L 142.784628 -23.398028 
-L 141.247438 -23.424213 
-L 139.710248 -23.453167 
-L 138.173058 -23.483628 
-L 136.635868 -23.514161 
-L 135.098678 -23.543278 
-L 133.561488 -23.56957 
-L 132.024298 -23.591835 
-L 130.487107 -23.609202 
-L 128.949917 -23.621215 
-L 127.412727 -23.627893 
-L 125.875537 -23.629737 
-L 124.338347 -23.627702 
-L 122.801157 -23.623113 
-L 121.263967 -23.617558 
-L 119.726777 -23.612747 
-L 118.189587 -23.610362 
-L 116.652397 -23.611912 
-L 115.115207 -23.618607 
-L 113.578017 -23.631253 
-L 112.040826 -23.650197 
-L 110.503636 -23.675308 
-L 108.966446 -23.705998 
-L 107.429256 -23.74129 
-L 105.892066 -23.779913 
-L 104.354876 -23.820419 
-L 102.817686 -23.861309 
-L 101.280496 -23.901164 
-L 99.743306 -23.938761 
-L 98.206116 -23.973169 
-L 96.668926 -24.00382 
-L 95.131736 -24.030555 
-L 93.594545 -24.053633 
-L 92.057355 -24.07372 
-L 90.520165 -24.091846 
-L 88.982975 -24.109343 
-L 87.445785 -24.127774 
-L 85.908595 -24.148844 
-L 84.371405 -24.174314 
-L 82.834215 -24.205904 
-L 81.297025 -24.245217 
-L 79.759835 -24.29366 
-L 78.222645 -24.352393 
-L 76.685455 -24.422287 
-L 75.148264 -24.503923 
-L 73.611074 -24.597615 
-L 72.073884 -24.703464 
-L 70.536694 -24.821447 
-L 68.999504 -24.951535 
-L 67.462314 -25.093816 
-L 65.925124 -25.248636 
-L 64.387934 -25.416716 
-L 62.850744 -25.599246 
-L 61.313554 -25.797935 
-L 59.776364 -26.015011 
-L 58.239174 -26.253162 
-L 56.701983 -26.515415 
-L 55.164793 -26.804969 
-L 53.627603 -27.124992 
-L 52.090413 -27.478384 
-L 50.553223 -27.867543 
-L 49.016033 -28.294127 
-L 47.478843 -28.758833 
-L 45.941653 -29.261206 
-L 44.404463 -29.799465 
-L 42.867273 -30.37036 
-L 41.330083 -30.96906 
-L 39.792893 -31.589064 
-L 38.255702 -32.222148 
-L 36.718512 -32.858362 
-L 35.181322 -33.48608 
-L 33.644132 -34.092143 
-L 32.106942 -34.66209 
-L 30.569752 -35.180521 
-L 29.032562 -35.631588 
-L 27.495372 -35.999611 
-L 25.958182 -36.269812 
-L 24.420992 -36.429119 
-L 22.883802 -36.466992 
-L 21.346612 -36.376202 
-L 19.809421 -36.15349 
-L 18.272231 -35.800038 
-L 16.735041 -35.321676 
-L 15.197851 -34.728808 
-L 13.660661 -34.036016 
-L 12.123471 -33.261388 
-L 10.586281 -32.425595 
-L 9.049091 -31.550801 
+<path d="M 9.049091 -31.550801
+L 9.049091 -14.572399
+L 10.586281 -13.697605
+L 12.123471 -12.861812
+L 13.660661 -12.087184
+L 15.197851 -11.394392
+L 16.735041 -10.801524
+L 18.272231 -10.323162
+L 19.809421 -9.96971
+L 21.346612 -9.746998
+L 22.883802 -9.656208
+L 24.420992 -9.694081
+L 25.958182 -9.853388
+L 27.495372 -10.123589
+L 29.032562 -10.491612
+L 30.569752 -10.942679
+L 32.106942 -11.46111
+L 33.644132 -12.031057
+L 35.181322 -12.63712
+L 36.718512 -13.264838
+L 38.255702 -13.901052
+L 39.792893 -14.534136
+L 41.330083 -15.15414
+L 42.867273 -15.75284
+L 44.404463 -16.323735
+L 45.941653 -16.861994
+L 47.478843 -17.364367
+L 49.016033 -17.829073
+L 50.553223 -18.255657
+L 52.090413 -18.644816
+L 53.627603 -18.998208
+L 55.164793 -19.318231
+L 56.701983 -19.607785
+L 58.239174 -19.870038
+L 59.776364 -20.108189
+L 61.313554 -20.325265
+L 62.850744 -20.523954
+L 64.387934 -20.706484
+L 65.925124 -20.874564
+L 67.462314 -21.029384
+L 68.999504 -21.171665
+L 70.536694 -21.301753
+L 72.073884 -21.419736
+L 73.611074 -21.525585
+L 75.148264 -21.619277
+L 76.685455 -21.700913
+L 78.222645 -21.770807
+L 79.759835 -21.82954
+L 81.297025 -21.877983
+L 82.834215 -21.917296
+L 84.371405 -21.948886
+L 85.908595 -21.974356
+L 87.445785 -21.995426
+L 88.982975 -22.013857
+L 90.520165 -22.031354
+L 92.057355 -22.04948
+L 93.594545 -22.069567
+L 95.131736 -22.092645
+L 96.668926 -22.11938
+L 98.206116 -22.150031
+L 99.743306 -22.184439
+L 101.280496 -22.222036
+L 102.817686 -22.261891
+L 104.354876 -22.302781
+L 105.892066 -22.343287
+L 107.429256 -22.38191
+L 108.966446 -22.417202
+L 110.503636 -22.447892
+L 112.040826 -22.473003
+L 113.578017 -22.491947
+L 115.115207 -22.504593
+L 116.652397 -22.511288
+L 118.189587 -22.512838
+L 119.726777 -22.510453
+L 121.263967 -22.505642
+L 122.801157 -22.500087
+L 124.338347 -22.495498
+L 125.875537 -22.493463
+L 127.412727 -22.495307
+L 128.949917 -22.501985
+L 130.487107 -22.513998
+L 132.024298 -22.531365
+L 133.561488 -22.55363
+L 135.098678 -22.579922
+L 136.635868 -22.609039
+L 138.173058 -22.639572
+L 139.710248 -22.670033
+L 141.247438 -22.698987
+L 142.784628 -22.725172
+L 144.321818 -22.747599
+L 145.859008 -22.765624
+L 147.396198 -22.778978
+L 148.933388 -22.787775
+L 150.470579 -22.79248
+L 152.007769 -22.793852
+L 153.544959 -22.792863
+L 155.082149 -22.79061
+L 156.619339 -22.788216
+L 158.156529 -22.78674
+L 159.693719 -22.787098
+L 161.230909 -22.789996
+L 161.230909 -23.333204
+L 161.230909 -23.333204
+L 159.693719 -23.336102
+L 158.156529 -23.33646
+L 156.619339 -23.334984
+L 155.082149 -23.33259
+L 153.544959 -23.330337
+L 152.007769 -23.329348
+L 150.470579 -23.33072
+L 148.933388 -23.335425
+L 147.396198 -23.344222
+L 145.859008 -23.357576
+L 144.321818 -23.375601
+L 142.784628 -23.398028
+L 141.247438 -23.424213
+L 139.710248 -23.453167
+L 138.173058 -23.483628
+L 136.635868 -23.514161
+L 135.098678 -23.543278
+L 133.561488 -23.56957
+L 132.024298 -23.591835
+L 130.487107 -23.609202
+L 128.949917 -23.621215
+L 127.412727 -23.627893
+L 125.875537 -23.629737
+L 124.338347 -23.627702
+L 122.801157 -23.623113
+L 121.263967 -23.617558
+L 119.726777 -23.612747
+L 118.189587 -23.610362
+L 116.652397 -23.611912
+L 115.115207 -23.618607
+L 113.578017 -23.631253
+L 112.040826 -23.650197
+L 110.503636 -23.675308
+L 108.966446 -23.705998
+L 107.429256 -23.74129
+L 105.892066 -23.779913
+L 104.354876 -23.820419
+L 102.817686 -23.861309
+L 101.280496 -23.901164
+L 99.743306 -23.938761
+L 98.206116 -23.973169
+L 96.668926 -24.00382
+L 95.131736 -24.030555
+L 93.594545 -24.053633
+L 92.057355 -24.07372
+L 90.520165 -24.091846
+L 88.982975 -24.109343
+L 87.445785 -24.127774
+L 85.908595 -24.148844
+L 84.371405 -24.174314
+L 82.834215 -24.205904
+L 81.297025 -24.245217
+L 79.759835 -24.29366
+L 78.222645 -24.352393
+L 76.685455 -24.422287
+L 75.148264 -24.503923
+L 73.611074 -24.597615
+L 72.073884 -24.703464
+L 70.536694 -24.821447
+L 68.999504 -24.951535
+L 67.462314 -25.093816
+L 65.925124 -25.248636
+L 64.387934 -25.416716
+L 62.850744 -25.599246
+L 61.313554 -25.797935
+L 59.776364 -26.015011
+L 58.239174 -26.253162
+L 56.701983 -26.515415
+L 55.164793 -26.804969
+L 53.627603 -27.124992
+L 52.090413 -27.478384
+L 50.553223 -27.867543
+L 49.016033 -28.294127
+L 47.478843 -28.758833
+L 45.941653 -29.261206
+L 44.404463 -29.799465
+L 42.867273 -30.37036
+L 41.330083 -30.96906
+L 39.792893 -31.589064
+L 38.255702 -32.222148
+L 36.718512 -32.858362
+L 35.181322 -33.48608
+L 33.644132 -34.092143
+L 32.106942 -34.66209
+L 30.569752 -35.180521
+L 29.032562 -35.631588
+L 27.495372 -35.999611
+L 25.958182 -36.269812
+L 24.420992 -36.429119
+L 22.883802 -36.466992
+L 21.346612 -36.376202
+L 19.809421 -36.15349
+L 18.272231 -35.800038
+L 16.735041 -35.321676
+L 15.197851 -34.728808
+L 13.660661 -34.036016
+L 12.123471 -33.261388
+L 10.586281 -32.425595
+L 9.049091 -31.550801
 z
-" id="m4a583a5b5f" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
+" id="m647d58de53" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
 </defs>
-<g clip-path="url(#p4ac9ebc2ed)">
-<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#m4a583a5b5f" y="46.1232"></use>
+<g clip-path="url(#pfca5b7e1b8)">
+<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#m647d58de53" y="46.1232"></use>
 </g>
 </g>
 <g id="patch_2">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 18.908139 26.953488 
-L 18.908139 19.169712 
-L 40.55595 19.169712 
-L 40.55595 26.953488 
-L 18.908139 26.953488 
+<path clip-path="url(#pfca5b7e1b8)" d="M 18.908139 26.953488
+L 18.908139 19.169712
+L 40.55595 19.169712
+L 40.55595 26.953488
+L 18.908139 26.953488
 z
 " style="fill: #ffffff; stroke: #111111; stroke-width: 1.15; stroke-linejoin: miter"></path>
 </g>
 <g id="line2d_1">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 18.908139 23.0616 
-L 9.049091 23.0616 
+<path clip-path="url(#pfca5b7e1b8)" d="M 18.908139 23.0616
+L 9.049091 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_2">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 40.55595 23.0616 
-L 63.592552 23.0616 
+<path clip-path="url(#pfca5b7e1b8)" d="M 40.55595 23.0616
+L 63.592552 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_3">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 9.049091 25.007544 
-L 9.049091 21.115656 
+<path clip-path="url(#pfca5b7e1b8)" d="M 9.049091 25.007544
+L 9.049091 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_4">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 63.592552 25.007544 
-L 63.592552 21.115656 
+<path clip-path="url(#pfca5b7e1b8)" d="M 63.592552 25.007544
+L 63.592552 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_5">
-<path clip-path="url(#p4ac9ebc2ed)" d="M 26.620326 26.953488 
-L 26.620326 19.169712 
+<path clip-path="url(#pfca5b7e1b8)" d="M 26.620326 26.953488
+L 26.620326 19.169712
 " style="fill: none; stroke: #b74c5f; stroke-width: 1.4"></path>
 </g>
 </g>
 </g>
 <defs>
-<clippath id="p4ac9ebc2ed">
+<clippath id="pfca5b7e1b8">
 <rect height="43.2432" width="167.4" x="1.44" y="1.44"></rect>
 </clippath>
 </defs>
@@ -8600,11 +9020,11 @@ L 26.620326 19.169712
 <rdf:rdf xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <cc:work>
 <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
-<dc:date>2026-07-27T23:42:55.194792</dc:date>
+<dc:date>2026-09-21T16:03:25.477779</dc:date>
 <dc:format>image/svg+xml</dc:format>
 <dc:creator>
 <cc:agent>
-<dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+<dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
 </cc:agent>
 </dc:creator>
 </cc:work>
@@ -8615,264 +9035,264 @@ L 26.620326 19.169712
 </defs>
 <g id="figure_1">
 <g id="patch_1">
-<path d="M 0 46.1232 
-L 170.28 46.1232 
-L 170.28 0 
-L 0 0 
-L 0 46.1232 
+<path d="M 0 46.1232
+L 170.28 46.1232
+L 170.28 0
+L 0 0
+L 0 46.1232
 z
 " style="fill: none; opacity: 0"></path>
 </g>
 <g id="axes_1">
 <g id="FillBetweenPolyCollection_1">
 <defs>
-<path d="M 9.049091 -36.466992 
-L 9.049091 -9.656208 
-L 10.586281 -9.677398 
-L 12.123471 -9.740769 
-L 13.660661 -9.845721 
-L 15.197851 -9.991267 
-L 16.735041 -10.176044 
-L 18.272231 -10.398338 
-L 19.809421 -10.65611 
-L 21.346612 -10.947026 
-L 22.883802 -11.268492 
-L 24.420992 -11.617692 
-L 25.958182 -11.991632 
-L 27.495372 -12.387179 
-L 29.032562 -12.801105 
-L 30.569752 -13.230133 
-L 32.106942 -13.670976 
-L 33.644132 -14.120381 
-L 35.181322 -14.575164 
-L 36.718512 -15.032251 
-L 38.255702 -15.488705 
-L 39.792893 -15.941756 
-L 41.330083 -16.388828 
-L 42.867273 -16.827556 
-L 44.404463 -17.255802 
-L 45.941653 -17.671666 
-L 47.478843 -18.073493 
-L 49.016033 -18.459877 
-L 50.553223 -18.829652 
-L 52.090413 -19.181898 
-L 53.627603 -19.515921 
-L 55.164793 -19.83125 
-L 56.701983 -20.127618 
-L 58.239174 -20.404948 
-L 59.776364 -20.663335 
-L 61.313554 -20.903027 
-L 62.850744 -21.124405 
-L 64.387934 -21.327967 
-L 65.925124 -21.514304 
-L 67.462314 -21.684083 
-L 68.999504 -21.838027 
-L 70.536694 -21.9769 
-L 72.073884 -22.101491 
-L 73.611074 -22.212594 
-L 75.148264 -22.311 
-L 76.685455 -22.397481 
-L 78.222645 -22.472783 
-L 79.759835 -22.537611 
-L 81.297025 -22.592629 
-L 82.834215 -22.638448 
-L 84.371405 -22.675624 
-L 85.908595 -22.704653 
-L 87.445785 -22.725973 
-L 88.982975 -22.739957 
-L 90.520165 -22.74692 
-L 92.057355 -22.747114 
-L 93.594545 -22.740738 
-L 95.131736 -22.727933 
-L 96.668926 -22.708795 
-L 98.206116 -22.683371 
-L 99.743306 -22.651674 
-L 101.280496 -22.613681 
-L 102.817686 -22.569346 
-L 104.354876 -22.518603 
-L 105.892066 -22.461377 
-L 107.429256 -22.39759 
-L 108.966446 -22.327171 
-L 110.503636 -22.250064 
-L 112.040826 -22.166234 
-L 113.578017 -22.075678 
-L 115.115207 -21.978433 
-L 116.652397 -21.874584 
-L 118.189587 -21.764267 
-L 119.726777 -21.647682 
-L 121.263967 -21.525093 
-L 122.801157 -21.396838 
-L 124.338347 -21.263328 
-L 125.875537 -21.125053 
-L 127.412727 -20.982579 
-L 128.949917 -20.836556 
-L 130.487107 -20.687705 
-L 132.024298 -20.536824 
-L 133.561488 -20.38478 
-L 135.098678 -20.232502 
-L 136.635868 -20.080973 
-L 138.173058 -19.931223 
-L 139.710248 -19.784315 
-L 141.247438 -19.641336 
-L 142.784628 -19.503384 
-L 144.321818 -19.371554 
-L 145.859008 -19.246921 
-L 147.396198 -19.130532 
-L 148.933388 -19.023384 
-L 150.470579 -18.926419 
-L 152.007769 -18.840499 
-L 153.544959 -18.766404 
-L 155.082149 -18.704815 
-L 156.619339 -18.656302 
-L 158.156529 -18.621319 
-L 159.693719 -18.600196 
-L 161.230909 -18.593134 
-L 161.230909 -27.530066 
-L 161.230909 -27.530066 
-L 159.693719 -27.523004 
-L 158.156529 -27.501881 
-L 156.619339 -27.466898 
-L 155.082149 -27.418385 
-L 153.544959 -27.356796 
-L 152.007769 -27.282701 
-L 150.470579 -27.196781 
-L 148.933388 -27.099816 
-L 147.396198 -26.992668 
-L 145.859008 -26.876279 
-L 144.321818 -26.751646 
-L 142.784628 -26.619816 
-L 141.247438 -26.481864 
-L 139.710248 -26.338885 
-L 138.173058 -26.191977 
-L 136.635868 -26.042227 
-L 135.098678 -25.890698 
-L 133.561488 -25.73842 
-L 132.024298 -25.586376 
-L 130.487107 -25.435495 
-L 128.949917 -25.286644 
-L 127.412727 -25.140621 
-L 125.875537 -24.998147 
-L 124.338347 -24.859872 
-L 122.801157 -24.726362 
-L 121.263967 -24.598107 
-L 119.726777 -24.475518 
-L 118.189587 -24.358933 
-L 116.652397 -24.248616 
-L 115.115207 -24.144767 
-L 113.578017 -24.047522 
-L 112.040826 -23.956966 
-L 110.503636 -23.873136 
-L 108.966446 -23.796029 
-L 107.429256 -23.72561 
-L 105.892066 -23.661823 
-L 104.354876 -23.604597 
-L 102.817686 -23.553854 
-L 101.280496 -23.509519 
-L 99.743306 -23.471526 
-L 98.206116 -23.439829 
-L 96.668926 -23.414405 
-L 95.131736 -23.395267 
-L 93.594545 -23.382462 
-L 92.057355 -23.376086 
-L 90.520165 -23.37628 
-L 88.982975 -23.383243 
-L 87.445785 -23.397227 
-L 85.908595 -23.418547 
-L 84.371405 -23.447576 
-L 82.834215 -23.484752 
-L 81.297025 -23.530571 
-L 79.759835 -23.585589 
-L 78.222645 -23.650417 
-L 76.685455 -23.725719 
-L 75.148264 -23.8122 
-L 73.611074 -23.910606 
-L 72.073884 -24.021709 
-L 70.536694 -24.1463 
-L 68.999504 -24.285173 
-L 67.462314 -24.439117 
-L 65.925124 -24.608896 
-L 64.387934 -24.795233 
-L 62.850744 -24.998795 
-L 61.313554 -25.220173 
-L 59.776364 -25.459865 
-L 58.239174 -25.718252 
-L 56.701983 -25.995582 
-L 55.164793 -26.29195 
-L 53.627603 -26.607279 
-L 52.090413 -26.941302 
-L 50.553223 -27.293548 
-L 49.016033 -27.663323 
-L 47.478843 -28.049707 
-L 45.941653 -28.451534 
-L 44.404463 -28.867398 
-L 42.867273 -29.295644 
-L 41.330083 -29.734372 
-L 39.792893 -30.181444 
-L 38.255702 -30.634495 
-L 36.718512 -31.090949 
-L 35.181322 -31.548036 
-L 33.644132 -32.002819 
-L 32.106942 -32.452224 
-L 30.569752 -32.893067 
-L 29.032562 -33.322095 
-L 27.495372 -33.736021 
-L 25.958182 -34.131568 
-L 24.420992 -34.505508 
-L 22.883802 -34.854708 
-L 21.346612 -35.176174 
-L 19.809421 -35.46709 
-L 18.272231 -35.724862 
-L 16.735041 -35.947156 
-L 15.197851 -36.131933 
-L 13.660661 -36.277479 
-L 12.123471 -36.382431 
-L 10.586281 -36.445802 
-L 9.049091 -36.466992 
+<path d="M 9.049091 -36.466992
+L 9.049091 -9.656208
+L 10.586281 -9.677398
+L 12.123471 -9.740769
+L 13.660661 -9.845721
+L 15.197851 -9.991267
+L 16.735041 -10.176044
+L 18.272231 -10.398338
+L 19.809421 -10.65611
+L 21.346612 -10.947026
+L 22.883802 -11.268492
+L 24.420992 -11.617692
+L 25.958182 -11.991632
+L 27.495372 -12.387179
+L 29.032562 -12.801105
+L 30.569752 -13.230133
+L 32.106942 -13.670976
+L 33.644132 -14.120381
+L 35.181322 -14.575164
+L 36.718512 -15.032251
+L 38.255702 -15.488705
+L 39.792893 -15.941756
+L 41.330083 -16.388828
+L 42.867273 -16.827556
+L 44.404463 -17.255802
+L 45.941653 -17.671666
+L 47.478843 -18.073493
+L 49.016033 -18.459877
+L 50.553223 -18.829652
+L 52.090413 -19.181898
+L 53.627603 -19.515921
+L 55.164793 -19.83125
+L 56.701983 -20.127618
+L 58.239174 -20.404948
+L 59.776364 -20.663335
+L 61.313554 -20.903027
+L 62.850744 -21.124405
+L 64.387934 -21.327967
+L 65.925124 -21.514304
+L 67.462314 -21.684083
+L 68.999504 -21.838027
+L 70.536694 -21.9769
+L 72.073884 -22.101491
+L 73.611074 -22.212594
+L 75.148264 -22.311
+L 76.685455 -22.397481
+L 78.222645 -22.472783
+L 79.759835 -22.537611
+L 81.297025 -22.592629
+L 82.834215 -22.638448
+L 84.371405 -22.675624
+L 85.908595 -22.704653
+L 87.445785 -22.725973
+L 88.982975 -22.739957
+L 90.520165 -22.74692
+L 92.057355 -22.747114
+L 93.594545 -22.740738
+L 95.131736 -22.727933
+L 96.668926 -22.708795
+L 98.206116 -22.683371
+L 99.743306 -22.651674
+L 101.280496 -22.613681
+L 102.817686 -22.569346
+L 104.354876 -22.518603
+L 105.892066 -22.461377
+L 107.429256 -22.39759
+L 108.966446 -22.327171
+L 110.503636 -22.250064
+L 112.040826 -22.166234
+L 113.578017 -22.075678
+L 115.115207 -21.978433
+L 116.652397 -21.874584
+L 118.189587 -21.764267
+L 119.726777 -21.647682
+L 121.263967 -21.525093
+L 122.801157 -21.396838
+L 124.338347 -21.263328
+L 125.875537 -21.125053
+L 127.412727 -20.982579
+L 128.949917 -20.836556
+L 130.487107 -20.687705
+L 132.024298 -20.536824
+L 133.561488 -20.38478
+L 135.098678 -20.232502
+L 136.635868 -20.080973
+L 138.173058 -19.931223
+L 139.710248 -19.784315
+L 141.247438 -19.641336
+L 142.784628 -19.503384
+L 144.321818 -19.371554
+L 145.859008 -19.246921
+L 147.396198 -19.130532
+L 148.933388 -19.023384
+L 150.470579 -18.926419
+L 152.007769 -18.840499
+L 153.544959 -18.766404
+L 155.082149 -18.704815
+L 156.619339 -18.656302
+L 158.156529 -18.621319
+L 159.693719 -18.600196
+L 161.230909 -18.593134
+L 161.230909 -27.530066
+L 161.230909 -27.530066
+L 159.693719 -27.523004
+L 158.156529 -27.501881
+L 156.619339 -27.466898
+L 155.082149 -27.418385
+L 153.544959 -27.356796
+L 152.007769 -27.282701
+L 150.470579 -27.196781
+L 148.933388 -27.099816
+L 147.396198 -26.992668
+L 145.859008 -26.876279
+L 144.321818 -26.751646
+L 142.784628 -26.619816
+L 141.247438 -26.481864
+L 139.710248 -26.338885
+L 138.173058 -26.191977
+L 136.635868 -26.042227
+L 135.098678 -25.890698
+L 133.561488 -25.73842
+L 132.024298 -25.586376
+L 130.487107 -25.435495
+L 128.949917 -25.286644
+L 127.412727 -25.140621
+L 125.875537 -24.998147
+L 124.338347 -24.859872
+L 122.801157 -24.726362
+L 121.263967 -24.598107
+L 119.726777 -24.475518
+L 118.189587 -24.358933
+L 116.652397 -24.248616
+L 115.115207 -24.144767
+L 113.578017 -24.047522
+L 112.040826 -23.956966
+L 110.503636 -23.873136
+L 108.966446 -23.796029
+L 107.429256 -23.72561
+L 105.892066 -23.661823
+L 104.354876 -23.604597
+L 102.817686 -23.553854
+L 101.280496 -23.509519
+L 99.743306 -23.471526
+L 98.206116 -23.439829
+L 96.668926 -23.414405
+L 95.131736 -23.395267
+L 93.594545 -23.382462
+L 92.057355 -23.376086
+L 90.520165 -23.37628
+L 88.982975 -23.383243
+L 87.445785 -23.397227
+L 85.908595 -23.418547
+L 84.371405 -23.447576
+L 82.834215 -23.484752
+L 81.297025 -23.530571
+L 79.759835 -23.585589
+L 78.222645 -23.650417
+L 76.685455 -23.725719
+L 75.148264 -23.8122
+L 73.611074 -23.910606
+L 72.073884 -24.021709
+L 70.536694 -24.1463
+L 68.999504 -24.285173
+L 67.462314 -24.439117
+L 65.925124 -24.608896
+L 64.387934 -24.795233
+L 62.850744 -24.998795
+L 61.313554 -25.220173
+L 59.776364 -25.459865
+L 58.239174 -25.718252
+L 56.701983 -25.995582
+L 55.164793 -26.29195
+L 53.627603 -26.607279
+L 52.090413 -26.941302
+L 50.553223 -27.293548
+L 49.016033 -27.663323
+L 47.478843 -28.049707
+L 45.941653 -28.451534
+L 44.404463 -28.867398
+L 42.867273 -29.295644
+L 41.330083 -29.734372
+L 39.792893 -30.181444
+L 38.255702 -30.634495
+L 36.718512 -31.090949
+L 35.181322 -31.548036
+L 33.644132 -32.002819
+L 32.106942 -32.452224
+L 30.569752 -32.893067
+L 29.032562 -33.322095
+L 27.495372 -33.736021
+L 25.958182 -34.131568
+L 24.420992 -34.505508
+L 22.883802 -34.854708
+L 21.346612 -35.176174
+L 19.809421 -35.46709
+L 18.272231 -35.724862
+L 16.735041 -35.947156
+L 15.197851 -36.131933
+L 13.660661 -36.277479
+L 12.123471 -36.382431
+L 10.586281 -36.445802
+L 9.049091 -36.466992
 z
-" id="md3de0f1e83" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
+" id="m26bcc827fe" style="stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15"></path>
 </defs>
-<g clip-path="url(#pb419a2b396)">
-<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#md3de0f1e83" y="46.1232"></use>
+<g clip-path="url(#p18ef761baf)">
+<use style="fill: #16c7e8; fill-opacity: 0.52; stroke: #111111; stroke-opacity: 0.52; stroke-width: 1.15" x="0" xlink:href="#m26bcc827fe" y="46.1232"></use>
 </g>
 </g>
 <g id="patch_2">
-<path clip-path="url(#pb419a2b396)" d="M 9.049091 26.953488 
-L 9.049091 19.169712 
-L 47.094545 19.169712 
-L 47.094545 26.953488 
-L 9.049091 26.953488 
+<path clip-path="url(#p18ef761baf)" d="M 9.049091 26.953488
+L 9.049091 19.169712
+L 47.094545 19.169712
+L 47.094545 26.953488
+L 9.049091 26.953488
 z
 " style="fill: #ffffff; stroke: #111111; stroke-width: 1.15; stroke-linejoin: miter"></path>
 </g>
 <g id="line2d_1">
-<path clip-path="url(#pb419a2b396)" d="M 9.049091 23.0616 
-L 9.049091 23.0616 
+<path clip-path="url(#p18ef761baf)" d="M 9.049091 23.0616
+L 9.049091 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_2">
-<path clip-path="url(#pb419a2b396)" d="M 47.094545 23.0616 
-L 47.094545 23.0616 
+<path clip-path="url(#p18ef761baf)" d="M 47.094545 23.0616
+L 47.094545 23.0616
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_3">
-<path clip-path="url(#pb419a2b396)" d="M 9.049091 25.007544 
-L 9.049091 21.115656 
+<path clip-path="url(#p18ef761baf)" d="M 9.049091 25.007544
+L 9.049091 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_4">
-<path clip-path="url(#pb419a2b396)" d="M 47.094545 25.007544 
-L 47.094545 21.115656 
+<path clip-path="url(#p18ef761baf)" d="M 47.094545 25.007544
+L 47.094545 21.115656
 " style="fill: none; stroke: #111111; stroke-linecap: square"></path>
 </g>
 <g id="line2d_5">
-<path clip-path="url(#pb419a2b396)" d="M 9.049091 26.953488 
-L 9.049091 19.169712 
+<path clip-path="url(#p18ef761baf)" d="M 9.049091 26.953488
+L 9.049091 19.169712
 " style="fill: none; stroke: #b74c5f; stroke-width: 1.4"></path>
 </g>
 </g>
 </g>
 <defs>
-<clippath id="pb419a2b396">
+<clippath id="p18ef761baf">
 <rect height="43.2432" width="167.4" x="1.44" y="1.44"></rect>
 </clippath>
 </defs>
@@ -8894,17 +9314,19 @@ div.wm-table-card .wm-shell-inner { min-width: 0; max-width: 100%; }
 div.wm-table-card .wm-shell-eyebrow { color: #16C7E8 !important; }
 div.wm-table-card:hover { transform: none; box-shadow: 0 12px 22px -14px rgba(0,0,0,0.20); }
 div.wm-table-card .wm-table-scroll {
-  overflow: auto;
+  overflow-x: auto; overflow-y: hidden;
   width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: #ECECE7 transparent;
-  border-radius: 14px;
+  border-radius: 0 0 14px 14px;
+  isolation: isolate;
 }
+div.wm-table-card .wm-table-scroll--bounded { overflow-y: auto; }
 div.wm-table-card .wm-table-scroll--bounded thead th {
   position: sticky; top: 0; z-index: 2;
 }
 table.wm-table {
-  width: max-content; min-width: 100%;
+  width: 100%; min-width: 100%;
   font-family: JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace; font-size: 13px;
   border-collapse: separate; border-spacing: 0;
 }
@@ -8922,7 +9344,7 @@ table.wm-table tbody td {
   border-bottom: 1px solid rgba(17,17,17,0.10);
   border-right: 1px solid rgba(17,17,17,0.10);
   color: #111111; font-variant-numeric: tabular-nums;
-  white-space: normal; word-break: break-word; line-height: 1.5;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.5;
   vertical-align: top;
   transition: background-color 0.14s ease, color 0.14s ease;
 }
@@ -8932,6 +9354,8 @@ table.wm-table tbody tr:nth-child(even) td {
   background: rgba(17,17,17,0.055);
 }
 table.wm-table tbody tr:last-child td { border-bottom: none; }
+table.wm-table tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+table.wm-table tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
 
 table.wm-table tbody tr:hover td {
   background: #10212B !important; color: #16C7E8 !important;
@@ -8965,99 +9389,99 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
     overflow-wrap: anywhere !important;
   }
 }
-</style><style>table.wm-table tbody td.col0 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col1 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col2 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col3 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col4 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col5 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col6 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col7 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col8 { text-align:left; white-space:normal; width:360px; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">EDA, field contract, evidence</div><div class="wm-shell-title">Fields that need a decision</div><div class="wm-shell-subtitle">Review threshold: |skew| ≥ 1.</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="Fields that need a decision" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
+</style><style>table.wm-align-dd392cb7991446769bfae16b4f29c733 { table-layout:auto; width:100%; }table.wm-align-dd392cb7991446769bfae16b4f29c733 th, table.wm-align-dd392cb7991446769bfae16b4f29c733 td { white-space:normal; overflow-wrap:anywhere; word-break:normal; vertical-align:top; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col0 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col1 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col2 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col3 { text-align:right; white-space:nowrap; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col4 { text-align:right; white-space:nowrap; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col5 { text-align:right; white-space:nowrap; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col6 { text-align:right; white-space:nowrap; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col7 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-dd392cb7991446769bfae16b4f29c733 tbody td.col8 { text-align:left; white-space:normal; width:360px; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">EDA, field contract, evidence</div><div class="wm-shell-title">Fields that need a decision</div><div class="wm-shell-subtitle">Review threshold: |skew| ≥ 1.</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="Fields that need a decision" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
 </style>
-<table class="wm-table" id="T_5fed2">
+<table class="wm-table wm-align-dd392cb7991446769bfae16b4f29c733" id="T_b6bbd">
 <thead>
 <tr>
-<th class="col_heading level0 col0" id="T_5fed2_level0_col0">field</th>
-<th class="col_heading level0 col1" id="T_5fed2_level0_col1">role</th>
-<th class="col_heading level0 col2" id="T_5fed2_level0_col2">dtype</th>
-<th class="col_heading level0 col3" id="T_5fed2_level0_col3">complete</th>
-<th class="col_heading level0 col4" id="T_5fed2_level0_col4">missing</th>
-<th class="col_heading level0 col5" id="T_5fed2_level0_col5">unique</th>
-<th class="col_heading level0 col6" id="T_5fed2_level0_col6">skew</th>
-<th class="col_heading level0 col7" id="T_5fed2_level0_col7">status</th>
-<th class="col_heading level0 col8" id="T_5fed2_level0_col8">what deserves a decision</th>
+<th class="col_heading level0 col0" id="T_b6bbd_level0_col0">field</th>
+<th class="col_heading level0 col1" id="T_b6bbd_level0_col1">role</th>
+<th class="col_heading level0 col2" id="T_b6bbd_level0_col2">dtype</th>
+<th class="col_heading level0 col3" id="T_b6bbd_level0_col3">complete</th>
+<th class="col_heading level0 col4" id="T_b6bbd_level0_col4">missing</th>
+<th class="col_heading level0 col5" id="T_b6bbd_level0_col5">unique</th>
+<th class="col_heading level0 col6" id="T_b6bbd_level0_col6">skew</th>
+<th class="col_heading level0 col7" id="T_b6bbd_level0_col7">status</th>
+<th class="col_heading level0 col8" id="T_b6bbd_level0_col8">what deserves a decision</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="data row0 col0" id="T_5fed2_row0_col0">record_id</td>
-<td class="data row0 col1" id="T_5fed2_row0_col1">identifier</td>
-<td class="data row0 col2" id="T_5fed2_row0_col2">object</td>
-<td class="data row0 col3" id="T_5fed2_row0_col3">100.0%</td>
-<td class="data row0 col4" id="T_5fed2_row0_col4">0</td>
-<td class="data row0 col5" id="T_5fed2_row0_col5">84</td>
-<td class="data row0 col6" id="T_5fed2_row0_col6">—</td>
-<td class="data row0 col7" id="T_5fed2_row0_col7">CHECK</td>
-<td class="data row0 col8" id="T_5fed2_row0_col8">Keep raw identifiers for joins or review, not as model features without a specific reason.</td>
+<td class="data row0 col0" id="T_b6bbd_row0_col0">record_id</td>
+<td class="data row0 col1" id="T_b6bbd_row0_col1">identifier</td>
+<td class="data row0 col2" id="T_b6bbd_row0_col2">object</td>
+<td class="data row0 col3" id="T_b6bbd_row0_col3">100.0%</td>
+<td class="data row0 col4" id="T_b6bbd_row0_col4">0</td>
+<td class="data row0 col5" id="T_b6bbd_row0_col5">84</td>
+<td class="data row0 col6" id="T_b6bbd_row0_col6">—</td>
+<td class="data row0 col7" id="T_b6bbd_row0_col7">CHECK</td>
+<td class="data row0 col8" id="T_b6bbd_row0_col8">Keep raw identifiers for joins or review, not as model features without a specific reason.</td>
 </tr>
 <tr>
-<td class="data row1 col0" id="T_5fed2_row1_col0">month</td>
-<td class="data row1 col1" id="T_5fed2_row1_col1">time</td>
-<td class="data row1 col2" id="T_5fed2_row1_col2">datetime64[ns]</td>
-<td class="data row1 col3" id="T_5fed2_row1_col3">100.0%</td>
-<td class="data row1 col4" id="T_5fed2_row1_col4">0</td>
-<td class="data row1 col5" id="T_5fed2_row1_col5">84</td>
-<td class="data row1 col6" id="T_5fed2_row1_col6">—</td>
-<td class="data row1 col7" id="T_5fed2_row1_col7">CHECK</td>
-<td class="data row1 col8" id="T_5fed2_row1_col8">Verify timezone, frequency, and chronological ordering before splitting.</td>
+<td class="data row1 col0" id="T_b6bbd_row1_col0">month</td>
+<td class="data row1 col1" id="T_b6bbd_row1_col1">time</td>
+<td class="data row1 col2" id="T_b6bbd_row1_col2">datetime64[ns]</td>
+<td class="data row1 col3" id="T_b6bbd_row1_col3">100.0%</td>
+<td class="data row1 col4" id="T_b6bbd_row1_col4">0</td>
+<td class="data row1 col5" id="T_b6bbd_row1_col5">84</td>
+<td class="data row1 col6" id="T_b6bbd_row1_col6">—</td>
+<td class="data row1 col7" id="T_b6bbd_row1_col7">CHECK</td>
+<td class="data row1 col8" id="T_b6bbd_row1_col8">Verify timezone, frequency, and chronological ordering before splitting.</td>
 </tr>
 <tr>
-<td class="data row2 col0" id="T_5fed2_row2_col0">value</td>
-<td class="data row2 col1" id="T_5fed2_row2_col1">target</td>
-<td class="data row2 col2" id="T_5fed2_row2_col2">float64</td>
-<td class="data row2 col3" id="T_5fed2_row2_col3">100.0%</td>
-<td class="data row2 col4" id="T_5fed2_row2_col4">0</td>
-<td class="data row2 col5" id="T_5fed2_row2_col5">84</td>
-<td class="data row2 col6" id="T_5fed2_row2_col6">—</td>
-<td class="data row2 col7" id="T_5fed2_row2_col7">PASS</td>
-<td class="data row2 col8" id="T_5fed2_row2_col8">No automatic transformation applied; continue with the question this field must answer.</td>
+<td class="data row2 col0" id="T_b6bbd_row2_col0">value</td>
+<td class="data row2 col1" id="T_b6bbd_row2_col1">target</td>
+<td class="data row2 col2" id="T_b6bbd_row2_col2">float64</td>
+<td class="data row2 col3" id="T_b6bbd_row2_col3">100.0%</td>
+<td class="data row2 col4" id="T_b6bbd_row2_col4">0</td>
+<td class="data row2 col5" id="T_b6bbd_row2_col5">84</td>
+<td class="data row2 col6" id="T_b6bbd_row2_col6">—</td>
+<td class="data row2 col7" id="T_b6bbd_row2_col7">PASS</td>
+<td class="data row2 col8" id="T_b6bbd_row2_col8">No automatic transformation applied; continue with the question this field must answer.</td>
 </tr>
 <tr>
-<td class="data row3 col0" id="T_5fed2_row3_col0">channel</td>
-<td class="data row3 col1" id="T_5fed2_row3_col1">categorical</td>
-<td class="data row3 col2" id="T_5fed2_row3_col2">object</td>
-<td class="data row3 col3" id="T_5fed2_row3_col3">100.0%</td>
-<td class="data row3 col4" id="T_5fed2_row3_col4">0</td>
-<td class="data row3 col5" id="T_5fed2_row3_col5">3</td>
-<td class="data row3 col6" id="T_5fed2_row3_col6">—</td>
-<td class="data row3 col7" id="T_5fed2_row3_col7">PASS</td>
-<td class="data row3 col8" id="T_5fed2_row3_col8">No automatic transformation applied; continue with the question this field must answer.</td>
+<td class="data row3 col0" id="T_b6bbd_row3_col0">channel</td>
+<td class="data row3 col1" id="T_b6bbd_row3_col1">categorical</td>
+<td class="data row3 col2" id="T_b6bbd_row3_col2">object</td>
+<td class="data row3 col3" id="T_b6bbd_row3_col3">100.0%</td>
+<td class="data row3 col4" id="T_b6bbd_row3_col4">0</td>
+<td class="data row3 col5" id="T_b6bbd_row3_col5">3</td>
+<td class="data row3 col6" id="T_b6bbd_row3_col6">—</td>
+<td class="data row3 col7" id="T_b6bbd_row3_col7">PASS</td>
+<td class="data row3 col8" id="T_b6bbd_row3_col8">No automatic transformation applied; continue with the question this field must answer.</td>
 </tr>
 <tr>
-<td class="data row4 col0" id="T_5fed2_row4_col0">exposure</td>
-<td class="data row4 col1" id="T_5fed2_row4_col1">numeric</td>
-<td class="data row4 col2" id="T_5fed2_row4_col2">float64</td>
-<td class="data row4 col3" id="T_5fed2_row4_col3">97.6%</td>
-<td class="data row4 col4" id="T_5fed2_row4_col4">2</td>
-<td class="data row4 col5" id="T_5fed2_row4_col5">82</td>
-<td class="data row4 col6" id="T_5fed2_row4_col6">+2.31</td>
-<td class="data row4 col7" id="T_5fed2_row4_col7">CHECK</td>
-<td class="data row4 col8" id="T_5fed2_row4_col8">Investigate why values are missing; if you choose imputation, fit it on training data only. |skew| is at least 1; inspect scale and unusual values before choosing a transform.</td>
+<td class="data row4 col0" id="T_b6bbd_row4_col0">exposure</td>
+<td class="data row4 col1" id="T_b6bbd_row4_col1">numeric</td>
+<td class="data row4 col2" id="T_b6bbd_row4_col2">float64</td>
+<td class="data row4 col3" id="T_b6bbd_row4_col3">97.6%</td>
+<td class="data row4 col4" id="T_b6bbd_row4_col4">2</td>
+<td class="data row4 col5" id="T_b6bbd_row4_col5">82</td>
+<td class="data row4 col6" id="T_b6bbd_row4_col6">+2.31</td>
+<td class="data row4 col7" id="T_b6bbd_row4_col7">CHECK</td>
+<td class="data row4 col8" id="T_b6bbd_row4_col8">Investigate why values are missing; if you choose imputation, fit it on training data only. |skew| is at least 1; inspect scale and unusual values before choosing a transform.</td>
 </tr>
 <tr>
-<td class="data row5 col0" id="T_5fed2_row5_col0">is_peak_window</td>
-<td class="data row5 col1" id="T_5fed2_row5_col1">boolean / flag</td>
-<td class="data row5 col2" id="T_5fed2_row5_col2">bool</td>
-<td class="data row5 col3" id="T_5fed2_row5_col3">100.0%</td>
-<td class="data row5 col4" id="T_5fed2_row5_col4">0</td>
-<td class="data row5 col5" id="T_5fed2_row5_col5">2</td>
-<td class="data row5 col6" id="T_5fed2_row5_col6">—</td>
-<td class="data row5 col7" id="T_5fed2_row5_col7">PASS</td>
-<td class="data row5 col8" id="T_5fed2_row5_col8">No automatic transformation applied; continue with the question this field must answer.</td>
+<td class="data row5 col0" id="T_b6bbd_row5_col0">is_peak_window</td>
+<td class="data row5 col1" id="T_b6bbd_row5_col1">boolean / flag</td>
+<td class="data row5 col2" id="T_b6bbd_row5_col2">bool</td>
+<td class="data row5 col3" id="T_b6bbd_row5_col3">100.0%</td>
+<td class="data row5 col4" id="T_b6bbd_row5_col4">0</td>
+<td class="data row5 col5" id="T_b6bbd_row5_col5">2</td>
+<td class="data row5 col6" id="T_b6bbd_row5_col6">—</td>
+<td class="data row5 col7" id="T_b6bbd_row5_col7">PASS</td>
+<td class="data row5 col8" id="T_b6bbd_row5_col8">No automatic transformation applied; continue with the question this field must answer.</td>
 </tr>
 <tr>
-<td class="data row6 col0" id="T_5fed2_row6_col0">split</td>
-<td class="data row6 col1" id="T_5fed2_row6_col1">categorical</td>
-<td class="data row6 col2" id="T_5fed2_row6_col2">object</td>
-<td class="data row6 col3" id="T_5fed2_row6_col3">100.0%</td>
-<td class="data row6 col4" id="T_5fed2_row6_col4">0</td>
-<td class="data row6 col5" id="T_5fed2_row6_col5">2</td>
-<td class="data row6 col6" id="T_5fed2_row6_col6">—</td>
-<td class="data row6 col7" id="T_5fed2_row6_col7">PASS</td>
-<td class="data row6 col8" id="T_5fed2_row6_col8">No automatic transformation applied; continue with the question this field must answer.</td>
+<td class="data row6 col0" id="T_b6bbd_row6_col0">split</td>
+<td class="data row6 col1" id="T_b6bbd_row6_col1">categorical</td>
+<td class="data row6 col2" id="T_b6bbd_row6_col2">object</td>
+<td class="data row6 col3" id="T_b6bbd_row6_col3">100.0%</td>
+<td class="data row6 col4" id="T_b6bbd_row6_col4">0</td>
+<td class="data row6 col5" id="T_b6bbd_row6_col5">2</td>
+<td class="data row6 col6" id="T_b6bbd_row6_col6">—</td>
+<td class="data row6 col7" id="T_b6bbd_row6_col7">PASS</td>
+<td class="data row6 col8" id="T_b6bbd_row6_col8">No automatic transformation applied; continue with the question this field must answer.</td>
 </tr>
 </tbody>
 </table>
@@ -9079,17 +9503,19 @@ div.wm-table-card .wm-shell-inner { min-width: 0; max-width: 100%; }
 div.wm-table-card .wm-shell-eyebrow { color: #16C7E8 !important; }
 div.wm-table-card:hover { transform: none; box-shadow: 0 12px 22px -14px rgba(0,0,0,0.20); }
 div.wm-table-card .wm-table-scroll {
-  overflow: auto;
+  overflow-x: auto; overflow-y: hidden;
   width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: #ECECE7 transparent;
-  border-radius: 14px;
+  border-radius: 0 0 14px 14px;
+  isolation: isolate;
 }
+div.wm-table-card .wm-table-scroll--bounded { overflow-y: auto; }
 div.wm-table-card .wm-table-scroll--bounded thead th {
   position: sticky; top: 0; z-index: 2;
 }
 table.wm-table {
-  width: max-content; min-width: 100%;
+  width: 100%; min-width: 100%;
   font-family: JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace; font-size: 13px;
   border-collapse: separate; border-spacing: 0;
 }
@@ -9107,7 +9533,7 @@ table.wm-table tbody td {
   border-bottom: 1px solid rgba(17,17,17,0.10);
   border-right: 1px solid rgba(17,17,17,0.10);
   color: #111111; font-variant-numeric: tabular-nums;
-  white-space: normal; word-break: break-word; line-height: 1.5;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.5;
   vertical-align: top;
   transition: background-color 0.14s ease, color 0.14s ease;
 }
@@ -9117,6 +9543,8 @@ table.wm-table tbody tr:nth-child(even) td {
   background: rgba(17,17,17,0.055);
 }
 table.wm-table tbody tr:last-child td { border-bottom: none; }
+table.wm-table tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+table.wm-table tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
 
 table.wm-table tbody tr:hover td {
   background: #10212B !important; color: #16C7E8 !important;
@@ -9150,47 +9578,47 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
     overflow-wrap: anywhere !important;
   }
 }
-</style><style>table.wm-table tbody td.col0 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col1 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col2 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col3 { text-align:right; white-space:nowrap; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">02, EDA, categorical shares</div><div class="wm-shell-title">Process fields stay grouped, ordered, and reconciled to all rows</div><div class="wm-shell-subtitle">Each field group is sorted from most common to least common</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="Process fields stay grouped, ordered, and reconciled to all rows" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
+</style><style>table.wm-align-064f234137ec4445ab6f1eb44dd9048d { table-layout:auto; width:100%; }table.wm-align-064f234137ec4445ab6f1eb44dd9048d th, table.wm-align-064f234137ec4445ab6f1eb44dd9048d td { white-space:normal; overflow-wrap:anywhere; word-break:normal; vertical-align:top; }table.wm-align-064f234137ec4445ab6f1eb44dd9048d tbody td.col0 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-064f234137ec4445ab6f1eb44dd9048d tbody td.col1 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-064f234137ec4445ab6f1eb44dd9048d tbody td.col2 { text-align:right; white-space:nowrap; }table.wm-align-064f234137ec4445ab6f1eb44dd9048d tbody td.col3 { text-align:right; white-space:nowrap; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">02, EDA, categorical shares</div><div class="wm-shell-title">Process fields stay grouped, ordered, and reconciled to all rows</div><div class="wm-shell-subtitle">Each field group is sorted from most common to least common</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="Process fields stay grouped, ordered, and reconciled to all rows" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
 </style>
-<table class="wm-table" id="T_29a68">
+<table class="wm-table wm-align-064f234137ec4445ab6f1eb44dd9048d" id="T_426ed">
 <thead>
 <tr>
-<th class="col_heading level0 col0" id="T_29a68_level0_col0">field group</th>
-<th class="col_heading level0 col1" id="T_29a68_level0_col1">category</th>
-<th class="col_heading level0 col2" id="T_29a68_level0_col2">rows</th>
-<th class="col_heading level0 col3" id="T_29a68_level0_col3">share of all rows</th>
+<th class="col_heading level0 col0" id="T_426ed_level0_col0">field group</th>
+<th class="col_heading level0 col1" id="T_426ed_level0_col1">category</th>
+<th class="col_heading level0 col2" id="T_426ed_level0_col2">rows</th>
+<th class="col_heading level0 col3" id="T_426ed_level0_col3">share of all rows</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="data row0 col0" id="T_29a68_row0_col0">Acquisition channel</td>
-<td class="data row0 col1" id="T_29a68_row0_col1">Direct</td>
-<td class="data row0 col2" id="T_29a68_row0_col2">28</td>
-<td class="data row0 col3" id="T_29a68_row0_col3">33.3%</td>
+<td class="data row0 col0" id="T_426ed_row0_col0">Acquisition channel</td>
+<td class="data row0 col1" id="T_426ed_row0_col1">Direct</td>
+<td class="data row0 col2" id="T_426ed_row0_col2">28</td>
+<td class="data row0 col3" id="T_426ed_row0_col3">33.3%</td>
 </tr>
 <tr>
-<td class="data row1 col0" id="T_29a68_row1_col0">Acquisition channel</td>
-<td class="data row1 col1" id="T_29a68_row1_col1">Partner</td>
-<td class="data row1 col2" id="T_29a68_row1_col2">28</td>
-<td class="data row1 col3" id="T_29a68_row1_col3">33.3%</td>
+<td class="data row1 col0" id="T_426ed_row1_col0">Acquisition channel</td>
+<td class="data row1 col1" id="T_426ed_row1_col1">Partner</td>
+<td class="data row1 col2" id="T_426ed_row1_col2">28</td>
+<td class="data row1 col3" id="T_426ed_row1_col3">33.3%</td>
 </tr>
 <tr>
-<td class="data row2 col0" id="T_29a68_row2_col0">Acquisition channel</td>
-<td class="data row2 col1" id="T_29a68_row2_col1">Community</td>
-<td class="data row2 col2" id="T_29a68_row2_col2">28</td>
-<td class="data row2 col3" id="T_29a68_row2_col3">33.3%</td>
+<td class="data row2 col0" id="T_426ed_row2_col0">Acquisition channel</td>
+<td class="data row2 col1" id="T_426ed_row2_col1">Community</td>
+<td class="data row2 col2" id="T_426ed_row2_col2">28</td>
+<td class="data row2 col3" id="T_426ed_row2_col3">33.3%</td>
 </tr>
 <tr>
-<td class="data row3 col0" id="T_29a68_row3_col0">Evidence role</td>
-<td class="data row3 col1" id="T_29a68_row3_col1">Train</td>
-<td class="data row3 col2" id="T_29a68_row3_col2">72</td>
-<td class="data row3 col3" id="T_29a68_row3_col3">85.7%</td>
+<td class="data row3 col0" id="T_426ed_row3_col0">Evidence role</td>
+<td class="data row3 col1" id="T_426ed_row3_col1">Train</td>
+<td class="data row3 col2" id="T_426ed_row3_col2">72</td>
+<td class="data row3 col3" id="T_426ed_row3_col3">85.7%</td>
 </tr>
 <tr>
-<td class="data row4 col0" id="T_29a68_row4_col0">Evidence role</td>
-<td class="data row4 col1" id="T_29a68_row4_col1">Hold-out</td>
-<td class="data row4 col2" id="T_29a68_row4_col2">12</td>
-<td class="data row4 col3" id="T_29a68_row4_col3">14.3%</td>
+<td class="data row4 col0" id="T_426ed_row4_col0">Evidence role</td>
+<td class="data row4 col1" id="T_426ed_row4_col1">Hold-out</td>
+<td class="data row4 col2" id="T_426ed_row4_col2">12</td>
+<td class="data row4 col3" id="T_426ed_row4_col3">14.3%</td>
 </tr>
 </tbody>
 </table>
@@ -9205,11 +9633,11 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
 <rdf:rdf xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <cc:work>
 <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
-<dc:date>2026-07-27T23:42:56.373425</dc:date>
+<dc:date>2026-09-21T16:03:25.612875</dc:date>
 <dc:format>image/svg+xml</dc:format>
 <dc:creator>
 <cc:agent>
-<dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+<dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
 </cc:agent>
 </dc:creator>
 </cc:work>
@@ -9220,11 +9648,11 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
 </defs>
 <g id="figure_1">
 <g id="patch_1">
-<path d="M 0 21.28 
-L 326.88 21.28 
-L 326.88 -0 
-L 0 -0 
-L 0 21.28 
+<path d="M 0 21.28
+L 326.88 21.28
+L 326.88 -0
+L 0 -0
+L 0 21.28
 z
 " style="fill: none; opacity: 0"></path>
 </g>
@@ -9232,404 +9660,404 @@ z
 <!-- $y_t = 72 + 0.55t + 18\sin(2\pi t/12 - \pi/3) + \epsilon_t$ -->
 <g style="fill: #111111" transform="translate(2.88 15.04) scale(0.16 -0.16)">
 <defs>
-<path d="M 1588 -325 
-Q 1188 -997 936 -1164 
-Q 684 -1331 294 -1331 
-L -159 -1331 
-L -63 -850 
-L 269 -850 
-Q 509 -850 678 -719 
-Q 847 -588 1056 -206 
-L 1234 128 
-L 459 3500 
-L 1069 3500 
-L 1650 819 
-L 3256 3500 
-L 3859 3500 
-L 1588 -325 
+<path d="M 1588 -325
+Q 1188 -997 936 -1164
+Q 684 -1331 294 -1331
+L -159 -1331
+L -63 -850
+L 269 -850
+Q 509 -850 678 -719
+Q 847 -588 1056 -206
+L 1234 128
+L 459 3500
+L 1069 3500
+L 1650 819
+L 3256 3500
+L 3859 3500
+L 1588 -325
 z
 " id="DejaVuSans-Oblique-79" transform="scale(0.015625)"></path>
-<path d="M 2706 3500 
-L 2619 3053 
-L 1472 3053 
-L 1100 1153 
-Q 1081 1047 1072 975 
-Q 1063 903 1063 863 
-Q 1063 663 1183 572 
-Q 1303 481 1569 481 
-L 2150 481 
-L 2053 0 
-L 1503 0 
-Q 991 0 739 200 
-Q 488 400 488 806 
-Q 488 878 497 964 
-Q 506 1050 525 1153 
-L 897 3053 
-L 409 3053 
-L 500 3500 
-L 978 3500 
-L 1172 4494 
-L 1747 4494 
-L 1556 3500 
-L 2706 3500 
+<path d="M 2706 3500
+L 2619 3053
+L 1472 3053
+L 1100 1153
+Q 1081 1047 1072 975
+Q 1063 903 1063 863
+Q 1063 663 1183 572
+Q 1303 481 1569 481
+L 2150 481
+L 2053 0
+L 1503 0
+Q 991 0 739 200
+Q 488 400 488 806
+Q 488 878 497 964
+Q 506 1050 525 1153
+L 897 3053
+L 409 3053
+L 500 3500
+L 978 3500
+L 1172 4494
+L 1747 4494
+L 1556 3500
+L 2706 3500
 z
 " id="DejaVuSans-Oblique-74" transform="scale(0.015625)"></path>
-<path d="M 678 2906 
-L 4684 2906 
-L 4684 2381 
-L 678 2381 
-L 678 2906 
+<path d="M 678 2906
+L 4684 2906
+L 4684 2381
+L 678 2381
+L 678 2906
 z
-M 678 1631 
-L 4684 1631 
-L 4684 1100 
-L 678 1100 
-L 678 1631 
+M 678 1631
+L 4684 1631
+L 4684 1100
+L 678 1100
+L 678 1631
 z
 " id="DejaVuSans-3d" transform="scale(0.015625)"></path>
-<path d="M 525 4666 
-L 3525 4666 
-L 3525 4397 
-L 1831 0 
-L 1172 0 
-L 2766 4134 
-L 525 4134 
-L 525 4666 
+<path d="M 525 4666
+L 3525 4666
+L 3525 4397
+L 1831 0
+L 1172 0
+L 2766 4134
+L 525 4134
+L 525 4666
 z
 " id="DejaVuSans-37" transform="scale(0.015625)"></path>
-<path d="M 1228 531 
-L 3431 531 
-L 3431 0 
-L 469 0 
-L 469 531 
-Q 828 903 1448 1529 
-Q 2069 2156 2228 2338 
-Q 2531 2678 2651 2914 
-Q 2772 3150 2772 3378 
-Q 2772 3750 2511 3984 
-Q 2250 4219 1831 4219 
-Q 1534 4219 1204 4116 
-Q 875 4013 500 3803 
-L 500 4441 
-Q 881 4594 1212 4672 
-Q 1544 4750 1819 4750 
-Q 2544 4750 2975 4387 
-Q 3406 4025 3406 3419 
-Q 3406 3131 3298 2873 
-Q 3191 2616 2906 2266 
-Q 2828 2175 2409 1742 
-Q 1991 1309 1228 531 
+<path d="M 1228 531
+L 3431 531
+L 3431 0
+L 469 0
+L 469 531
+Q 828 903 1448 1529
+Q 2069 2156 2228 2338
+Q 2531 2678 2651 2914
+Q 2772 3150 2772 3378
+Q 2772 3750 2511 3984
+Q 2250 4219 1831 4219
+Q 1534 4219 1204 4116
+Q 875 4013 500 3803
+L 500 4441
+Q 881 4594 1212 4672
+Q 1544 4750 1819 4750
+Q 2544 4750 2975 4387
+Q 3406 4025 3406 3419
+Q 3406 3131 3298 2873
+Q 3191 2616 2906 2266
+Q 2828 2175 2409 1742
+Q 1991 1309 1228 531
 z
 " id="DejaVuSans-32" transform="scale(0.015625)"></path>
-<path d="M 2944 4013 
-L 2944 2272 
-L 4684 2272 
-L 4684 1741 
-L 2944 1741 
-L 2944 0 
-L 2419 0 
-L 2419 1741 
-L 678 1741 
-L 678 2272 
-L 2419 2272 
-L 2419 4013 
-L 2944 4013 
+<path d="M 2944 4013
+L 2944 2272
+L 4684 2272
+L 4684 1741
+L 2944 1741
+L 2944 0
+L 2419 0
+L 2419 1741
+L 678 1741
+L 678 2272
+L 2419 2272
+L 2419 4013
+L 2944 4013
 z
 " id="DejaVuSans-2b" transform="scale(0.015625)"></path>
-<path d="M 2034 4250 
-Q 1547 4250 1301 3770 
-Q 1056 3291 1056 2328 
-Q 1056 1369 1301 889 
-Q 1547 409 2034 409 
-Q 2525 409 2770 889 
-Q 3016 1369 3016 2328 
-Q 3016 3291 2770 3770 
-Q 2525 4250 2034 4250 
+<path d="M 2034 4250
+Q 1547 4250 1301 3770
+Q 1056 3291 1056 2328
+Q 1056 1369 1301 889
+Q 1547 409 2034 409
+Q 2525 409 2770 889
+Q 3016 1369 3016 2328
+Q 3016 3291 2770 3770
+Q 2525 4250 2034 4250
 z
-M 2034 4750 
-Q 2819 4750 3233 4129 
-Q 3647 3509 3647 2328 
-Q 3647 1150 3233 529 
-Q 2819 -91 2034 -91 
-Q 1250 -91 836 529 
-Q 422 1150 422 2328 
-Q 422 3509 836 4129 
-Q 1250 4750 2034 4750 
+M 2034 4750
+Q 2819 4750 3233 4129
+Q 3647 3509 3647 2328
+Q 3647 1150 3233 529
+Q 2819 -91 2034 -91
+Q 1250 -91 836 529
+Q 422 1150 422 2328
+Q 422 3509 836 4129
+Q 1250 4750 2034 4750
 z
 " id="DejaVuSans-30" transform="scale(0.015625)"></path>
-<path d="M 684 794 
-L 1344 794 
-L 1344 0 
-L 684 0 
-L 684 794 
+<path d="M 684 794
+L 1344 794
+L 1344 0
+L 684 0
+L 684 794
 z
 " id="DejaVuSans-2e" transform="scale(0.015625)"></path>
-<path d="M 691 4666 
-L 3169 4666 
-L 3169 4134 
-L 1269 4134 
-L 1269 2991 
-Q 1406 3038 1543 3061 
-Q 1681 3084 1819 3084 
-Q 2600 3084 3056 2656 
-Q 3513 2228 3513 1497 
-Q 3513 744 3044 326 
-Q 2575 -91 1722 -91 
-Q 1428 -91 1123 -41 
-Q 819 9 494 109 
-L 494 744 
-Q 775 591 1075 516 
-Q 1375 441 1709 441 
-Q 2250 441 2565 725 
-Q 2881 1009 2881 1497 
-Q 2881 1984 2565 2268 
-Q 2250 2553 1709 2553 
-Q 1456 2553 1204 2497 
-Q 953 2441 691 2322 
-L 691 4666 
+<path d="M 691 4666
+L 3169 4666
+L 3169 4134
+L 1269 4134
+L 1269 2991
+Q 1406 3038 1543 3061
+Q 1681 3084 1819 3084
+Q 2600 3084 3056 2656
+Q 3513 2228 3513 1497
+Q 3513 744 3044 326
+Q 2575 -91 1722 -91
+Q 1428 -91 1123 -41
+Q 819 9 494 109
+L 494 744
+Q 775 591 1075 516
+Q 1375 441 1709 441
+Q 2250 441 2565 725
+Q 2881 1009 2881 1497
+Q 2881 1984 2565 2268
+Q 2250 2553 1709 2553
+Q 1456 2553 1204 2497
+Q 953 2441 691 2322
+L 691 4666
 z
 " id="DejaVuSans-35" transform="scale(0.015625)"></path>
-<path d="M 794 531 
-L 1825 531 
-L 1825 4091 
-L 703 3866 
-L 703 4441 
-L 1819 4666 
-L 2450 4666 
-L 2450 531 
-L 3481 531 
-L 3481 0 
-L 794 0 
-L 794 531 
+<path d="M 794 531
+L 1825 531
+L 1825 4091
+L 703 3866
+L 703 4441
+L 1819 4666
+L 2450 4666
+L 2450 531
+L 3481 531
+L 3481 0
+L 794 0
+L 794 531
 z
 " id="DejaVuSans-31" transform="scale(0.015625)"></path>
-<path d="M 2034 2216 
-Q 1584 2216 1326 1975 
-Q 1069 1734 1069 1313 
-Q 1069 891 1326 650 
-Q 1584 409 2034 409 
-Q 2484 409 2743 651 
-Q 3003 894 3003 1313 
-Q 3003 1734 2745 1975 
-Q 2488 2216 2034 2216 
+<path d="M 2034 2216
+Q 1584 2216 1326 1975
+Q 1069 1734 1069 1313
+Q 1069 891 1326 650
+Q 1584 409 2034 409
+Q 2484 409 2743 651
+Q 3003 894 3003 1313
+Q 3003 1734 2745 1975
+Q 2488 2216 2034 2216
 z
-M 1403 2484 
-Q 997 2584 770 2862 
-Q 544 3141 544 3541 
-Q 544 4100 942 4425 
-Q 1341 4750 2034 4750 
-Q 2731 4750 3128 4425 
-Q 3525 4100 3525 3541 
-Q 3525 3141 3298 2862 
-Q 3072 2584 2669 2484 
-Q 3125 2378 3379 2068 
-Q 3634 1759 3634 1313 
-Q 3634 634 3220 271 
-Q 2806 -91 2034 -91 
-Q 1263 -91 848 271 
-Q 434 634 434 1313 
-Q 434 1759 690 2068 
-Q 947 2378 1403 2484 
+M 1403 2484
+Q 997 2584 770 2862
+Q 544 3141 544 3541
+Q 544 4100 942 4425
+Q 1341 4750 2034 4750
+Q 2731 4750 3128 4425
+Q 3525 4100 3525 3541
+Q 3525 3141 3298 2862
+Q 3072 2584 2669 2484
+Q 3125 2378 3379 2068
+Q 3634 1759 3634 1313
+Q 3634 634 3220 271
+Q 2806 -91 2034 -91
+Q 1263 -91 848 271
+Q 434 634 434 1313
+Q 434 1759 690 2068
+Q 947 2378 1403 2484
 z
-M 1172 3481 
-Q 1172 3119 1398 2916 
-Q 1625 2713 2034 2713 
-Q 2441 2713 2670 2916 
-Q 2900 3119 2900 3481 
-Q 2900 3844 2670 4047 
-Q 2441 4250 2034 4250 
-Q 1625 4250 1398 4047 
-Q 1172 3844 1172 3481 
+M 1172 3481
+Q 1172 3119 1398 2916
+Q 1625 2713 2034 2713
+Q 2441 2713 2670 2916
+Q 2900 3119 2900 3481
+Q 2900 3844 2670 4047
+Q 2441 4250 2034 4250
+Q 1625 4250 1398 4047
+Q 1172 3844 1172 3481
 z
 " id="DejaVuSans-38" transform="scale(0.015625)"></path>
-<path d="M 2834 3397 
-L 2834 2853 
-Q 2591 2978 2328 3040 
-Q 2066 3103 1784 3103 
-Q 1356 3103 1142 2972 
-Q 928 2841 928 2578 
-Q 928 2378 1081 2264 
-Q 1234 2150 1697 2047 
-L 1894 2003 
-Q 2506 1872 2764 1633 
-Q 3022 1394 3022 966 
-Q 3022 478 2636 193 
-Q 2250 -91 1575 -91 
-Q 1294 -91 989 -36 
-Q 684 19 347 128 
-L 347 722 
-Q 666 556 975 473 
-Q 1284 391 1588 391 
-Q 1994 391 2212 530 
-Q 2431 669 2431 922 
-Q 2431 1156 2273 1281 
-Q 2116 1406 1581 1522 
-L 1381 1569 
-Q 847 1681 609 1914 
-Q 372 2147 372 2553 
-Q 372 3047 722 3315 
-Q 1072 3584 1716 3584 
-Q 2034 3584 2315 3537 
-Q 2597 3491 2834 3397 
+<path d="M 2834 3397
+L 2834 2853
+Q 2591 2978 2328 3040
+Q 2066 3103 1784 3103
+Q 1356 3103 1142 2972
+Q 928 2841 928 2578
+Q 928 2378 1081 2264
+Q 1234 2150 1697 2047
+L 1894 2003
+Q 2506 1872 2764 1633
+Q 3022 1394 3022 966
+Q 3022 478 2636 193
+Q 2250 -91 1575 -91
+Q 1294 -91 989 -36
+Q 684 19 347 128
+L 347 722
+Q 666 556 975 473
+Q 1284 391 1588 391
+Q 1994 391 2212 530
+Q 2431 669 2431 922
+Q 2431 1156 2273 1281
+Q 2116 1406 1581 1522
+L 1381 1569
+Q 847 1681 609 1914
+Q 372 2147 372 2553
+Q 372 3047 722 3315
+Q 1072 3584 1716 3584
+Q 2034 3584 2315 3537
+Q 2597 3491 2834 3397
 z
 " id="DejaVuSans-73" transform="scale(0.015625)"></path>
-<path d="M 603 3500 
-L 1178 3500 
-L 1178 0 
-L 603 0 
-L 603 3500 
+<path d="M 603 3500
+L 1178 3500
+L 1178 0
+L 603 0
+L 603 3500
 z
-M 603 4863 
-L 1178 4863 
-L 1178 4134 
-L 603 4134 
-L 603 4863 
+M 603 4863
+L 1178 4863
+L 1178 4134
+L 603 4134
+L 603 4863
 z
 " id="DejaVuSans-69" transform="scale(0.015625)"></path>
-<path d="M 3513 2113 
-L 3513 0 
-L 2938 0 
-L 2938 2094 
-Q 2938 2591 2744 2837 
-Q 2550 3084 2163 3084 
-Q 1697 3084 1428 2787 
-Q 1159 2491 1159 1978 
-L 1159 0 
-L 581 0 
-L 581 3500 
-L 1159 3500 
-L 1159 2956 
-Q 1366 3272 1645 3428 
-Q 1925 3584 2291 3584 
-Q 2894 3584 3203 3211 
-Q 3513 2838 3513 2113 
+<path d="M 3513 2113
+L 3513 0
+L 2938 0
+L 2938 2094
+Q 2938 2591 2744 2837
+Q 2550 3084 2163 3084
+Q 1697 3084 1428 2787
+Q 1159 2491 1159 1978
+L 1159 0
+L 581 0
+L 581 3500
+L 1159 3500
+L 1159 2956
+Q 1366 3272 1645 3428
+Q 1925 3584 2291 3584
+Q 2894 3584 3203 3211
+Q 3513 2838 3513 2113
 z
 " id="DejaVuSans-6e" transform="scale(0.015625)"></path>
-<path d="M 1984 4856 
-Q 1566 4138 1362 3434 
-Q 1159 2731 1159 2009 
-Q 1159 1288 1364 580 
-Q 1569 -128 1984 -844 
-L 1484 -844 
-Q 1016 -109 783 600 
-Q 550 1309 550 2009 
-Q 550 2706 781 3412 
-Q 1013 4119 1484 4856 
-L 1984 4856 
+<path d="M 1984 4856
+Q 1566 4138 1362 3434
+Q 1159 2731 1159 2009
+Q 1159 1288 1364 580
+Q 1569 -128 1984 -844
+L 1484 -844
+Q 1016 -109 783 600
+Q 550 1309 550 2009
+Q 550 2706 781 3412
+Q 1013 4119 1484 4856
+L 1984 4856
 z
 " id="DejaVuSans-28" transform="scale(0.015625)"></path>
-<path d="M 584 3500 
-L 3938 3500 
-L 3825 2925 
-L 3384 2925 
-L 2966 775 
-Q 2922 550 2981 450 
-Q 3038 353 3209 353 
-Q 3256 353 3325 363 
-Q 3397 369 3419 372 
-L 3338 -44 
-Q 3222 -84 3103 -103 
-Q 2981 -122 2866 -122 
-Q 2491 -122 2388 81 
-Q 2284 288 2391 838 
-L 2797 2925 
-L 1506 2925 
-L 938 0 
-L 350 0 
-L 919 2925 
-L 472 2925 
-L 584 3500 
+<path d="M 584 3500
+L 3938 3500
+L 3825 2925
+L 3384 2925
+L 2966 775
+Q 2922 550 2981 450
+Q 3038 353 3209 353
+Q 3256 353 3325 363
+Q 3397 369 3419 372
+L 3338 -44
+Q 3222 -84 3103 -103
+Q 2981 -122 2866 -122
+Q 2491 -122 2388 81
+Q 2284 288 2391 838
+L 2797 2925
+L 1506 2925
+L 938 0
+L 350 0
+L 919 2925
+L 472 2925
+L 584 3500
 z
 " id="DejaVuSans-Oblique-3c0" transform="scale(0.015625)"></path>
-<path d="M 1625 4666 
-L 2156 4666 
-L 531 -594 
-L 0 -594 
-L 1625 4666 
+<path d="M 1625 4666
+L 2156 4666
+L 531 -594
+L 0 -594
+L 1625 4666
 z
 " id="DejaVuSans-2f" transform="scale(0.015625)"></path>
-<path d="M 678 2272 
-L 4684 2272 
-L 4684 1741 
-L 678 1741 
-L 678 2272 
+<path d="M 678 2272
+L 4684 2272
+L 4684 1741
+L 678 1741
+L 678 2272
 z
 " id="DejaVuSans-2212" transform="scale(0.015625)"></path>
-<path d="M 2597 2516 
-Q 3050 2419 3304 2112 
-Q 3559 1806 3559 1356 
-Q 3559 666 3084 287 
-Q 2609 -91 1734 -91 
-Q 1441 -91 1130 -33 
-Q 819 25 488 141 
-L 488 750 
-Q 750 597 1062 519 
-Q 1375 441 1716 441 
-Q 2309 441 2620 675 
-Q 2931 909 2931 1356 
-Q 2931 1769 2642 2001 
-Q 2353 2234 1838 2234 
-L 1294 2234 
-L 1294 2753 
-L 1863 2753 
-Q 2328 2753 2575 2939 
-Q 2822 3125 2822 3475 
-Q 2822 3834 2567 4026 
-Q 2313 4219 1838 4219 
-Q 1578 4219 1281 4162 
-Q 984 4106 628 3988 
-L 628 4550 
-Q 988 4650 1302 4700 
-Q 1616 4750 1894 4750 
-Q 2613 4750 3031 4423 
-Q 3450 4097 3450 3541 
-Q 3450 3153 3228 2886 
-Q 3006 2619 2597 2516 
+<path d="M 2597 2516
+Q 3050 2419 3304 2112
+Q 3559 1806 3559 1356
+Q 3559 666 3084 287
+Q 2609 -91 1734 -91
+Q 1441 -91 1130 -33
+Q 819 25 488 141
+L 488 750
+Q 750 597 1062 519
+Q 1375 441 1716 441
+Q 2309 441 2620 675
+Q 2931 909 2931 1356
+Q 2931 1769 2642 2001
+Q 2353 2234 1838 2234
+L 1294 2234
+L 1294 2753
+L 1863 2753
+Q 2328 2753 2575 2939
+Q 2822 3125 2822 3475
+Q 2822 3834 2567 4026
+Q 2313 4219 1838 4219
+Q 1578 4219 1281 4162
+Q 984 4106 628 3988
+L 628 4550
+Q 988 4650 1302 4700
+Q 1616 4750 1894 4750
+Q 2613 4750 3031 4423
+Q 3450 4097 3450 3541
+Q 3450 3153 3228 2886
+Q 3006 2619 2597 2516
 z
 " id="DejaVuSans-33" transform="scale(0.015625)"></path>
-<path d="M 513 4856 
-L 1013 4856 
-Q 1481 4119 1714 3412 
-Q 1947 2706 1947 2009 
-Q 1947 1309 1714 600 
-Q 1481 -109 1013 -844 
-L 513 -844 
-Q 928 -128 1133 580 
-Q 1338 1288 1338 2009 
-Q 1338 2731 1133 3434 
-Q 928 4138 513 4856 
+<path d="M 513 4856
+L 1013 4856
+Q 1481 4119 1714 3412
+Q 1947 2706 1947 2009
+Q 1947 1309 1714 600
+Q 1481 -109 1013 -844
+L 513 -844
+Q 928 -128 1133 580
+Q 1338 1288 1338 2009
+Q 1338 2731 1133 3434
+Q 928 4138 513 4856
 z
 " id="DejaVuSans-29" transform="scale(0.015625)"></path>
-<path d="M 1263 1888 
-Q 925 1963 778 2166 
-Q 669 2309 669 2503 
-Q 669 3034 1175 3344 
-Q 1575 3588 2188 3588 
-Q 2425 3588 2684 3550 
-Q 2944 3513 3234 3438 
-L 3134 2916 
-Q 2847 3006 2606 3047 
-Q 2359 3088 2138 3088 
-Q 1766 3088 1522 2944 
-Q 1228 2772 1228 2522 
-Q 1228 2356 1381 2241 
-Q 1563 2103 1925 2103 
-L 2409 2103 
-L 2319 1628 
-L 1856 1628 
-Q 1425 1628 1172 1469 
-Q 828 1253 828 916 
-Q 828 703 1013 563 
-Q 1244 388 1716 388 
-Q 2006 388 2284 444 
-Q 2563 503 2806 619 
-L 2700 84 
-Q 2403 -3 2131 -47 
-Q 1859 -91 1609 -91 
-Q 866 -91 516 194 
-Q 250 413 250 781 
-Q 250 1278 600 1584 
-Q 859 1813 1263 1888 
+<path d="M 1263 1888
+Q 925 1963 778 2166
+Q 669 2309 669 2503
+Q 669 3034 1175 3344
+Q 1575 3588 2188 3588
+Q 2425 3588 2684 3550
+Q 2944 3513 3234 3438
+L 3134 2916
+Q 2847 3006 2606 3047
+Q 2359 3088 2138 3088
+Q 1766 3088 1522 2944
+Q 1228 2772 1228 2522
+Q 1228 2356 1381 2241
+Q 1563 2103 1925 2103
+L 2409 2103
+L 2319 1628
+L 1856 1628
+Q 1425 1628 1172 1469
+Q 828 1253 828 916
+Q 828 703 1013 563
+Q 1244 388 1716 388
+Q 2006 388 2284 444
+Q 2563 503 2806 619
+L 2700 84
+Q 2403 -3 2131 -47
+Q 1859 -91 1609 -91
+Q 866 -91 516 194
+Q 250 413 250 781
+Q 250 1278 600 1584
+Q 859 1813 1263 1888
 z
 " id="DejaVuSans-Oblique-3b5" transform="scale(0.015625)"></path>
 </defs>
@@ -9673,11 +10101,11 @@ z
 <rdf:rdf xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 <cc:work>
 <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
-<dc:date>2026-07-27T23:42:56.570975</dc:date>
+<dc:date>2026-09-21T16:03:25.624569</dc:date>
 <dc:format>image/svg+xml</dc:format>
 <dc:creator>
 <cc:agent>
-<dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+<dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
 </cc:agent>
 </dc:creator>
 </cc:work>
@@ -9688,11 +10116,11 @@ z
 </defs>
 <g id="figure_1">
 <g id="patch_1">
-<path d="M 0 23.84 
-L 234.72 23.84 
-L 234.72 0 
-L 0 0 
-L 0 23.84 
+<path d="M 0 23.84
+L 234.72 23.84
+L 234.72 0
+L 0 0
+L 0 23.84
 z
 " style="fill: none; opacity: 0"></path>
 </g>
@@ -9700,255 +10128,255 @@ z
 <!-- $x \rightarrow \mathrm{inspect} \rightarrow \mathrm{split\;in\;time} \rightarrow \hat{y}$ -->
 <g style="fill: #111111" transform="translate(2.88 17.6) scale(0.16 -0.16)">
 <defs>
-<path d="M 3841 3500 
-L 2234 1784 
-L 3219 0 
-L 2559 0 
-L 1819 1388 
-L 531 0 
-L -166 0 
-L 1556 1844 
-L 641 3500 
-L 1300 3500 
-L 1972 2234 
-L 3144 3500 
-L 3841 3500 
+<path d="M 3841 3500
+L 2234 1784
+L 3219 0
+L 2559 0
+L 1819 1388
+L 531 0
+L -166 0
+L 1556 1844
+L 641 3500
+L 1300 3500
+L 1972 2234
+L 3144 3500
+L 3841 3500
 z
 " id="DejaVuSans-Oblique-78" transform="scale(0.015625)"></path>
-<path d="M 5050 2147 
-L 5050 1866 
-L 3822 638 
-L 3447 1013 
-L 4175 1741 
-L 366 1741 
-L 366 2272 
-L 4175 2272 
-L 3447 3000 
-L 3822 3375 
-L 5050 2147 
+<path d="M 5050 2147
+L 5050 1866
+L 3822 638
+L 3447 1013
+L 4175 1741
+L 366 1741
+L 366 2272
+L 4175 2272
+L 3447 3000
+L 3822 3375
+L 5050 2147
 z
 " id="DejaVuSans-2192" transform="scale(0.015625)"></path>
-<path d="M 603 3500 
-L 1178 3500 
-L 1178 0 
-L 603 0 
-L 603 3500 
+<path d="M 603 3500
+L 1178 3500
+L 1178 0
+L 603 0
+L 603 3500
 z
-M 603 4863 
-L 1178 4863 
-L 1178 4134 
-L 603 4134 
-L 603 4863 
+M 603 4863
+L 1178 4863
+L 1178 4134
+L 603 4134
+L 603 4863
 z
 " id="DejaVuSans-69" transform="scale(0.015625)"></path>
-<path d="M 3513 2113 
-L 3513 0 
-L 2938 0 
-L 2938 2094 
-Q 2938 2591 2744 2837 
-Q 2550 3084 2163 3084 
-Q 1697 3084 1428 2787 
-Q 1159 2491 1159 1978 
-L 1159 0 
-L 581 0 
-L 581 3500 
-L 1159 3500 
-L 1159 2956 
-Q 1366 3272 1645 3428 
-Q 1925 3584 2291 3584 
-Q 2894 3584 3203 3211 
-Q 3513 2838 3513 2113 
+<path d="M 3513 2113
+L 3513 0
+L 2938 0
+L 2938 2094
+Q 2938 2591 2744 2837
+Q 2550 3084 2163 3084
+Q 1697 3084 1428 2787
+Q 1159 2491 1159 1978
+L 1159 0
+L 581 0
+L 581 3500
+L 1159 3500
+L 1159 2956
+Q 1366 3272 1645 3428
+Q 1925 3584 2291 3584
+Q 2894 3584 3203 3211
+Q 3513 2838 3513 2113
 z
 " id="DejaVuSans-6e" transform="scale(0.015625)"></path>
-<path d="M 2834 3397 
-L 2834 2853 
-Q 2591 2978 2328 3040 
-Q 2066 3103 1784 3103 
-Q 1356 3103 1142 2972 
-Q 928 2841 928 2578 
-Q 928 2378 1081 2264 
-Q 1234 2150 1697 2047 
-L 1894 2003 
-Q 2506 1872 2764 1633 
-Q 3022 1394 3022 966 
-Q 3022 478 2636 193 
-Q 2250 -91 1575 -91 
-Q 1294 -91 989 -36 
-Q 684 19 347 128 
-L 347 722 
-Q 666 556 975 473 
-Q 1284 391 1588 391 
-Q 1994 391 2212 530 
-Q 2431 669 2431 922 
-Q 2431 1156 2273 1281 
-Q 2116 1406 1581 1522 
-L 1381 1569 
-Q 847 1681 609 1914 
-Q 372 2147 372 2553 
-Q 372 3047 722 3315 
-Q 1072 3584 1716 3584 
-Q 2034 3584 2315 3537 
-Q 2597 3491 2834 3397 
+<path d="M 2834 3397
+L 2834 2853
+Q 2591 2978 2328 3040
+Q 2066 3103 1784 3103
+Q 1356 3103 1142 2972
+Q 928 2841 928 2578
+Q 928 2378 1081 2264
+Q 1234 2150 1697 2047
+L 1894 2003
+Q 2506 1872 2764 1633
+Q 3022 1394 3022 966
+Q 3022 478 2636 193
+Q 2250 -91 1575 -91
+Q 1294 -91 989 -36
+Q 684 19 347 128
+L 347 722
+Q 666 556 975 473
+Q 1284 391 1588 391
+Q 1994 391 2212 530
+Q 2431 669 2431 922
+Q 2431 1156 2273 1281
+Q 2116 1406 1581 1522
+L 1381 1569
+Q 847 1681 609 1914
+Q 372 2147 372 2553
+Q 372 3047 722 3315
+Q 1072 3584 1716 3584
+Q 2034 3584 2315 3537
+Q 2597 3491 2834 3397
 z
 " id="DejaVuSans-73" transform="scale(0.015625)"></path>
-<path d="M 1159 525 
-L 1159 -1331 
-L 581 -1331 
-L 581 3500 
-L 1159 3500 
-L 1159 2969 
-Q 1341 3281 1617 3432 
-Q 1894 3584 2278 3584 
-Q 2916 3584 3314 3078 
-Q 3713 2572 3713 1747 
-Q 3713 922 3314 415 
-Q 2916 -91 2278 -91 
-Q 1894 -91 1617 61 
-Q 1341 213 1159 525 
+<path d="M 1159 525
+L 1159 -1331
+L 581 -1331
+L 581 3500
+L 1159 3500
+L 1159 2969
+Q 1341 3281 1617 3432
+Q 1894 3584 2278 3584
+Q 2916 3584 3314 3078
+Q 3713 2572 3713 1747
+Q 3713 922 3314 415
+Q 2916 -91 2278 -91
+Q 1894 -91 1617 61
+Q 1341 213 1159 525
 z
-M 3116 1747 
-Q 3116 2381 2855 2742 
-Q 2594 3103 2138 3103 
-Q 1681 3103 1420 2742 
-Q 1159 2381 1159 1747 
-Q 1159 1113 1420 752 
-Q 1681 391 2138 391 
-Q 2594 391 2855 752 
-Q 3116 1113 3116 1747 
+M 3116 1747
+Q 3116 2381 2855 2742
+Q 2594 3103 2138 3103
+Q 1681 3103 1420 2742
+Q 1159 2381 1159 1747
+Q 1159 1113 1420 752
+Q 1681 391 2138 391
+Q 2594 391 2855 752
+Q 3116 1113 3116 1747
 z
 " id="DejaVuSans-70" transform="scale(0.015625)"></path>
-<path d="M 3597 1894 
-L 3597 1613 
-L 953 1613 
-Q 991 1019 1311 708 
-Q 1631 397 2203 397 
-Q 2534 397 2845 478 
-Q 3156 559 3463 722 
-L 3463 178 
-Q 3153 47 2828 -22 
-Q 2503 -91 2169 -91 
-Q 1331 -91 842 396 
-Q 353 884 353 1716 
-Q 353 2575 817 3079 
-Q 1281 3584 2069 3584 
-Q 2775 3584 3186 3129 
-Q 3597 2675 3597 1894 
+<path d="M 3597 1894
+L 3597 1613
+L 953 1613
+Q 991 1019 1311 708
+Q 1631 397 2203 397
+Q 2534 397 2845 478
+Q 3156 559 3463 722
+L 3463 178
+Q 3153 47 2828 -22
+Q 2503 -91 2169 -91
+Q 1331 -91 842 396
+Q 353 884 353 1716
+Q 353 2575 817 3079
+Q 1281 3584 2069 3584
+Q 2775 3584 3186 3129
+Q 3597 2675 3597 1894
 z
-M 3022 2063 
-Q 3016 2534 2758 2815 
-Q 2500 3097 2075 3097 
-Q 1594 3097 1305 2825 
-Q 1016 2553 972 2059 
-L 3022 2063 
+M 3022 2063
+Q 3016 2534 2758 2815
+Q 2500 3097 2075 3097
+Q 1594 3097 1305 2825
+Q 1016 2553 972 2059
+L 3022 2063
 z
 " id="DejaVuSans-65" transform="scale(0.015625)"></path>
-<path d="M 3122 3366 
-L 3122 2828 
-Q 2878 2963 2633 3030 
-Q 2388 3097 2138 3097 
-Q 1578 3097 1268 2742 
-Q 959 2388 959 1747 
-Q 959 1106 1268 751 
-Q 1578 397 2138 397 
-Q 2388 397 2633 464 
-Q 2878 531 3122 666 
-L 3122 134 
-Q 2881 22 2623 -34 
-Q 2366 -91 2075 -91 
-Q 1284 -91 818 406 
-Q 353 903 353 1747 
-Q 353 2603 823 3093 
-Q 1294 3584 2113 3584 
-Q 2378 3584 2631 3529 
-Q 2884 3475 3122 3366 
+<path d="M 3122 3366
+L 3122 2828
+Q 2878 2963 2633 3030
+Q 2388 3097 2138 3097
+Q 1578 3097 1268 2742
+Q 959 2388 959 1747
+Q 959 1106 1268 751
+Q 1578 397 2138 397
+Q 2388 397 2633 464
+Q 2878 531 3122 666
+L 3122 134
+Q 2881 22 2623 -34
+Q 2366 -91 2075 -91
+Q 1284 -91 818 406
+Q 353 903 353 1747
+Q 353 2603 823 3093
+Q 1294 3584 2113 3584
+Q 2378 3584 2631 3529
+Q 2884 3475 3122 3366
 z
 " id="DejaVuSans-63" transform="scale(0.015625)"></path>
-<path d="M 1172 4494 
-L 1172 3500 
-L 2356 3500 
-L 2356 3053 
-L 1172 3053 
-L 1172 1153 
-Q 1172 725 1289 603 
-Q 1406 481 1766 481 
-L 2356 481 
-L 2356 0 
-L 1766 0 
-Q 1100 0 847 248 
-Q 594 497 594 1153 
-L 594 3053 
-L 172 3053 
-L 172 3500 
-L 594 3500 
-L 594 4494 
-L 1172 4494 
+<path d="M 1172 4494
+L 1172 3500
+L 2356 3500
+L 2356 3053
+L 1172 3053
+L 1172 1153
+Q 1172 725 1289 603
+Q 1406 481 1766 481
+L 2356 481
+L 2356 0
+L 1766 0
+Q 1100 0 847 248
+Q 594 497 594 1153
+L 594 3053
+L 172 3053
+L 172 3500
+L 594 3500
+L 594 4494
+L 1172 4494
 z
 " id="DejaVuSans-74" transform="scale(0.015625)"></path>
-<path d="M 603 4863 
-L 1178 4863 
-L 1178 0 
-L 603 0 
-L 603 4863 
+<path d="M 603 4863
+L 1178 4863
+L 1178 0
+L 603 0
+L 603 4863
 z
 " id="DejaVuSans-6c" transform="scale(0.015625)"></path>
-<path d="M 3328 2828 
-Q 3544 3216 3844 3400 
-Q 4144 3584 4550 3584 
-Q 5097 3584 5394 3201 
-Q 5691 2819 5691 2113 
-L 5691 0 
-L 5113 0 
-L 5113 2094 
-Q 5113 2597 4934 2840 
-Q 4756 3084 4391 3084 
-Q 3944 3084 3684 2787 
-Q 3425 2491 3425 1978 
-L 3425 0 
-L 2847 0 
-L 2847 2094 
-Q 2847 2600 2669 2842 
-Q 2491 3084 2119 3084 
-Q 1678 3084 1418 2786 
-Q 1159 2488 1159 1978 
-L 1159 0 
-L 581 0 
-L 581 3500 
-L 1159 3500 
-L 1159 2956 
-Q 1356 3278 1631 3431 
-Q 1906 3584 2284 3584 
-Q 2666 3584 2933 3390 
-Q 3200 3197 3328 2828 
+<path d="M 3328 2828
+Q 3544 3216 3844 3400
+Q 4144 3584 4550 3584
+Q 5097 3584 5394 3201
+Q 5691 2819 5691 2113
+L 5691 0
+L 5113 0
+L 5113 2094
+Q 5113 2597 4934 2840
+Q 4756 3084 4391 3084
+Q 3944 3084 3684 2787
+Q 3425 2491 3425 1978
+L 3425 0
+L 2847 0
+L 2847 2094
+Q 2847 2600 2669 2842
+Q 2491 3084 2119 3084
+Q 1678 3084 1418 2786
+Q 1159 2488 1159 1978
+L 1159 0
+L 581 0
+L 581 3500
+L 1159 3500
+L 1159 2956
+Q 1356 3278 1631 3431
+Q 1906 3584 2284 3584
+Q 2666 3584 2933 3390
+Q 3200 3197 3328 2828
 z
 " id="DejaVuSans-6d" transform="scale(0.015625)"></path>
-<path d="M -1831 5119 
-L -1369 5119 
-L -603 3944 
-L -1038 3944 
-L -1600 4709 
-L -2163 3944 
-L -2597 3944 
-L -1831 5119 
+<path d="M -1831 5119
+L -1369 5119
+L -603 3944
+L -1038 3944
+L -1600 4709
+L -2163 3944
+L -2597 3944
+L -1831 5119
 z
-M -1600 3584 
-L -1600 3584 
+M -1600 3584
+L -1600 3584
 z
 " id="DejaVuSans-302" transform="scale(0.015625)"></path>
-<path d="M 1588 -325 
-Q 1188 -997 936 -1164 
-Q 684 -1331 294 -1331 
-L -159 -1331 
-L -63 -850 
-L 269 -850 
-Q 509 -850 678 -719 
-Q 847 -588 1056 -206 
-L 1234 128 
-L 459 3500 
-L 1069 3500 
-L 1650 819 
-L 3256 3500 
-L 3859 3500 
-L 1588 -325 
+<path d="M 1588 -325
+Q 1188 -997 936 -1164
+Q 684 -1331 294 -1331
+L -159 -1331
+L -63 -850
+L 269 -850
+Q 509 -850 678 -719
+Q 847 -588 1056 -206
+L 1234 128
+L 459 3500
+L 1069 3500
+L 1650 819
+L 3256 3500
+L 3859 3500
+L 1588 -325
 z
 " id="DejaVuSans-Oblique-79" transform="scale(0.015625)"></path>
 </defs>
@@ -9985,6 +10413,48 @@ z
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=9884be8e">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">"evidence"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Starting level"</span><span class="p">,</span> <span class="s2">"Ending level"</span><span class="p">,</span> <span class="s2">"Hold-out rows"</span><span class="p">,</span> <span class="s2">"Random seed"</span><span class="p">],</span>
+    <span class="s2">"value"</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">demo</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">demo</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"12"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">RNG_SEED</span><span class="p">)],</span>
+    <span class="s2">"how to read it"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"The series begins near its designed baseline."</span><span class="p">,</span>
+        <span class="s2">"Trend and seasonality both influence the endpoint."</span><span class="p">,</span>
+        <span class="s2">"The final year stays unseen by the training fit."</span><span class="p">,</span>
+        <span class="s2">"Anyone can regenerate the exact same teaching data."</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">})</span>
+<span class="n">wm_render_styler</span><span class="p">(</span>
+    <span class="n">summary</span><span class="o">.</span><span class="n">style</span><span class="p">,</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"The evidence has an audit trail"</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"03, table, exact values"</span><span class="p">,</span>
+    <span class="n">wrap_columns</span><span class="o">=</span><span class="p">{</span><span class="s2">"how to read it"</span><span class="p">:</span> <span class="mi">320</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">split</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Train"</span><span class="p">,</span> <span class="n">theme</span><span class="o">.</span><span class="n">accent</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Hold-out"</span><span class="p">,</span> <span class="s2">"#B74C5F"</span><span class="p">)]:</span>
+    <span class="n">part</span> <span class="o">=</span> <span class="n">demo</span><span class="p">[</span><span class="n">demo</span><span class="o">.</span><span class="n">split</span> <span class="o">==</span> <span class="n">split</span><span class="p">]</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">part</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">part</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"lines+markers"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">split</span><span class="p">,</span>
+                             <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s2">"color"</span><span class="p">:</span> <span class="n">color</span><span class="p">,</span> <span class="s2">"width"</span><span class="p">:</span> <span class="mi">3</span><span class="p">}))</span>
+<span class="n">style_fig_wm</span><span class="p">(</span>
+    <span class="n">fig</span><span class="p">,</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"The line climbs while the annual wave keeps returning"</span><span class="p">,</span>
+    <span class="n">subtitle</span><span class="o">=</span><span class="s2">"Cyan is training evidence; rose is the untouched final year"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">wm_render_figure_card</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span> <span class="n">file_stub</span><span class="o">=</span><span class="s2">"simple_seasonal_forecasting_lab"</span><span class="p">,</span> <span class="n">kicker</span><span class="o">=</span><span class="s2">"03, chart"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -10004,17 +10474,19 @@ div.wm-table-card .wm-shell-inner { min-width: 0; max-width: 100%; }
 div.wm-table-card .wm-shell-eyebrow { color: #16C7E8 !important; }
 div.wm-table-card:hover { transform: none; box-shadow: 0 12px 22px -14px rgba(0,0,0,0.20); }
 div.wm-table-card .wm-table-scroll {
-  overflow: auto;
+  overflow-x: auto; overflow-y: hidden;
   width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: #ECECE7 transparent;
-  border-radius: 14px;
+  border-radius: 0 0 14px 14px;
+  isolation: isolate;
 }
+div.wm-table-card .wm-table-scroll--bounded { overflow-y: auto; }
 div.wm-table-card .wm-table-scroll--bounded thead th {
   position: sticky; top: 0; z-index: 2;
 }
 table.wm-table {
-  width: max-content; min-width: 100%;
+  width: 100%; min-width: 100%;
   font-family: JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace; font-size: 13px;
   border-collapse: separate; border-spacing: 0;
 }
@@ -10032,7 +10504,7 @@ table.wm-table tbody td {
   border-bottom: 1px solid rgba(17,17,17,0.10);
   border-right: 1px solid rgba(17,17,17,0.10);
   color: #111111; font-variant-numeric: tabular-nums;
-  white-space: normal; word-break: break-word; line-height: 1.5;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.5;
   vertical-align: top;
   transition: background-color 0.14s ease, color 0.14s ease;
 }
@@ -10042,6 +10514,8 @@ table.wm-table tbody tr:nth-child(even) td {
   background: rgba(17,17,17,0.055);
 }
 table.wm-table tbody tr:last-child td { border-bottom: none; }
+table.wm-table tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+table.wm-table tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
 
 table.wm-table tbody tr:hover td {
   background: #10212B !important; color: #16C7E8 !important;
@@ -10075,41 +10549,41 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
     overflow-wrap: anywhere !important;
   }
 }
-</style><style>table.wm-table tbody td.col0 { text-align:left; white-space:normal; max-width:360px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }table.wm-table tbody td.col1 { text-align:right; white-space:nowrap; }table.wm-table tbody td.col2 { text-align:left; white-space:normal; width:320px; max-width:320px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">03, table, exact values</div><div class="wm-shell-title">The evidence has an audit trail</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="The evidence has an audit trail" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
+</style><style>table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 { table-layout:auto; width:100%; }table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 th, table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 td { white-space:normal; overflow-wrap:anywhere; word-break:normal; vertical-align:top; }table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 tbody td.col0 { text-align:left; white-space:normal; width:auto; max-width:280px; line-height:1.5; overflow-wrap:anywhere; word-break:normal; }table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 tbody td.col1 { text-align:right; white-space:nowrap; }table.wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2 tbody td.col2 { text-align:left; white-space:normal; width:320px; max-width:320px; line-height:1.5; overflow-wrap:anywhere; word-break:break-word; }</style><style>table.wm-table tbody td.wm-semantic--before { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--before code,table.wm-table tbody td.wm-semantic--before span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--after { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--after code,table.wm-table tbody td.wm-semantic--after span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--pass { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--pass code,table.wm-table tbody td.wm-semantic--pass span { color:#146C43 !important;}}table.wm-table tbody td.wm-semantic--fail { background-color:rgba(180, 35, 60, 0.10) !important; color:#9F1D35 !important; border-color:rgba(180, 35, 60, 0.24) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--fail code,table.wm-table tbody td.wm-semantic--fail span { color:#9F1D35 !important;}}table.wm-table tbody td.wm-semantic--warn { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--warn code,table.wm-table tbody td.wm-semantic--warn span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--cached { background-color:rgba(22, 199, 232, 0.12) !important; color:#087B91 !important; border-color:rgba(22, 199, 232, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cached code,table.wm-table tbody td.wm-semantic--cached span { color:#087B91 !important;}}table.wm-table tbody td.wm-semantic--missing { background-color:rgba(216, 140, 46, 0.16) !important; color:#8A5700 !important; border-color:rgba(216, 140, 46, 0.28) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--missing code,table.wm-table tbody td.wm-semantic--missing span { color:#8A5700 !important;}}table.wm-table tbody td.wm-semantic--raw { background-color:rgba(76, 100, 117, 0.10) !important; color:#3D5362 !important; border-color:rgba(76, 100, 117, 0.22) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--raw code,table.wm-table tbody td.wm-semantic--raw span { color:#3D5362 !important;}}table.wm-table tbody td.wm-semantic--cleaned { background-color:rgba(32, 181, 123, 0.12) !important; color:#146C43 !important; border-color:rgba(32, 181, 123, 0.26) !important; font-weight:800;}}table.wm-table tbody td.wm-semantic--cleaned code,table.wm-table tbody td.wm-semantic--cleaned span { color:#146C43 !important;}}</style><div class="wm-card wm-table-card"><div class="wm-shell-inner"><div class="wm-shell-eyebrow"><span class="wm-shell-marker"></span><span>TABLE</span></div><div class="wm-shell-kicker">03, table, exact values</div><div class="wm-shell-title">The evidence has an audit trail</div><div class="wm-shell-rule"></div><div class="wm-shell-divider"></div></div><div aria-label="The evidence has an audit trail" class="wm-table-scroll" role="region" tabindex="0"><style type="text/css">
 </style>
-<table class="wm-table" id="T_3d70e">
+<table class="wm-table wm-align-8ee1cec7a88d4feda4e2b45b6f551ca2" id="T_de0e5">
 <thead>
 <tr>
 <th class="blank level0"> </th>
-<th class="col_heading level0 col0" id="T_3d70e_level0_col0">evidence</th>
-<th class="col_heading level0 col1" id="T_3d70e_level0_col1">value</th>
-<th class="col_heading level0 col2" id="T_3d70e_level0_col2">how to read it</th>
+<th class="col_heading level0 col0" id="T_de0e5_level0_col0">evidence</th>
+<th class="col_heading level0 col1" id="T_de0e5_level0_col1">value</th>
+<th class="col_heading level0 col2" id="T_de0e5_level0_col2">how to read it</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<th class="row_heading level0 row0" id="T_3d70e_level0_row0">0</th>
-<td class="data row0 col0" id="T_3d70e_row0_col0">Starting level</td>
-<td class="data row0 col1" id="T_3d70e_row0_col1">62.3</td>
-<td class="data row0 col2" id="T_3d70e_row0_col2">The series begins near its designed baseline.</td>
+<th class="row_heading level0 row0" id="T_de0e5_level0_row0">0</th>
+<td class="data row0 col0" id="T_de0e5_row0_col0">Starting level</td>
+<td class="data row0 col1" id="T_de0e5_row0_col1">62.3</td>
+<td class="data row0 col2" id="T_de0e5_row0_col2">The series begins near its designed baseline.</td>
 </tr>
 <tr>
-<th class="row_heading level0 row1" id="T_3d70e_level0_row1">1</th>
-<td class="data row1 col0" id="T_3d70e_row1_col0">Ending level</td>
-<td class="data row1 col1" id="T_3d70e_row1_col1">106.2</td>
-<td class="data row1 col2" id="T_3d70e_row1_col2">Trend and seasonality both influence the endpoint.</td>
+<th class="row_heading level0 row1" id="T_de0e5_level0_row1">1</th>
+<td class="data row1 col0" id="T_de0e5_row1_col0">Ending level</td>
+<td class="data row1 col1" id="T_de0e5_row1_col1">106.2</td>
+<td class="data row1 col2" id="T_de0e5_row1_col2">Trend and seasonality both influence the endpoint.</td>
 </tr>
 <tr>
-<th class="row_heading level0 row2" id="T_3d70e_level0_row2">2</th>
-<td class="data row2 col0" id="T_3d70e_row2_col0">Hold-out rows</td>
-<td class="data row2 col1" id="T_3d70e_row2_col1">12</td>
-<td class="data row2 col2" id="T_3d70e_row2_col2">The final year stays unseen by the training fit.</td>
+<th class="row_heading level0 row2" id="T_de0e5_level0_row2">2</th>
+<td class="data row2 col0" id="T_de0e5_row2_col0">Hold-out rows</td>
+<td class="data row2 col1" id="T_de0e5_row2_col1">12</td>
+<td class="data row2 col2" id="T_de0e5_row2_col2">The final year stays unseen by the training fit.</td>
 </tr>
 <tr>
-<th class="row_heading level0 row3" id="T_3d70e_level0_row3">3</th>
-<td class="data row3 col0" id="T_3d70e_row3_col0">Random seed</td>
-<td class="data row3 col1" id="T_3d70e_row3_col1">20260718</td>
-<td class="data row3 col2" id="T_3d70e_row3_col2">Anyone can regenerate the exact same teaching data.</td>
+<th class="row_heading level0 row3" id="T_de0e5_level0_row3">3</th>
+<td class="data row3 col0" id="T_de0e5_row3_col0">Random seed</td>
+<td class="data row3 col1" id="T_de0e5_row3_col1">20260718</td>
+<td class="data row3 col2" id="T_de0e5_row3_col2">Anyone can regenerate the exact same teaching data.</td>
 </tr>
 </tbody>
 </table>
@@ -10119,13 +10593,44 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<style>@keyframes wm-card-arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}.wm-plot-shell{animation:wm-card-arrive 0.28s cubic-bezier(0.22,1,0.36,1);box-shadow:none;transition:transform .18s ease,box-shadow .18s ease;}.wm-plot-shell:hover{transform:translateY(-2px);box-shadow:0 20px 34px -20px rgba(0,0,0,0.28) !important;}.wm-plot-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;box-sizing:border-box;}.wm-plot-stage{display:block;margin:0 auto;box-sizing:border-box;}@media (prefers-reduced-motion:reduce){.wm-plot-shell,.wm-plot-shell *{transition:none !important;animation:none !important;}}</style><div class="wm-card wm-plot-shell-wrap" style="--wm-card-bg:#FFFFFF;--wm-plot-bg:#F3F3EF;--wm-text-main:#111111;--wm-text-muted:rgba(17,17,17,0.60);--wm-border:rgba(17,17,17,0.14);--wm-accent:#16C7E8;--wm-color-scheme:light;display:flex;justify-content:center;align-items:flex-start;width:100%;margin:16px auto;padding:10px 0 6px 0;box-sizing:border-box;text-align:center;"><div class="wm-plot-shell" style="display:inline-block;text-align:left;width:min(100%, 908px);max-width:908px !important;margin:0 auto;padding:32px 24px 22px 24px;background:#FFFFFF !important;color:#111111 !important;color-scheme:light;isolation:isolate;border:1px solid rgba(17,17,17,0.14) !important;border-radius:18px;box-shadow:none;overflow:hidden;box-sizing:border-box;"><div aria-label="Chart; scroll horizontally when needed" class="wm-plot-scroll" role="region" tabindex="0"><div class="wm-plot-stage" style="width:860px;min-width:860px;padding-top:14px;border-radius:12px;overflow:hidden;"><div> <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-<script charset="utf-8" crossorigin="anonymous" integrity="sha256-Ei4740bWZhaUTQuD6q9yQlgVCMPBz6CZWhevDYPv93A=" src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script> <div class="plotly-graph-div" id="a10ed994-647c-46b9-bbae-b9799bce370d" style="height:568px; width:860px;"></div> <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("a10ed994-647c-46b9-bbae-b9799bce370d")) {                    Plotly.newPlot(                        "a10ed994-647c-46b9-bbae-b9799bce370d",                        [{"line":{"color":"#16C7E8","width":3},"mode":"lines+markers","name":"Train","x":["2018-01-01T00:00:00","2018-02-01T00:00:00","2018-03-01T00:00:00","2018-04-01T00:00:00","2018-05-01T00:00:00","2018-06-01T00:00:00","2018-07-01T00:00:00","2018-08-01T00:00:00","2018-09-01T00:00:00","2018-10-01T00:00:00","2018-11-01T00:00:00","2018-12-01T00:00:00","2019-01-01T00:00:00","2019-02-01T00:00:00","2019-03-01T00:00:00","2019-04-01T00:00:00","2019-05-01T00:00:00","2019-06-01T00:00:00","2019-07-01T00:00:00","2019-08-01T00:00:00","2019-09-01T00:00:00","2019-10-01T00:00:00","2019-11-01T00:00:00","2019-12-01T00:00:00","2020-01-01T00:00:00","2020-02-01T00:00:00","2020-03-01T00:00:00","2020-04-01T00:00:00","2020-05-01T00:00:00","2020-06-01T00:00:00","2020-07-01T00:00:00","2020-08-01T00:00:00","2020-09-01T00:00:00","2020-10-01T00:00:00","2020-11-01T00:00:00","2020-12-01T00:00:00","2021-01-01T00:00:00","2021-02-01T00:00:00","2021-03-01T00:00:00","2021-04-01T00:00:00","2021-05-01T00:00:00","2021-06-01T00:00:00","2021-07-01T00:00:00","2021-08-01T00:00:00","2021-09-01T00:00:00","2021-10-01T00:00:00","2021-11-01T00:00:00","2021-12-01T00:00:00","2022-01-01T00:00:00","2022-02-01T00:00:00","2022-03-01T00:00:00","2022-04-01T00:00:00","2022-05-01T00:00:00","2022-06-01T00:00:00","2022-07-01T00:00:00","2022-08-01T00:00:00","2022-09-01T00:00:00","2022-10-01T00:00:00","2022-11-01T00:00:00","2022-12-01T00:00:00","2023-01-01T00:00:00","2023-02-01T00:00:00","2023-03-01T00:00:00","2023-04-01T00:00:00","2023-05-01T00:00:00","2023-06-01T00:00:00","2023-07-01T00:00:00","2023-08-01T00:00:00","2023-09-01T00:00:00","2023-10-01T00:00:00","2023-11-01T00:00:00","2023-12-01T00:00:00"],"y":{"dtype":"f8","bdata":"sqxj2I0iT0AHOxpITftQQLejyxtAO1JAZRqWmI7jU0BwQvJ1wM9XQAm0Zdb1m1NAXmyDVGFsV0B\u002fw7FmfBxTQAUi87OrYFJAGzTWU56nUUBAsKjj9FNKQOLilB8320tANBQ4M2sKUUB2mEnNUvVRQHz4Q6f2dlRAtj5TNBJPVkDXNquRom1XQKK9tPBUxlpA2lURv3ClWEAbY0QQLv5XQInMJ\u002fBG0FNAmWhWaCMZU0Ddj+vM6l5QQKzEWzZMu1BAP7N71xdMUUBMM83iC91VQBjZe+WK6FVAW5a6vArWV0A+E4SWHfxYQN63ZEeuLVxAbyFWeypIWkCZ6O8LZstXQHQFvE+BoVVAOg3AmvSzVkAubLRG0SxUQHq2vO4Z5VBAi82Jge7BUkCHkthyKhxVQHXmVVcu+FZA0bBlx20TXUAqOI0Jt0RYQKKBE+BmyV1A7uIP86jTXUC3Ox\u002fFATJaQDO+h4jKkFhAtSCHBkqsVkASDguy3tNTQEcDh8yEIVJA8Xc8mGqrVEAEqet7OT5VQFxLzgDo7FlAGpbHCyIaW0C8agmubDleQMEAkAl+xF1APmAzkJkgXkDpRe1EZN5aQBuob7cLolpA91gq9YGUV0BASQBR5HtWQIqvHPXGUVVAC+i24irpVEDEa72lp31YQIKQOkJIOVlAONNYcRRMXEBPV+UReZxeQHzfhN+H8V1AhScecMdiX0AB2kBYb49bQFtECrold1lAAw10m2OSWEA9NBQ8tHtVQDVQS8v6\u002fVVA"},"type":"scatter","marker":{"line":{"width":0}}},{"line":{"color":"#B74C5F","width":3},"mode":"lines+markers","name":"Hold-out","x":["2024-01-01T00:00:00","2024-02-01T00:00:00","2024-03-01T00:00:00","2024-04-01T00:00:00","2024-05-01T00:00:00","2024-06-01T00:00:00","2024-07-01T00:00:00","2024-08-01T00:00:00","2024-09-01T00:00:00","2024-10-01T00:00:00","2024-11-01T00:00:00","2024-12-01T00:00:00"],"y":{"dtype":"f8","bdata":"YhElLcPZVkDGYdMzE4BZQEC+t6oBq1tAYESs1pynXUDnbZ+2+x5gQBkYzmkAT2BAzpKJlM9QYUDsadqlIcZcQPQrIK4e\u002fFxAhQh1WgoEW0BKf02qhqJZQCAod0m3j1pA"},"type":"scatter","marker":{"line":{"width":0}}}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"title":{"pad":{"t":10,"b":0},"font":{"size":30,"color":"#111111"},"text":"\u003cspan style='font-family:JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(17,17,17,0.60);'\u003e■ STANDARD • 03 • CHART\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-family:Inter, Space Grotesk, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:900; letter-spacing:-0.8px;'\u003eThe line climbs while the annual wave\u003cbr\u003ekeeps returning\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-family:JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace; font-size:13px; font-weight:400; letter-spacing:0; color:rgba(17,17,17,0.78);'\u003eCyan is training evidence; rose is the untouched final year\u003c\u002fspan\u003e","x":0.07441860465116279,"xanchor":"left","y":0.94,"yanchor":"top"},"margin":{"l":64,"r":72,"t":174,"b":112},"legend":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"#111111"},"bgcolor":"rgba(0,0,0,0)","borderwidth":0,"orientation":"h","yanchor":"bottom","y":-0.4,"xanchor":"left","x":0.0},"hoverlabel":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"#16C7E8"},"bgcolor":"#10212B","bordercolor":"rgba(17,17,17,0.14)"},"width":860,"height":568,"autosize":false,"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"#F3F3EF","colorway":["#111111","#16C7E8","#B74C5F","#2F6BFF","#D88C2E","#149E9E"],"showlegend":true,"hovermode":"x unified","xaxis":{"tickfont":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":11,"color":"rgba(17,17,17,0.78)"},"title":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"standoff":18},"gridcolor":"rgba(17,17,17,0.10)","zeroline":false,"ticks":"outside","ticklen":6,"tickwidth":1,"showline":false,"automargin":true},"yaxis":{"tickfont":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":11,"color":"rgba(17,17,17,0.78)"},"title":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"standoff":18},"gridcolor":"rgba(17,17,17,0.10)","zeroline":false,"ticks":"outside","ticklen":6,"tickwidth":1,"showline":false,"automargin":true}},                        {"displaylogo": false, "responsive": false, "displayModeBar": false, "toImageButtonOptions": {"format": "svg", "filename": "simple_seasonal_forecasting_lab", "width": 860, "height": 568, "scale": 3.0}}                    )                };            </script> </div></div></div></div></div>
+<style>@keyframes wm-card-arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}.wm-plot-shell{animation:wm-card-arrive 0.28s cubic-bezier(0.22,1,0.36,1);box-shadow:none;transition:transform .18s ease,box-shadow .18s ease;}.wm-plot-shell:hover{transform:translateY(-2px);box-shadow:0 20px 34px -20px rgba(0,0,0,0.28) !important;}.wm-plot-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;box-sizing:border-box;}.wm-plot-stage{display:block;margin:0 auto;box-sizing:border-box;}@media (prefers-reduced-motion:reduce){.wm-plot-shell,.wm-plot-shell *{transition:none !important;animation:none !important;}}</style><div class="wm-card wm-plot-shell-wrap" style="--wm-card-bg:#FFFFFF;--wm-plot-bg:#F3F3EF;--wm-text-main:#111111;--wm-text-muted:rgba(17,17,17,0.60);--wm-border:rgba(17,17,17,0.14);--wm-accent:#16C7E8;--wm-color-scheme:light;display:flex;justify-content:center;align-items:flex-start;width:100%;margin:16px auto;padding:10px 0 6px 0;box-sizing:border-box;text-align:center;"><div class="wm-plot-shell" style="display:inline-block;text-align:left;width:min(100%, 908px);max-width:908px !important;margin:0 auto;padding:32px 24px 22px 24px;background:#FFFFFF !important;color:#111111 !important;color-scheme:light;isolation:isolate;border:1px solid rgba(17,17,17,0.14) !important;border-radius:18px;box-shadow:none;overflow:hidden;box-sizing:border-box;"><div aria-label="Chart; scroll horizontally when needed" class="wm-plot-scroll" role="region" tabindex="0"><div class="wm-plot-stage" style="width:860px;min-width:860px;padding-top:14px;border-radius:12px;overflow:hidden;"><div> <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+<script charset="utf-8" crossorigin="anonymous" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" src="https://cdn.plot.ly/plotly-3.4.0.min.js"></script> <div class="plotly-graph-div" id="7994c56a-1186-4cf1-ac4a-219ae85409ac" style="height:568px; width:860px;"></div> <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("7994c56a-1186-4cf1-ac4a-219ae85409ac")) {                    Plotly.newPlot(                        "7994c56a-1186-4cf1-ac4a-219ae85409ac",                        [{"line":{"color":"#16C7E8","width":3},"mode":"lines+markers","name":"Train","x":["2018-01-01T00:00:00","2018-02-01T00:00:00","2018-03-01T00:00:00","2018-04-01T00:00:00","2018-05-01T00:00:00","2018-06-01T00:00:00","2018-07-01T00:00:00","2018-08-01T00:00:00","2018-09-01T00:00:00","2018-10-01T00:00:00","2018-11-01T00:00:00","2018-12-01T00:00:00","2019-01-01T00:00:00","2019-02-01T00:00:00","2019-03-01T00:00:00","2019-04-01T00:00:00","2019-05-01T00:00:00","2019-06-01T00:00:00","2019-07-01T00:00:00","2019-08-01T00:00:00","2019-09-01T00:00:00","2019-10-01T00:00:00","2019-11-01T00:00:00","2019-12-01T00:00:00","2020-01-01T00:00:00","2020-02-01T00:00:00","2020-03-01T00:00:00","2020-04-01T00:00:00","2020-05-01T00:00:00","2020-06-01T00:00:00","2020-07-01T00:00:00","2020-08-01T00:00:00","2020-09-01T00:00:00","2020-10-01T00:00:00","2020-11-01T00:00:00","2020-12-01T00:00:00","2021-01-01T00:00:00","2021-02-01T00:00:00","2021-03-01T00:00:00","2021-04-01T00:00:00","2021-05-01T00:00:00","2021-06-01T00:00:00","2021-07-01T00:00:00","2021-08-01T00:00:00","2021-09-01T00:00:00","2021-10-01T00:00:00","2021-11-01T00:00:00","2021-12-01T00:00:00","2022-01-01T00:00:00","2022-02-01T00:00:00","2022-03-01T00:00:00","2022-04-01T00:00:00","2022-05-01T00:00:00","2022-06-01T00:00:00","2022-07-01T00:00:00","2022-08-01T00:00:00","2022-09-01T00:00:00","2022-10-01T00:00:00","2022-11-01T00:00:00","2022-12-01T00:00:00","2023-01-01T00:00:00","2023-02-01T00:00:00","2023-03-01T00:00:00","2023-04-01T00:00:00","2023-05-01T00:00:00","2023-06-01T00:00:00","2023-07-01T00:00:00","2023-08-01T00:00:00","2023-09-01T00:00:00","2023-10-01T00:00:00","2023-11-01T00:00:00","2023-12-01T00:00:00"],"y":{"dtype":"f8","bdata":"sqxj2I0iT0AHOxpITftQQLejyxtAO1JAZRqWmI7jU0BwQvJ1wM9XQAm0Zdb1m1NAXmyDVGFsV0B\u002fw7FmfBxTQAUi87OrYFJAGzTWU56nUUBAsKjj9FNKQOLilB8320tANBQ4M2sKUUB2mEnNUvVRQHz4Q6f2dlRAtj5TNBJPVkDXNquRom1XQKK9tPBUxlpA2lURv3ClWEAbY0QQLv5XQInMJ\u002fBG0FNAmWhWaCMZU0Ddj+vM6l5QQKzEWzZMu1BAP7N71xdMUUBMM83iC91VQBjZe+WK6FVAW5a6vArWV0A+E4SWHfxYQN63ZEeuLVxAbyFWeypIWkCZ6O8LZstXQHQFvE+BoVVAOg3AmvSzVkAubLRG0SxUQHq2vO4Z5VBAi82Jge7BUkCHkthyKhxVQHXmVVcu+FZA0bBlx20TXUAqOI0Jt0RYQKKBE+BmyV1A7uIP86jTXUC3Ox\u002fFATJaQDO+h4jKkFhAtSCHBkqsVkASDguy3tNTQEcDh8yEIVJA8Xc8mGqrVEAEqet7OT5VQFxLzgDo7FlAGpbHCyIaW0C8agmubDleQMEAkAl+xF1APmAzkJkgXkDpRe1EZN5aQBuob7cLolpA91gq9YGUV0BASQBR5HtWQIqvHPXGUVVAC+i24irpVEDEa72lp31YQIKQOkJIOVlAONNYcRRMXEBPV+UReZxeQHzfhN+H8V1AhScecMdiX0AB2kBYb49bQFtECrold1lAAw10m2OSWEA9NBQ8tHtVQDVQS8v6\u002fVVA"},"type":"scatter","marker":{"line":{"width":0}}},{"line":{"color":"#B74C5F","width":3},"mode":"lines+markers","name":"Hold-out","x":["2024-01-01T00:00:00","2024-02-01T00:00:00","2024-03-01T00:00:00","2024-04-01T00:00:00","2024-05-01T00:00:00","2024-06-01T00:00:00","2024-07-01T00:00:00","2024-08-01T00:00:00","2024-09-01T00:00:00","2024-10-01T00:00:00","2024-11-01T00:00:00","2024-12-01T00:00:00"],"y":{"dtype":"f8","bdata":"YhElLcPZVkDGYdMzE4BZQEC+t6oBq1tAYESs1pynXUDnbZ+2+x5gQBkYzmkAT2BAzpKJlM9QYUDsadqlIcZcQPQrIK4e\u002fFxAhQh1WgoEW0BKf02qhqJZQCAod0m3j1pA"},"type":"scatter","marker":{"line":{"width":0}}}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"title":{"pad":{"t":10,"b":0},"font":{"size":30,"color":"#111111"},"text":"\u003cspan style='font-family:JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(17,17,17,0.60);'\u003e■ STANDARD • 03 • CHART\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-family:Inter, Space Grotesk, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; font-weight:900; letter-spacing:-0.8px;'\u003eThe line climbs while the annual wave\u003cbr\u003ekeeps returning\u003c\u002fspan\u003e\u003cbr\u003e\u003cspan style='font-family:JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace; font-size:13px; font-weight:400; letter-spacing:0; color:rgba(17,17,17,0.78);'\u003eCyan is training evidence; rose is the untouched final year\u003c\u002fspan\u003e","x":0.07441860465116279,"xanchor":"left","y":0.94,"yanchor":"top"},"margin":{"l":64,"r":72,"t":174,"b":112},"legend":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"#111111"},"bgcolor":"rgba(0,0,0,0)","borderwidth":0,"orientation":"h","yanchor":"bottom","y":-0.4,"xanchor":"left","x":0.0},"hoverlabel":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"#16C7E8"},"bgcolor":"#10212B","bordercolor":"rgba(17,17,17,0.14)"},"width":860,"height":568,"autosize":false,"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"#F3F3EF","colorway":["#111111","#16C7E8","#B74C5F","#2F6BFF","#D88C2E","#149E9E"],"showlegend":true,"hovermode":"x unified","xaxis":{"tickfont":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":11,"color":"rgba(17,17,17,0.78)"},"title":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"standoff":18},"gridcolor":"rgba(17,17,17,0.10)","zeroline":false,"ticks":"outside","ticklen":6,"tickwidth":1,"showline":false,"automargin":true},"yaxis":{"tickfont":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":11,"color":"rgba(17,17,17,0.78)"},"title":{"font":{"family":"JetBrains Mono, Space Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace","size":12,"color":"rgba(17,17,17,0.78)"},"standoff":18},"gridcolor":"rgba(17,17,17,0.10)","zeroline":false,"ticks":"outside","ticklen":6,"tickwidth":1,"showline":false,"automargin":true}},                        {"displaylogo": false, "responsive": false, "displayModeBar": false, "toImageButtonOptions": {"format": "svg", "filename": "simple_seasonal_forecasting_lab", "width": 860, "height": 568, "scale": 3.0}}                    )                };            </script> </div></div></div></div></div>
 </div>
 </div>
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=908fd409">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">peak_month_share</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">demo</span><span class="o">.</span><span class="n">month</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]))</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="n">pictogram_card</span><span class="p">(</span>
+    <span class="n">percent</span><span class="o">=</span><span class="n">peak_month_share</span><span class="p">,</span>
+    <span class="n">headline</span><span class="o">=</span><span class="s2">"One quarter of observations sit in the designed peak-season window"</span><span class="p">,</span>
+    <span class="n">subtitle</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">peak_month_share</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> of synthetic months"</span><span class="p">,</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">icon</span><span class="o">=</span><span class="s2">"chart_bar"</span><span class="p">,</span>
+    <span class="n">chip_text</span><span class="o">=</span><span class="s2">"SCALE"</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"04, pictogram"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">big_number_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"The hold-out is deliberately one full seasonal cycle"</span><span class="p">,</span>
+    <span class="n">value</span><span class="o">=</span><span class="s2">"12"</span><span class="p">,</span>
+    <span class="n">value_label</span><span class="o">=</span><span class="s2">"months kept out of training"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="s2">"That gives every calendar month one honest chance to surprise the model."</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"04, big number"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -10193,6 +10698,45 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=c9ebd1b3">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">wm_counterintuitive_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">why_misread</span><span class="o">=</span><span class="s2">"A smooth seasonal fit can look like proof that the model understands time."</span><span class="p">,</span>
+    <span class="n">ordinary_process</span><span class="o">=</span><span class="s2">"We manufactured the rhythm and used only one hold-out cycle."</span><span class="p">,</span>
+    <span class="n">conclusion_boundary</span><span class="o">=</span><span class="s2">"This proves the rendering and teaching workflow, not production accuracy."</span><span class="p">,</span>
+    <span class="n">math_items</span><span class="o">=</span><span class="p">[{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Boundary"</span><span class="p">,</span> <span class="s2">"fallback"</span><span class="p">:</span> <span class="s2">"demo evidence != deployment evidence"</span><span class="p">}],</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"05, counterintuitive boundary"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">preview_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Before the decision, check what actually survived"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="s2">"The release gate separates reproducibility, readability, and claims."</span><span class="p">,</span>
+    <span class="n">bullets</span><span class="o">=</span><span class="p">[</span><span class="s2">"Seed is public."</span><span class="p">,</span> <span class="s2">"No external CSV is bundled."</span><span class="p">,</span> <span class="s2">"The conclusion stays inside the evidence."</span><span class="p">],</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"05, preview"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">wm_check_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Open-source example release gate"</span><span class="p">,</span>
+    <span class="n">checks</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Provenance"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"PASS"</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Equation and seed are visible."</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Layout"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"PASS"</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Every role uses the shared shell."</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="s2">"Claims"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"PASS"</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Teaching demo only."</span><span class="p">},</span>
+    <span class="p">],</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"05, checklist"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
@@ -10218,6 +10762,48 @@ div.wm-table-card .wm-table-scroll::-webkit-scrollbar-thumb {
 </div>
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_wm-essential celltag_wm-hide-source" id="cell-id=c95a5e15">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-python"><pre><span></span><span class="n">takeaway_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"The untouched year keeps the climb and the annual wave."</span><span class="p">,</span>
+    <span class="n">metric</span><span class="o">=</span><span class="s2">"12 consecutive months held out"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">"The visual pattern survives the time split. That earns a forecasting question; "</span>
+        <span class="s2">"it does not yet crown a model."</span>
+    <span class="p">),</span>
+    <span class="n">bullets</span><span class="o">=</span><span class="p">[</span>
+        <span class="s2">"The equation makes the synthetic trend and seasonality auditable."</span><span class="p">,</span>
+        <span class="s2">"The table preserves exact values while the chart carries shape."</span><span class="p">,</span>
+        <span class="s2">"One seasonal cycle is enough for this lesson, not a production claim."</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"06, takeaway"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">verdict_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Ready as an OSS teaching example"</span><span class="p">,</span>
+    <span class="n">verdict</span><span class="o">=</span><span class="s2">"check"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="s2">"Safe to share because the data is generated here and the evidence boundary is explicit."</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"06, verdict"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">next_think_card</span><span class="p">(</span>
+    <span class="n">theme</span><span class="o">=</span><span class="n">theme</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">"Your decision: which real question should this interface help you think through?"</span><span class="p">,</span>
+    <span class="n">body</span><span class="o">=</span><span class="s2">"Swap in data you have the right to use. Keep the choreography and the release gates."</span><span class="p">,</span>
+    <span class="n">kicker</span><span class="o">=</span><span class="s2">"06, human decision"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>

@@ -17,6 +17,7 @@ import re
 from dataclasses import dataclass, replace
 from html import escape
 from typing import TYPE_CHECKING, Any, cast
+from uuid import uuid4
 
 import matplotlib.colors as mcolors
 import numpy as np
@@ -379,10 +380,10 @@ def _align_css(
     # Long prose is the default in teaching tables.  Keep numeric cells tight,
     # but never allow a sentence to escape its cell or flatten the card border.
     base = (
-        f"table.{table_class} {{ table-layout:fixed; width:100%; }}"
+        f"table.{table_class} {{ table-layout:auto; width:100%; }}"
         f"table.{table_class} th, table.{table_class} td {{"
         " white-space:normal; overflow-wrap:anywhere; word-break:normal;"
-        " vertical-align:top; }}"
+        " vertical-align:top; }"
     )
     return f"<style>{base}{''.join(rules)}</style>"
 
@@ -1062,7 +1063,10 @@ def wm_render_styler(
             table_theme,
             interactive_rows=interactive_rows,
         )
-    styler = styler.set_table_attributes(f'class="{table_theme.table_class}"')
+    alignment_class = f"wm-align-{uuid4().hex}"
+    styler = styler.set_table_attributes(
+        f'class="{table_theme.table_class} {alignment_class}"'
+    )
     html_table = styler.to_html()
     css = table_theme.css(theme)
     data = cast("pd.DataFrame", cast("Any", styler).data)
@@ -1075,7 +1079,7 @@ def wm_render_styler(
             raise ValueError("max_height must be at least 160 pixels.")
         scroll_class += " wm-table-scroll--bounded"
         scroll_style = f" style='max-height:{int(max_height)}px;'"
-    acss = _align_css(data, table_theme.table_class, wrap=wrap_columns)
+    acss = _align_css(data, alignment_class, wrap=wrap_columns)
     scss = semantic_table_css(theme, table_class=table_theme.table_class)
 
     header = shell_header_html(

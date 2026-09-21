@@ -158,3 +158,26 @@ def test_embedded_helper_is_tagged_as_collapsed_noise(tmp_path: Path) -> None:
     assert cell.metadata["collapsed"] is True
     assert cell.metadata["jupyter"]["source_hidden"] is True
     assert cell.metadata["jupyter"]["outputs_hidden"] is True
+
+
+def test_shipped_colab_runtimes_match_distributable_source():
+    import ast
+    import base64
+    import gzip
+
+    root = Path(__file__).resolve().parents[1]
+    expected = {
+        key: sanitize_embedded_python_source(path.read_text()) if path.suffix == '.py'
+        else path.read_text()
+        for path, key in collect_wm_package_files(root)
+    }
+    for path in sorted((root / 'examples').glob('*_COLAB.ipynb')):
+        notebook = json.loads(path.read_text())
+        source = next(''.join(cell['source']) for cell in notebook['cells']
+                      if 'EMBEDDED_FILES_B64 = (' in ''.join(cell['source']))
+        assignment = next(node for node in ast.parse(source).body
+                          if isinstance(node, ast.Assign)
+                          and any(isinstance(target, ast.Name) and target.id == 'EMBEDDED_FILES_B64'
+                                  for target in node.targets))
+        embedded = json.loads(gzip.decompress(base64.b64decode(ast.literal_eval(assignment.value))))
+        assert embedded == expected, f'{path.name} needs its embedded runtime regenerated'

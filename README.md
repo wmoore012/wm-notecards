@@ -277,3 +277,28 @@ failures. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+
+## Opt-in responsive notebook layout
+
+New notebooks can replace hand-written centering, profile-grid, and narrow-table CSS:
+
+```python
+from wm_notecards import init_notebook
+
+init_notebook(layout="responsive")
+```
+
+Existing `init_notebook()` calls keep their current behavior. This does not update
+other repositories, their vendored wheels, or their manual overrides. Opt in only
+when migrating a notebook; remove its duplicate layout CSS at the same time.
+The preset centers VS Code rich figure/card outputs, wraps profile cards into two
+columns (one below 720px), and scrolls wide WM tables rather than squeezing numbers.
+An odd final profile card spans the row; an even final card retains its column.
+Table widths are based on actual data-cell counts, independent of pandas class names.
+
+Call at startup before rendering cards. To undo a preset in an already-rendered
+notebook, clear saved outputs and reload the frontend; `layout=None` does not remove
+previously emitted CSS. Modern CSS `:has()` is required. Renderer-isolated iframes
+may not inherit parent CSS; use a WM HTML figure card in that case. The preset does
+not change plain text output layout or wrap long numeric values.

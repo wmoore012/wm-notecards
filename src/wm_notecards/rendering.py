@@ -68,6 +68,9 @@ def _export_svg_bytes(fig: go.Figure, *, file_stub: str) -> bytes:
     """Export *fig* to SVG bytes via Kaleido (lazy import)."""
     import kaleido  # optional dependency — imported lazily
 
+    if not hasattr(kaleido, "calc_fig_sync"):
+        return cast("bytes", fig.to_image(format="svg"))
+
     export_path = Path(tempfile.gettempdir()) / f"{_safe_export_stub(file_stub)}.svg"
     return cast(
         "bytes",
@@ -86,6 +89,11 @@ def _export_image_bytes(
 ) -> bytes:
     """Export bytes while preventing styled HTML titles becoming filenames."""
     import kaleido  # optional dependency — imported lazily
+
+    if not hasattr(kaleido, "calc_fig_sync"):
+        return cast("bytes", fig.to_image(
+            format=image_format, width=width, height=height, scale=scale,
+        ))
 
     with tempfile.TemporaryDirectory(prefix="wm-notecards-export-") as temp_dir:
         safe_path = Path(temp_dir) / f"{_safe_export_stub(file_stub)}.{image_format}"

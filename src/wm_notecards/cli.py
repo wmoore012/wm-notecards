@@ -5,9 +5,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 FindingKind = Literal["local-helper", "legacy-theme", "vendored-runtime", "duplicate-notebook"]
 # Keep this list explicit: the doctor is a migration aid, not a Python-code search engine.
@@ -79,15 +83,23 @@ def _scan_notebook(path: Path, root: Path) -> list[DoctorFinding]:
     return findings
 
 
+def _project_files(root: Path) -> Iterator[Path]:
+    """Prune generated directories before traversing their contents."""
+    for directory, dirs, files in os.walk(root):
+        dirs[:] = sorted(name for name in dirs if name not in _IGNORED_PARTS)
+        for name in sorted(files):
+            path = Path(directory) / name
+            if not path.is_symlink() and path.is_file():
+                yield path
+
+
 def scan_project(root: Path) -> list[DoctorFinding]:
     """Inspect a project without reading notebook outputs or changing files."""
     resolved = root.resolve()
     if not resolved.is_dir():
         raise ValueError(f"Project root is not a directory: {resolved}")
     findings: list[DoctorFinding] = []
-    for path in resolved.rglob("*"):
-        if _is_ignored(path.relative_to(resolved)) or not path.is_file():
-            continue
+    for path in _project_files(resolved):
         if path.name == "wm_theme.py":
             findings.append(
                 DoctorFinding("legacy-theme", _relative(path, resolved), None, "Legacy theme module")

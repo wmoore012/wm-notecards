@@ -450,6 +450,7 @@ def init_notebook(
     retina: bool = True,
     expand_colab_outputs: bool = True,
     colab_max_output_height: int = 5_000,
+    layout: str | None = None,
 ) -> None:
     """Initialise notebook display defaults once per kernel.
 
@@ -471,10 +472,18 @@ def init_notebook(
         Ask Colab to grow rich-output iframes with their notecards instead of
         creating nested scroll regions. Feature-detected and ignored outside
         Colab. Default *True*.
+    layout : str | None, optional
+        Opt into "responsive" for centered VS Code rich outputs, wrapping WM
+        profile cards, and scrollable wide WM tables on narrow screens. None
+        preserves existing behavior. Apply once at notebook startup; switching
+        back to None requires clearing outputs and reloading the frontend.
     colab_max_output_height : int, optional
         Safety ceiling for a single Colab output iframe. Must be between 800
         and 20,000 pixels. Default 5,000.
     """
+    from wm_notecards.layout import notebook_layout_css
+
+    layout_css = notebook_layout_css(layout)  # Validate before changing any defaults.
     global _NOTEBOOK_READY  # noqa: WPS420
 
     if html_styler:
@@ -498,6 +507,8 @@ def init_notebook(
             + _dark_mode_defense_css()
             + "\n"
             + _mathjax_bootstrap_html()
+            + "\n"
+            + layout_css
         ),
     )
 

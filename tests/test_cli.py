@@ -61,3 +61,24 @@ def test_doctor_reports_legacy_theme_vendor_and_colab_copy(tmp_path: Path) -> No
     kinds = {item.kind for item in scan_project(tmp_path)}
 
     assert kinds == {"legacy-theme", "vendored-runtime", "duplicate-notebook"}
+
+
+def test_doctor_prunes_ignored_directories_before_descent(tmp_path, monkeypatch):
+    import os
+
+    from wm_notecards import cli
+
+    ignored = tmp_path / '.venv'
+    ignored.mkdir()
+    (ignored / 'wm_theme.py').write_text('')
+    visited = []
+    walk = os.walk
+
+    def recording_walk(root):
+        for directory, dirs, files in walk(root):
+            visited.append(directory)
+            yield directory, dirs, files
+
+    monkeypatch.setattr(cli.os, 'walk', recording_walk)
+    assert scan_project(tmp_path) == []
+    assert visited == [str(tmp_path)]

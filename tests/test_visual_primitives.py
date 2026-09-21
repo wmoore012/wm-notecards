@@ -9,9 +9,9 @@ from IPython.display import Javascript
 from wm_notecards import WMTheme, boot, pictogram, rendering
 from wm_notecards._colors import WMGradient, generate_discrete_gradient_wm, generate_gradient_wm
 from wm_notecards._html import card_shell_css, chip_html, plot_shell_html, shell_header_html
+from wm_notecards.cards import mermaid_card
 from wm_notecards.icons import get_icon, list_icons
 from wm_notecards.kicker import WMKicker, kicker_html
-from wm_notecards.cards import mermaid_card
 
 
 def test_gradients_are_clamped_and_plotly_ready() -> None:
@@ -290,3 +290,20 @@ def test_vector_exports_keep_human_sized_pages(tmp_path, monkeypatch: pytest.Mon
         assert output.read_bytes() == b"vector-bytes"
 
     assert [call["scale"] for call in calls] == [1.0, 1.0]
+
+
+@pytest.mark.parametrize('image_format', ['svg', 'png', 'pdf'])
+def test_legacy_kaleido_exports_preserve_dimensions(monkeypatch, image_format):
+    import sys
+
+    monkeypatch.setitem(sys.modules, 'kaleido', types.SimpleNamespace())
+    calls = []
+    monkeypatch.setattr(go.Figure, 'to_image', lambda self, **kwargs: calls.append(kwargs) or b'image')
+    result = rendering._export_image_bytes(
+        go.Figure(), file_stub='safe', image_format=image_format,
+        width=860, height=520, scale=3,
+    )
+    assert result == b'image'
+    assert calls == [dict(format=image_format, width=860, height=520, scale=3)]
+    assert rendering._export_svg_bytes(go.Figure(), file_stub='safe') == b'image'
+    assert calls[-1] == {'format': 'svg'}
